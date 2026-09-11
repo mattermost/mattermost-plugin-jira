@@ -77,8 +77,6 @@ func (client testClient) DoTransition(issueKey string, transitionID string) erro
 func (client testClient) GetIssue(issueKey string, options *jira.GetQueryOptions) (*jira.Issue, error) {
 	switch issueKey {
 	case nonExistantIssueKey:
-		// Mirrors what the real go-jira client returns for a 404: an error
-		// carrying the HTTP status code via RESTError, not a bare sentinel.
 		return nil, RESTError{kvstore.ErrNotFound, http.StatusNotFound}
 	case forbiddenIssueKey:
 		return nil, RESTError{errors.New("forbidden"), http.StatusForbidden}
@@ -505,10 +503,6 @@ func TestRouteIssueTransition(t *testing.T) {
 	}
 }
 
-// TestGetIssueByKey covers the status codes GetIssueByKey reports for
-// permission-related Jira responses; httpGetIssueByKey relies on these being
-// real StatusCoder errors (see TestRouteGetIssueByKey) instead of always
-// reporting 500.
 func TestGetIssueByKey(t *testing.T) {
 	p := setupTestPlugin(&plugintest.API{})
 
@@ -548,11 +542,6 @@ func TestGetIssueByKey(t *testing.T) {
 	}
 }
 
-// TestRouteGetIssueByKey verifies the /get-issue-by-key HTTP route - used by
-// the webapp's Jira link-preview tooltip - surfaces the real Jira status
-// code instead of collapsing every failure into a 500. Before this fix, a
-// permission error from Jira showed up as a generic "connection error" in
-// the preview and a misleading 500 in the server logs.
 func TestRouteGetIssueByKey(t *testing.T) {
 	api := &plugintest.API{}
 	api.On("LogWarn", mockAnythingOfTypeBatch("string", 11)...).Return().Maybe()

@@ -159,11 +159,9 @@ func TestMigrateV3InstancesToV2(t *testing.T) {
 	}
 }
 
-// TestMapUsers pins the page-boundary bug that made uninstall silently skip
-// users: the callback deletes KV keys that sort before every "user_" key
-// (connection rows and the reverse indexes they own), which shifted each
-// subsequent offset-based page left. The key list has to mutate for real
-// here, or the shift cannot reproduce.
+// TestMapUsers pins the page-boundary bug that made uninstall skip users: the
+// callback deletes keys that sort before every "user_" key, shifting each
+// subsequent offset-based page left. The key list must mutate for real here.
 func TestMapUsers(t *testing.T) {
 	origPerPage := listPerPage
 	listPerPage = 4 // small pages cross the boundary deterministically
@@ -185,8 +183,7 @@ func TestMapUsers(t *testing.T) {
 		require.NoError(t, err)
 		values[key] = data
 	}
-	// Bare 32-char-hex keys, like the connection rows disconnectUser
-	// deletes. These sort before every "user_" key.
+	// Bare hex keys, like connection rows: these sort before every "user_" key.
 	for i := 0; i < numBareKeys; i++ {
 		keys = append(keys, hashkey("", fmt.Sprintf("bare-key-%d", i)))
 	}

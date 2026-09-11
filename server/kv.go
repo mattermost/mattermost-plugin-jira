@@ -69,10 +69,8 @@ type UserStore interface {
 	LoadMattermostUserID(instanceID types.ID, jiraUsername string) (types.ID, error)
 	DeleteConnection(instanceID, mattermostUserID types.ID) error
 	CountUsers() (int, error)
-	// MapUsers invokes f for every stored user record. It does not abort on
-	// a single unreadable record. It returns the number of records that
-	// failed to load, in addition to any error returned by f or by listing
-	// keys.
+	// MapUsers invokes f for every stored user record, skipping and counting
+	// the records it cannot load rather than aborting on them.
 	MapUsers(f func(user *User) error) (failedReads int, err error)
 }
 
@@ -283,11 +281,9 @@ func (store store) CountUsers() (int, error) {
 }
 
 func (store store) MapUsers(f func(user *User) error) (int, error) {
-	// Collect every user_ key across all pages before invoking f. f is free
-	// to delete KV keys (e.g. via disconnectUser); those keys sort before
-	// user_ keys and deleting them during iteration would shift every
-	// subsequent offset-based page left, silently skipping users that were
-	// never visited.
+	// Collect every key before invoking f: f may delete KV keys that sort
+	// before the user_ prefix, which would shift each subsequent
+	// offset-based page left and silently skip users.
 	var keys []string
 	for i := 0; ; i++ {
 		page, err := store.plugin.client.KV.ListKeys(i, listPerPage)

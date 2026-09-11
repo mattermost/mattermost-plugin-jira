@@ -273,9 +273,8 @@ func (p *Plugin) DisconnectUser(instanceURL string, mattermostUserID types.ID) (
 		return nil, err
 	}
 
-	// The instance may have been uninstalled while the user's record still
-	// references it. Clean up the record anyway rather than locking the
-	// user out of the one command that can fix it.
+	// An uninstalled instance must not block the disconnect: it is the one
+	// command that can clean up a record still referencing it.
 	if _, err := p.instanceStore.LoadInstance(instanceID); err != nil {
 		if errors.Cause(err) != kvstore.ErrNotFound {
 			return nil, err
@@ -310,9 +309,8 @@ func (p *Plugin) disconnectUser(instanceID types.ID, user *User) (*Connection, e
 	if !user.ConnectedInstances.Contains(instanceID) {
 		return nil, errors.Wrapf(kvstore.ErrNotFound, "user is not connected to %q", instanceID)
 	}
-	// LoadConnection does not error on a missing row; it returns a non-nil,
-	// empty Connection, which is fine here since we only need the ID to prune
-	// and (if present) the DisplayName for the caller's response.
+	// A missing row is not an error here: LoadConnection returns an empty
+	// Connection, and only its DisplayName is used, for the caller's reply.
 	conn, err := p.userStore.LoadConnection(instanceID, user.MattermostUserID)
 	if err != nil {
 		return nil, err
@@ -339,12 +337,8 @@ func (p *Plugin) disconnectUser(instanceID types.ID, user *User) (*Connection, e
 	if err != nil {
 		return nil, err
 	}
-	// GetUserInfo may have found other stale instances in the record while
-	// it was in hand; clean those up too, so a single disconnect recovers a
-	// record with more than one dangling instance reference. The requested
-	// disconnect is already persisted at this point, so a failure to heal
-	// the rest must not fail it, or the caller is told the disconnect did
-	// not happen and the client never gets the event below.
+	// The requested disconnect is already persisted, so a failure to heal the
+	// rest of the record must not be reported as a failed disconnect.
 	if err := p.healUserRecord(info); err != nil {
 		p.client.Log.Warn("Failed to persist reconciled user record after disconnect",
 			"mattermostUserID", user.MattermostUserID, "instanceID", instanceID, "error", err.Error())
@@ -358,11 +352,6 @@ func (p *Plugin) disconnectUser(instanceID types.ID, user *User) (*Connection, e
 	return conn, nil
 }
 
-// reconcileUserInstances drops instances that are no longer installed from
-// the user's record, and clears a default that points at one of them. It
-// returns the dropped instance IDs, and reports whether it changed the
-// record at all, so callers know both what to clean up and whether the
-// record needs persisting.
 func reconcileUserInstances(user *User, instances *Instances) (dropped []types.ID, changed bool) {
 	for _, instanceID := range user.ConnectedInstances.IDs() {
 		if !instances.Contains(instanceID) {
@@ -378,12 +367,9 @@ func reconcileUserInstances(user *User, instances *Instances) (dropped []types.I
 	return dropped, changed
 }
 
-// ensureConnectable reports whether mattermostUserID may start a connection
-// flow for instanceID, which the caller must have already confirmed is
-// installed. Only the user's own record decides that. A connection row the
-// record does not back is orphaned -- typically left behind by a
-// since-removed instance that occupied the same URL -- and is cleared here
-// so it cannot block the reconnect.
+// ensureConnectable reports whether the user may start a connection flow for
+// an already-installed instanceID. Only the user's own record decides that,
+// so a connection row the record does not back is orphaned, and cleared here.
 func (p *Plugin) ensureConnectable(instanceID, mattermostUserID types.ID) (bool, error) {
 	user, err := p.userStore.LoadUser(mattermostUserID)
 	if err != nil {
@@ -400,10 +386,8 @@ func (p *Plugin) ensureConnectable(instanceID, mattermostUserID types.ID) (bool,
 	return true, nil
 }
 
-// deleteOrphanedConnection removes the connection row, and the Jira account
-// reverse index it owns, for an instance the user's record does not list as
-// connected. Nothing can legitimately reach the row at this point, so a
-// failure to delete it is logged rather than returned.
+// deleteOrphanedConnection removes a connection row, and the Jira account
+// reverse index it owns, that the user's record does not list as connected.
 func (p *Plugin) deleteOrphanedConnection(instanceID, mattermostUserID types.ID) {
 	conn, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
 	if err != nil || len(conn.JiraAccountID()) == 0 {

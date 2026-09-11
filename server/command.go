@@ -541,9 +541,6 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 			"Jira instance %s is not installed, please contact the system administrator.",
 			instanceID)
 	}
-	// instanceID passed the connectable check above, which only admits
-	// instances the user's own record does not list as connected, so any
-	// connection row that still exists here is orphaned.
 	p.deleteOrphanedConnection(instanceID, types.ID(header.UserId))
 
 	link := routeUserConnect

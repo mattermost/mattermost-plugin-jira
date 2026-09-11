@@ -58,18 +58,15 @@ func TestUserSettings_String(t *testing.T) {
 }
 
 func TestRouteUserConnectAndStart(t *testing.T) {
-	// A record listing no instances at all, but with a connection row left
-	// in the KV store, as a since-removed instance at this URL leaves
-	// behind. Only the record may decide the user is already linked, so the
-	// row has to be cleared rather than block the connect flow.
+	// A record listing no instances, but with a connection row left behind
+	// by a since-removed instance at this URL.
 	const orphanedRowUserID = "orphaned_row_user"
 
 	tests := map[string]struct {
 		route      string
 		userID     string
 		statusCode int
-		// expectRowKept is only checked for the cases whose fixture starts
-		// with a connection row.
+		// Only checked for the cases whose fixture starts with a row.
 		expectRowKept bool
 	}{
 		"user connected to jira will re-direct to docs": {
@@ -123,11 +120,6 @@ func TestRouteUserConnectAndStart(t *testing.T) {
 	}
 }
 
-// TestDisconnectUserFromUninstalledInstance covers the reported limbo
-// state, where a record pointing at a removed instance left the user unable
-// to either use another instance or disconnect from the dead one. The
-// disconnect must now succeed and take every dangling reference with it,
-// connection rows included, while leaving a live connection alone.
 func TestDisconnectUserFromUninstalledInstance(t *testing.T) {
 	const userID = types.ID("test-user")
 	firstDead := types.ID("https://dead-one.example.com")
@@ -191,8 +183,7 @@ func TestDisconnectUserFromUninstalledInstance(t *testing.T) {
 
 	t.Run("reports success when only the opportunistic heal fails", func(t *testing.T) {
 		p, store := setup(true)
-		// The requested disconnect is written first; fail the second write,
-		// which is the bonus cleanup of the other dead instance.
+		// Fail the second write: the heal, not the requested disconnect.
 		store.storeUserErrAfter = 1
 
 		conn, err := p.DisconnectUser(firstDead.String(), userID)

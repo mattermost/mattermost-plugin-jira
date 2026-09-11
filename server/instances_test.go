@@ -128,10 +128,6 @@ func TestInstallInstance(t *testing.T) {
 	}
 }
 
-// TestResolveUserInstanceURL_StaleInstances covers a user record that still
-// references an uninstalled instance. Such a reference used to be returned
-// as the resolved instance, so every instance-resolving command failed on
-// it, including the disconnect that would have cleaned it up.
 func TestResolveUserInstanceURL_StaleInstances(t *testing.T) {
 	deadInstanceID := types.ID("https://dead-instance.example.com")
 	p := newPluginForStoreTests(t, newInstanceStoreDouble(testInstance1))
@@ -182,8 +178,7 @@ func TestUninstallInstance(t *testing.T) {
 	t.Run("a missing instance blob still removes the list entry and disconnects users", func(t *testing.T) {
 		deadInstanceID := types.ID("https://dead-instance.example.com")
 
-		// An install already in the broken state: listed in instances/v3,
-		// but with no blob behind it.
+		// An install in the broken state: listed in instances/v3, no blob.
 		store := newInstanceStoreDouble()
 		store.instances.Set(&InstanceCommon{InstanceID: deadInstanceID, Type: ServerInstanceType})
 

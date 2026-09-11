@@ -150,10 +150,8 @@ func (store *mockInstanceStore) StoreInstances(*Instances) error {
 	return nil
 }
 
-// instanceStoreDouble is an InstanceStore double for the uninstall tests.
-// It mirrors the real store's kvstore.ErrNotFound wrapping for a missing
-// instance blob, where mockInstanceStoreKV returns a bare error that other
-// tests assert on verbatim, and it records the order of durable writes.
+// instanceStoreDouble exists alongside mockInstanceStoreKV because it wraps
+// kvstore.ErrNotFound like the real store, and records durable write order.
 type instanceStoreDouble struct {
 	mockInstanceStore
 	instances *Instances
@@ -199,27 +197,20 @@ func (s *instanceStoreDouble) DeleteInstance(id types.ID) error {
 	return nil
 }
 
-// connKey identifies a connection row the way the real store does, by
-// instance as well as by user, so a removed instance's row can be told
-// apart from a live one belonging to the same user.
 type connKey struct {
 	instanceID       types.ID
 	mattermostUserID types.ID
 }
 
-// limboUserStore is a UserStore double for the stale-instance tests. It
-// tracks DeleteConnection calls, which mockUserStoreKV does not, and its
-// LoadConnection mirrors the real store's behavior of returning a non-nil,
-// empty Connection (not an error) for a missing row.
+// limboUserStore tracks DeleteConnection calls, and mirrors the real store's
+// empty-Connection-not-error behavior for a missing row.
 type limboUserStore struct {
 	mockUserStore
 	users              map[types.ID]*User
 	connections        map[connKey]*Connection
 	deletedConnections []connKey
 
-	// storeUserErrAfter, when positive, fails every StoreUser call past the
-	// first that many, so a test can let the primary write land and then
-	// break a follow-up one.
+	// When positive, fails every StoreUser call past the first that many.
 	storeUserErrAfter int
 	storeUserCalls    int
 }
@@ -256,9 +247,8 @@ func (s *limboUserStore) DeleteConnection(instanceID, mattermostUserID types.ID)
 	return nil
 }
 
-// newPluginForStoreTests wires a Plugin against the store doubles above.
-// The logging calls are variadic and testify matches them by expanded
-// argument count, so every arity these paths use has to be registered.
+// Logging calls are variadic and testify matches them by expanded argument
+// count, so every arity these paths use has to be registered below.
 func newPluginForStoreTests(t *testing.T, instanceStore InstanceStore) *Plugin {
 	t.Helper()
 	p := &Plugin{}

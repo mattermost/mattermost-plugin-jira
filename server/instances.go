@@ -193,12 +193,8 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 				return err
 
 			case err != nil:
-				// The instance blob is already gone, most likely because a
-				// previous uninstall attempt deleted it but failed before
-				// removing it from the list. Validate the type from the list
-				// entry instead, and still run the user cleanup and list
-				// removal below rather than leaving users pointed at a dead
-				// instance.
+				// Blob gone but the list entry left behind by a half-finished
+				// uninstall: finish it rather than leave users stranded.
 				common := instances.Get(instanceID)
 				if instanceType != common.Type {
 					return errors.Errorf("%s did not match instance %s type %s", instanceType, instanceID, common.Type)
@@ -224,15 +220,9 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 		return nil, UninstallCleanup{}, err
 	}
 
-	// Delete the instance blob only after the instance list has been durably
-	// updated to no longer reference it. Failing in the other order leaves a
-	// list entry pointing at a deleted blob, which is the state that strands
-	// users. A blob left behind with no list entry is the better failure:
-	// instance enumeration and the user-record reconciliation both read the
-	// list, so it does not strand anyone, and the setup handshake relies on
-	// that same state for inactive Cloud instances anyway. Note it is not
-	// fully inert -- LoadInstance resolves a blob by ID without consulting
-	// the list -- so re-running the uninstall is what actually clears it.
+	// Delete the blob only after the list no longer references it: a list
+	// entry pointing at a deleted blob is the state that strands users,
+	// while a leftover blob does not, and a repeat uninstall clears it.
 	if err := p.instanceStore.DeleteInstance(instanceID); err != nil {
 		p.errorf("UninstallInstance: failed to delete instance blob %q: %v", instanceID, err)
 	}
@@ -252,19 +242,13 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 	return instance, cleanup, nil
 }
 
-// UninstallCleanup reports what the post-uninstall user sweep could not
-// finish. The two counts are not interchangeable: a failed disconnect names
-// a user known to be connected to the removed instance, while an unreadable
-// record may belong to a user who was never connected to it at all.
+// An unreadable record may belong to a user who was never connected to this
+// instance, so the two are counted separately.
 type UninstallCleanup struct {
 	FailedDisconnects int
 	UnreadableRecords int
 }
 
-// disconnectAllUsersFromInstance disconnects every user connected to
-// instanceID. It does not require the instance to still be installed.
-// Failures are logged and skipped rather than aborting the sweep, so that
-// one bad record cannot leave the remaining users stuck.
 func (p *Plugin) disconnectAllUsersFromInstance(instanceID types.ID) (UninstallCleanup, error) {
 	cleanup := UninstallCleanup{}
 	unreadable, err := p.userStore.MapUsers(func(user *User) error {
@@ -281,10 +265,8 @@ func (p *Plugin) disconnectAllUsersFromInstance(instanceID types.ID) (UninstallC
 	return cleanup, err
 }
 
-// stubInstance builds a minimal Instance from list metadata alone, for a
-// record whose backing KV blob is already missing. It is only good for
-// read-only accessors like GetManageAppsURL/GetManageWebhooksURL that
-// callers need after a best-effort uninstall.
+// stubInstance builds an Instance from list metadata alone, for a record
+// whose KV blob is already gone. Only the URL accessors are usable on it.
 func stubInstance(common *InstanceCommon) Instance {
 	switch common.Type {
 	case CloudOAuthInstanceType:
@@ -402,18 +384,12 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 		instanceURL = instance.InstanceID.String()
 	}
 
-	// An explicitly requested instance is returned as-is, even if it is no
-	// longer installed: callers such as /jira disconnect need to be able to
-	// target a removed instance in order to clean up a stale record.
+	// Returned even when no longer installed, so that `/jira disconnect`
+	// can target a removed instance to clean up a stale record.
 	if types.ID(instanceURL) != "" {
 		return types.ID(instanceURL), nil
 	}
 
-	// Only consider instances the user is connected to that are still
-	// installed when picking a default. A DefaultInstanceID or a lone
-	// ConnectedInstances entry that points at a removed instance must not
-	// be selected here, or every instance-resolving command fails as soon
-	// as the referenced instance is gone.
 	connected := NewInstances()
 	for _, id := range user.ConnectedInstances.IDs() {
 		if instances.Contains(id) {

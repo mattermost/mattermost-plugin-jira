@@ -72,10 +72,6 @@ func (store mockUserStoreKV) StoreUser(user *User) error {
 	return nil
 }
 
-// MapUsers invokes f for every user in the fixture. Deletions of the *User
-// map entry are visible to later iterations, same as the real MapUsers
-// contract; that's fine here since it iterates a Go map snapshot, not a
-// paginated KV listing.
 func (store mockUserStoreKV) MapUsers(f func(*User) error) (int, error) {
 	for _, user := range store.users {
 		if err := f(user); err != nil {

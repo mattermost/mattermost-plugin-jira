@@ -16,9 +16,8 @@ type UserInfo struct {
 	Instances   *Instances `json:"instances"`
 
 	connectable *Instances
-	// reconciled reports whether GetUserInfo had to drop stale state from
-	// User; staleInstances lists the instances it dropped. Callers that hold
-	// a durable copy of the record should pass the info to healUserRecord.
+	// Set when GetUserInfo dropped no-longer-installed instances from User.
+	// Pass the info to healUserRecord to make that cleanup durable.
 	reconciled     bool
 	staleInstances []types.ID
 }
@@ -38,11 +37,6 @@ func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, e
 	return respondJSON(w, info.AsConfigMap())
 }
 
-// healUserRecord persists a user record that GetUserInfo had to reconcile,
-// and clears the connection rows and DM/GM subscriptions the instances it
-// dropped left behind. Those leftovers are what let a removed instance keep
-// blocking a reconnect at the same URL. They are unreachable either way, so
-// failing to remove them is logged inside rather than failing the heal.
 func (p *Plugin) healUserRecord(info *UserInfo) error {
 	if !info.reconciled {
 		return nil
@@ -75,10 +69,6 @@ func (p *Plugin) GetUserInfo(mattermostUserID types.ID, user *User) (*UserInfo, 
 		}
 	}
 
-	// Drop any instances that are no longer installed before computing
-	// anything from the record, so a dangling reference to a removed
-	// instance can't make IsConnected/CanConnect report a contradictory
-	// state.
 	staleInstances, reconciled := reconcileUserInstances(user, instances)
 
 	isConnected := !user.ConnectedInstances.IsEmpty()

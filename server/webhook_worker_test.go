@@ -48,10 +48,8 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 		return data
 	}
 
-	// PostToChannel atomically claims a dedup key before it posts, so only
-	// the subtests that expect a post need to allow the claim. The key is a
-	// hash over the rendered webhook, which the test does not build, so
-	// match it by prefix.
+	// PostToChannel claims a dedup key before posting. The key hashes the
+	// rendered webhook, which the test does not build, so match by prefix.
 	expectDedupClaim := func(api *plugintest.API) {
 		prefix := strings.TrimSuffix(channelPostDedupKeyFmt, "%s")
 		api.On("KVSetWithOptions", mock.MatchedBy(func(key string) bool {
@@ -79,9 +77,7 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 		require.NoError(t, err)
 		api.On("KVGet", testSubKey).Return(existingBytes, nil)
 
-		// Filter matching always resolves the instance's team field keys,
-		// even for subscriptions with no team filter. No keys are stored
-		// here, which leaves the team filter unused rather than unresolved.
+		// Filter matching resolves team field keys even with no team filter.
 		api.On("KVGet", keyWithInstanceID(testInstance1.GetID(), teamFieldKeysKey)).Return(nil, nil)
 
 		return api, p
