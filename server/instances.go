@@ -179,7 +179,6 @@ func (p *Plugin) InstallInstance(newInstance Instance) error {
 func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceType) (Instance, UninstallCleanup, error) {
 	var instance Instance
 	var updated *Instances
-	var cleanup UninstallCleanup
 	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
 			if !instances.Contains(instanceID) {
@@ -207,11 +206,6 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 				}
 			}
 
-			cleanup, err = p.disconnectAllUsersFromInstance(instanceID)
-			if err != nil {
-				return err
-			}
-
 			instances.Delete(instanceID)
 			updated = instances
 			return nil
@@ -220,9 +214,17 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 		return nil, UninstallCleanup{}, err
 	}
 
+	// Sweeping before the list write would disconnect everyone and then, if
+	// that write failed, leave them cut off from a still-installed instance.
+	// This order strands records instead, which reconcileUserInstances heals.
+	cleanup, err := p.disconnectAllUsersFromInstance(instanceID)
+	if err != nil {
+		p.errorf("UninstallInstance: failed to sweep users of instance %q, leaving their records to self-heal: %v", instanceID, err)
+	}
+
 	// Delete the blob only after the list no longer references it: a list
-	// entry pointing at a deleted blob is the state that strands users,
-	// while a leftover blob does not, and a repeat uninstall clears it.
+	// entry pointing at a deleted blob is the state that strands users. A
+	// leftover blob does not, but nothing can reach it to retry either.
 	if err := p.instanceStore.DeleteInstance(instanceID); err != nil {
 		p.errorf("UninstallInstance: failed to delete instance blob %q: %v", instanceID, err)
 	}

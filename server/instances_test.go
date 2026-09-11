@@ -175,6 +175,28 @@ func TestUninstallInstance(t *testing.T) {
 			"deleting the blob first leaves the list pointing at a dead instance if the list write then fails")
 	})
 
+	t.Run("a failed instance list write leaves users connected", func(t *testing.T) {
+		store := newInstanceStoreDouble(testInstance1)
+		store.storeInstancesErr = errors.New("TESTING kv store unavailable")
+
+		connected := NewUser("connected-user")
+		connected.ConnectedInstances.Set(testInstance1.Common())
+
+		p := newPluginForStoreTests(t, store)
+		p.userStore = mockUserStoreKV{
+			users:       map[types.ID]*User{connected.MattermostUserID: connected},
+			connections: map[types.ID]*Connection{connected.MattermostUserID: {User: jira.User{AccountID: "live-account"}}},
+		}
+
+		_, _, err := p.UninstallInstance(testInstance1.InstanceID, testInstance1.Type)
+		require.Error(t, err)
+
+		updated, err := p.userStore.LoadUser(connected.MattermostUserID)
+		require.NoError(t, err)
+		assert.True(t, updated.ConnectedInstances.Contains(testInstance1.InstanceID),
+			"sweeping users before the list write cuts them off from an instance that is still installed")
+	})
+
 	t.Run("a missing instance blob still removes the list entry and disconnects users", func(t *testing.T) {
 		deadInstanceID := types.ID("https://dead-instance.example.com")
 

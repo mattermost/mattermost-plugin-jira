@@ -130,6 +130,7 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 
 		api.AssertCalled(t, "CreatePost", mock.AnythingOfType("*model.Post"))
 		api.AssertNotCalled(t, "KVSetWithOptions", testSubKey, mock.Anything, mock.Anything)
+		api.AssertExpectations(t)
 	})
 
 	t.Run("delivers to regular channels without checking membership", func(t *testing.T) {
@@ -147,6 +148,7 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 
 		api.AssertCalled(t, "CreatePost", mock.AnythingOfType("*model.Post"))
 		api.AssertNotCalled(t, "GetChannelMembers", mock.Anything, mock.Anything, mock.Anything)
+		api.AssertExpectations(t)
 	})
 
 	t.Run("keeps the subscription when the connection lookup fails", func(t *testing.T) {

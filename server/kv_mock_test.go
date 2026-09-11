@@ -154,9 +154,10 @@ func (store *mockInstanceStore) StoreInstances(*Instances) error {
 // kvstore.ErrNotFound like the real store, and records durable write order.
 type instanceStoreDouble struct {
 	mockInstanceStore
-	instances *Instances
-	blobs     map[types.ID]Instance
-	writes    []string
+	instances         *Instances
+	blobs             map[types.ID]Instance
+	writes            []string
+	storeInstancesErr error
 }
 
 func newInstanceStoreDouble(installed ...Instance) *instanceStoreDouble {
@@ -173,6 +174,9 @@ func (s *instanceStoreDouble) LoadInstances() (*Instances, error) {
 }
 
 func (s *instanceStoreDouble) StoreInstances(instances *Instances) error {
+	if s.storeInstancesErr != nil {
+		return s.storeInstancesErr
+	}
 	s.instances = instances
 	s.writes = append(s.writes, "StoreInstances")
 	return nil
