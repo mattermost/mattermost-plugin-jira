@@ -176,10 +176,10 @@ func (p *Plugin) InstallInstance(newInstance Instance) error {
 	return nil
 }
 
-func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceType) (Instance, int, error) {
+func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceType) (Instance, UninstallCleanup, error) {
 	var instance Instance
 	var updated *Instances
-	var failedUsers int
+	var cleanup UninstallCleanup
 	err := UpdateInstances(p.instanceStore,
 		func(instances *Instances) error {
 			if !instances.Contains(instanceID) {
@@ -211,7 +211,7 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 				}
 			}
 
-			failedUsers, err = p.disconnectAllUsersFromInstance(instanceID)
+			cleanup, err = p.disconnectAllUsersFromInstance(instanceID)
 			if err != nil {
 				return err
 			}
@@ -221,14 +221,18 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 			return nil
 		})
 	if err != nil {
-		return nil, 0, err
+		return nil, UninstallCleanup{}, err
 	}
 
-	// Delete the instance blob only after the instance list has been
-	// durably updated to no longer reference it. An orphaned blob with no
-	// list entry is harmless, since nothing can resolve an instance ID that
-	// isn't in the list; an orphaned list entry pointing at a deleted blob
-	// is exactly what puts users into the stuck state this fixes.
+	// Delete the instance blob only after the instance list has been durably
+	// updated to no longer reference it. Failing in the other order leaves a
+	// list entry pointing at a deleted blob, which is the state that strands
+	// users. A blob left behind with no list entry is the better failure:
+	// instance enumeration and the user-record reconciliation both read the
+	// list, so it does not strand anyone, and the setup handshake relies on
+	// that same state for inactive Cloud instances anyway. Note it is not
+	// fully inert -- LoadInstance resolves a blob by ID without consulting
+	// the list -- so re-running the uninstall is what actually clears it.
 	if err := p.instanceStore.DeleteInstance(instanceID); err != nil {
 		p.errorf("UninstallInstance: failed to delete instance blob %q: %v", instanceID, err)
 	}
@@ -245,27 +249,36 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 
 	// Notify users we have uninstalled an instance
 	p.wsInstancesChanged(updated)
-	return instance, failedUsers, nil
+	return instance, cleanup, nil
+}
+
+// UninstallCleanup reports what the post-uninstall user sweep could not
+// finish. The two counts are not interchangeable: a failed disconnect names
+// a user known to be connected to the removed instance, while an unreadable
+// record may belong to a user who was never connected to it at all.
+type UninstallCleanup struct {
+	FailedDisconnects int
+	UnreadableRecords int
 }
 
 // disconnectAllUsersFromInstance disconnects every user connected to
-// instanceID. It does not require the instance to still be installed. It
-// returns the number of users that could not be cleaned up, whether due to
-// an unreadable user record or a failed disconnect; failures are logged and
-// skipped rather than aborting the sweep.
-func (p *Plugin) disconnectAllUsersFromInstance(instanceID types.ID) (int, error) {
-	failed := 0
-	failedReads, err := p.userStore.MapUsers(func(user *User) error {
+// instanceID. It does not require the instance to still be installed.
+// Failures are logged and skipped rather than aborting the sweep, so that
+// one bad record cannot leave the remaining users stuck.
+func (p *Plugin) disconnectAllUsersFromInstance(instanceID types.ID) (UninstallCleanup, error) {
+	cleanup := UninstallCleanup{}
+	unreadable, err := p.userStore.MapUsers(func(user *User) error {
 		if !user.ConnectedInstances.Contains(instanceID) {
 			return nil
 		}
 		if _, err := p.disconnectUser(instanceID, user); err != nil {
 			p.infof("UninstallInstance: failed to disconnect user %q from instance %q: %v", user.MattermostUserID, instanceID, err)
-			failed++
+			cleanup.FailedDisconnects++
 		}
 		return nil
 	})
-	return failed + failedReads, err
+	cleanup.UnreadableRecords = unreadable
+	return cleanup, err
 }
 
 // stubInstance builds a minimal Instance from list metadata alone, for a

@@ -12,6 +12,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -186,6 +187,24 @@ func TestDisconnectUserFromUninstalledInstance(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, updated.ConnectedInstances.Contains(firstDead))
 		assert.Empty(t, updated.DefaultInstanceID)
+	})
+
+	t.Run("reports success when only the opportunistic heal fails", func(t *testing.T) {
+		p, store := setup(true)
+		// The requested disconnect is written first; fail the second write,
+		// which is the bonus cleanup of the other dead instance.
+		store.storeUserErrAfter = 1
+
+		conn, err := p.DisconnectUser(firstDead.String(), userID)
+		require.NoError(t, err, "the requested disconnect is already persisted, so a failed heal must not be reported as a failed disconnect")
+		require.NotNil(t, conn)
+
+		updated, err := store.LoadUser(userID)
+		require.NoError(t, err)
+		assert.False(t, updated.ConnectedInstances.Contains(firstDead), "the requested disconnect must stand")
+
+		p.API.(*plugintest.API).AssertCalled(t, "PublishWebSocketEvent",
+			websocketEventDisconnect, mock.Anything, mock.Anything)
 	})
 }
 

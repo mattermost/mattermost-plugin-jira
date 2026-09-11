@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -47,6 +48,17 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 		return data
 	}
 
+	// PostToChannel atomically claims a dedup key before it posts, so only
+	// the subtests that expect a post need to allow the claim. The key is a
+	// hash over the rendered webhook, which the test does not build, so
+	// match it by prefix.
+	expectDedupClaim := func(api *plugintest.API) {
+		prefix := strings.TrimSuffix(channelPostDedupKeyFmt, "%s")
+		api.On("KVSetWithOptions", mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, prefix)
+		}), mock.Anything, mock.Anything).Return(true, nil)
+	}
+
 	setup := func(t *testing.T, sub ChannelSubscription) (*plugintest.API, *Plugin) {
 		api := &plugintest.API{}
 		p := &Plugin{}
@@ -66,6 +78,11 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 		existingBytes, err := json.Marshal(existing)
 		require.NoError(t, err)
 		api.On("KVGet", testSubKey).Return(existingBytes, nil)
+
+		// Filter matching always resolves the instance's team field keys,
+		// even for subscriptions with no team filter. No keys are stored
+		// here, which leaves the team filter unused rather than unresolved.
+		api.On("KVGet", keyWithInstanceID(testInstance1.GetID(), teamFieldKeysKey)).Return(nil, nil)
 
 		return api, p
 	}
@@ -107,6 +124,7 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 			{UserId: botUserID},
 			{UserId: connectedUserID},
 		}, nil)
+		expectDedupClaim(api)
 		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{Id: "createdpost1"}, nil)
 		api.On("KVSetWithOptions", fmt.Sprintf(ticketRootPostIDKey, fixtureIssueID, channelID), mock.Anything, mock.Anything).Return(true, nil)
 
@@ -123,6 +141,7 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 		api, p := setup(t, newSub("sub3______________________", channelID))
 
 		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypeOpen}, nil)
+		expectDedupClaim(api)
 		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{Id: "createdpost2"}, nil)
 		api.On("KVSetWithOptions", fmt.Sprintf(ticketRootPostIDKey, fixtureIssueID, channelID), mock.Anything, mock.Anything).Return(true, nil)
 

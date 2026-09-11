@@ -204,10 +204,10 @@ func TestUninstallInstance(t *testing.T) {
 			},
 		}
 
-		instance, failedUsers, err := p.UninstallInstance(deadInstanceID, ServerInstanceType)
+		instance, cleanup, err := p.UninstallInstance(deadInstanceID, ServerInstanceType)
 		require.NoError(t, err, "must not error, and must not panic, on a missing instance blob")
 		require.NotNil(t, instance, "callers print manage-app URLs from the returned instance")
-		assert.Equal(t, 0, failedUsers)
+		assert.Equal(t, UninstallCleanup{}, cleanup)
 
 		instances, err := p.instanceStore.LoadInstances()
 		require.NoError(t, err)

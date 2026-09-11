@@ -216,6 +216,12 @@ type limboUserStore struct {
 	users              map[types.ID]*User
 	connections        map[connKey]*Connection
 	deletedConnections []connKey
+
+	// storeUserErrAfter, when positive, fails every StoreUser call past the
+	// first that many, so a test can let the primary write land and then
+	// break a follow-up one.
+	storeUserErrAfter int
+	storeUserCalls    int
 }
 
 func (s *limboUserStore) LoadUser(id types.ID) (*User, error) {
@@ -227,6 +233,10 @@ func (s *limboUserStore) LoadUser(id types.ID) (*User, error) {
 }
 
 func (s *limboUserStore) StoreUser(user *User) error {
+	s.storeUserCalls++
+	if s.storeUserErrAfter > 0 && s.storeUserCalls > s.storeUserErrAfter {
+		return errors.New("TESTING kv store unavailable")
+	}
 	s.users[user.MattermostUserID] = user
 	return nil
 }

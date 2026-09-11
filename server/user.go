@@ -341,9 +341,13 @@ func (p *Plugin) disconnectUser(instanceID types.ID, user *User) (*Connection, e
 	}
 	// GetUserInfo may have found other stale instances in the record while
 	// it was in hand; clean those up too, so a single disconnect recovers a
-	// record with more than one dangling instance reference.
+	// record with more than one dangling instance reference. The requested
+	// disconnect is already persisted at this point, so a failure to heal
+	// the rest must not fail it, or the caller is told the disconnect did
+	// not happen and the client never gets the event below.
 	if err := p.healUserRecord(info); err != nil {
-		return nil, err
+		p.client.Log.Warn("Failed to persist reconciled user record after disconnect",
+			"mattermostUserID", user.MattermostUserID, "instanceID", instanceID, "error", err.Error())
 	}
 
 	p.client.Frontend.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
