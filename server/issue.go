@@ -1365,7 +1365,7 @@ func (p *Plugin) getIssueAsSlackAttachment(instance Instance, connection *Connec
 		case http.StatusNotFound:
 			return nil, errors.New("we couldn't find the issue key, or you do not have the appropriate permissions to view the issue. Please try again or contact your Jira administrator")
 
-		case http.StatusUnauthorized:
+		case http.StatusUnauthorized, http.StatusForbidden:
 			return nil, errors.New("you do not have the appropriate permissions to view the issue. Please contact your Jira administrator")
 
 		default:
@@ -1602,7 +1602,7 @@ func (p *Plugin) httpGetIssueByKey(w http.ResponseWriter, r *http.Request) (int,
 	issueKey := r.FormValue(ParamIssueKey)
 	issue, err := p.GetIssueByKey(types.ID(instanceID), types.ID(mattermostUserID), issueKey)
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+		return respondErr(w, StatusCode(err), err)
 	}
 
 	return respondJSON(w, issue)
@@ -1618,7 +1618,17 @@ func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey s
 	if err != nil {
 		switch StatusCode(err) {
 		case http.StatusNotFound:
-			return nil, errors.New("we couldn't find the issue key, or you do not have the appropriate permissions to view the issue. Please try again or contact your Jira administrator")
+			return nil, RESTError{
+				errors.New("we couldn't find the issue key, or you do not have the appropriate permissions to view the issue. Please try again or contact your Jira administrator"),
+				http.StatusNotFound,
+			}
+
+		case http.StatusUnauthorized, http.StatusForbidden:
+			return nil, RESTError{
+				errors.New("you do not have the appropriate permissions to view the issue. Please contact your Jira administrator"),
+				http.StatusForbidden,
+			}
+
 		default:
 			return nil, errors.WithMessage(err, "request to Jira failed")
 		}

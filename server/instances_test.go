@@ -7,14 +7,18 @@ import (
 	"path/filepath"
 	"testing"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func TestInstallInstance(t *testing.T) {
@@ -122,4 +126,117 @@ func TestInstallInstance(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestResolveUserInstanceURL_StaleInstances(t *testing.T) {
+	deadInstanceID := types.ID("https://dead-instance.example.com")
+	p := newPluginForStoreTests(t, newInstanceStoreDouble(testInstance1))
+
+	t.Run("a default pointing at an uninstalled instance falls back to the installed one", func(t *testing.T) {
+		user := NewUser("test-user")
+		user.ConnectedInstances.Set(testInstance1.Common())
+		user.ConnectedInstances.Set(&InstanceCommon{InstanceID: deadInstanceID})
+		user.DefaultInstanceID = deadInstanceID
+
+		instanceID, err := p.resolveUserInstanceURL(user, "")
+		require.NoError(t, err)
+		assert.Equal(t, testInstance1.InstanceID, instanceID)
+	})
+
+	t.Run("being connected only to an uninstalled instance reports not-connected", func(t *testing.T) {
+		user := NewUser("test-user")
+		user.ConnectedInstances.Set(&InstanceCommon{InstanceID: deadInstanceID})
+		user.DefaultInstanceID = deadInstanceID
+
+		_, err := p.resolveUserInstanceURL(user, "")
+		require.Error(t, err)
+		assert.Equal(t, kvstore.ErrNotFound, errors.Cause(err))
+	})
+
+	t.Run("an explicitly named instance is honored even when uninstalled", func(t *testing.T) {
+		user := NewUser("test-user")
+		user.ConnectedInstances.Set(&InstanceCommon{InstanceID: deadInstanceID})
+
+		instanceID, err := p.resolveUserInstanceURL(user, deadInstanceID.String())
+		require.NoError(t, err)
+		assert.Equal(t, deadInstanceID, instanceID, "/jira disconnect has to be able to target a removed instance")
+	})
+}
+
+func TestUninstallInstance(t *testing.T) {
+	t.Run("the instance list is written before the instance blob is deleted", func(t *testing.T) {
+		store := newInstanceStoreDouble(testInstance1)
+		p := newPluginForStoreTests(t, store)
+		p.userStore = mockUserStoreKV{users: map[types.ID]*User{}, connections: map[types.ID]*Connection{}}
+
+		_, _, err := p.UninstallInstance(testInstance1.InstanceID, testInstance1.Type)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"StoreInstances", "DeleteInstance"}, store.writes,
+			"deleting the blob first leaves the list pointing at a dead instance if the list write then fails")
+	})
+
+	t.Run("a failed instance list write leaves users connected", func(t *testing.T) {
+		store := newInstanceStoreDouble(testInstance1)
+		store.storeInstancesErr = errors.New("TESTING kv store unavailable")
+
+		connected := NewUser("connected-user")
+		connected.ConnectedInstances.Set(testInstance1.Common())
+
+		p := newPluginForStoreTests(t, store)
+		p.userStore = mockUserStoreKV{
+			users:       map[types.ID]*User{connected.MattermostUserID: connected},
+			connections: map[types.ID]*Connection{connected.MattermostUserID: {User: jira.User{AccountID: "live-account"}}},
+		}
+
+		_, _, err := p.UninstallInstance(testInstance1.InstanceID, testInstance1.Type)
+		require.Error(t, err)
+
+		updated, err := p.userStore.LoadUser(connected.MattermostUserID)
+		require.NoError(t, err)
+		assert.True(t, updated.ConnectedInstances.Contains(testInstance1.InstanceID),
+			"sweeping users before the list write cuts them off from an instance that is still installed")
+	})
+
+	t.Run("a missing instance blob still removes the list entry and disconnects users", func(t *testing.T) {
+		deadInstanceID := types.ID("https://dead-instance.example.com")
+
+		// An install in the broken state: listed in instances/v3, no blob.
+		store := newInstanceStoreDouble()
+		store.instances.Set(&InstanceCommon{InstanceID: deadInstanceID, Type: ServerInstanceType})
+
+		affected := NewUser("affected-user")
+		affected.ConnectedInstances.Set(&InstanceCommon{InstanceID: deadInstanceID})
+		affected.DefaultInstanceID = deadInstanceID
+		unaffected := NewUser("unaffected-user")
+		unaffected.ConnectedInstances.Set(testInstance1.Common())
+
+		p := newPluginForStoreTests(t, store)
+		p.userStore = mockUserStoreKV{
+			users: map[types.ID]*User{
+				affected.MattermostUserID:   affected,
+				unaffected.MattermostUserID: unaffected,
+			},
+			connections: map[types.ID]*Connection{
+				affected.MattermostUserID: {User: jira.User{AccountID: "dead-account"}},
+			},
+		}
+
+		instance, cleanup, err := p.UninstallInstance(deadInstanceID, ServerInstanceType)
+		require.NoError(t, err, "must not error, and must not panic, on a missing instance blob")
+		require.NotNil(t, instance, "callers print manage-app URLs from the returned instance")
+		assert.Equal(t, UninstallCleanup{}, cleanup)
+
+		instances, err := p.instanceStore.LoadInstances()
+		require.NoError(t, err)
+		assert.False(t, instances.Contains(deadInstanceID))
+
+		updated, err := p.userStore.LoadUser(affected.MattermostUserID)
+		require.NoError(t, err)
+		assert.False(t, updated.ConnectedInstances.Contains(deadInstanceID))
+		assert.Empty(t, updated.DefaultInstanceID)
+
+		untouched, err := p.userStore.LoadUser(unaffected.MattermostUserID)
+		require.NoError(t, err)
+		assert.True(t, untouched.ConnectedInstances.Contains(testInstance1.InstanceID))
+	})
 }

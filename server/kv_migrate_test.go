@@ -4,12 +4,21 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"slices"
+	"sort"
+	"strings"
 	"testing"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func TestMigrateV2Instances(t *testing.T) {
@@ -148,4 +157,69 @@ func TestMigrateV3InstancesToV2(t *testing.T) {
 			require.Equal(t, tc.expectMessage, msg)
 		})
 	}
+}
+
+// TestMapUsers pins the page-boundary bug that made uninstall skip users: the
+// callback deletes keys that sort before every "user_" key, shifting each
+// subsequent offset-based page left. The key list must mutate for real here.
+func TestMapUsers(t *testing.T) {
+	origPerPage := listPerPage
+	listPerPage = 4 // small pages cross the boundary deterministically
+	defer func() { listPerPage = origPerPage }()
+
+	const numUsers, numBareKeys = 9, 3
+
+	var userIDs []types.ID
+	var keys []string
+	values := map[string][]byte{}
+
+	for i := 0; i < numUsers; i++ {
+		id := types.ID(fmt.Sprintf("user-%d", i))
+		userIDs = append(userIDs, id)
+		key := hashkey(prefixUser, id.String())
+		keys = append(keys, key)
+
+		data, err := json.Marshal(NewUser(id))
+		require.NoError(t, err)
+		values[key] = data
+	}
+	// Bare hex keys, like connection rows: these sort before every "user_" key.
+	for i := 0; i < numBareKeys; i++ {
+		keys = append(keys, hashkey("", fmt.Sprintf("bare-key-%d", i)))
+	}
+	sort.Strings(keys)
+
+	api := &plugintest.API{}
+	api.On("KVList", mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(
+		func(page, count int) ([]string, *model.AppError) {
+			start := min(page*count, len(keys))
+			return append([]string{}, keys[start:min(start+count, len(keys))]...), nil
+		})
+	api.On("KVGet", mock.AnythingOfType("string")).Return(
+		func(key string) ([]byte, *model.AppError) { return values[key], nil })
+	api.On("KVSetWithOptions", mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(
+		func(key string, _ []byte, _ model.PluginKVSetOptions) (bool, *model.AppError) {
+			keys = slices.DeleteFunc(keys, func(k string) bool { return k == key })
+			return true, nil
+		})
+
+	p := &Plugin{}
+	p.SetAPI(api)
+	p.client = pluginapi.NewClient(api, p.Driver)
+
+	var visited []types.ID
+	failedReads, err := NewStore(p).MapUsers(func(user *User) error {
+		visited = append(visited, user.MattermostUserID)
+
+		// Mirror disconnectUser deleting a bare key mid-iteration.
+		if len(keys) > 0 && !strings.HasPrefix(keys[0], prefixUser) {
+			require.NoError(t, p.client.KV.Delete(keys[0]))
+		}
+		return nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, 0, failedReads)
+	assert.ElementsMatch(t, userIDs, visited,
+		"every user must be visited exactly once, even though the callback deletes keys that sort before user_ keys")
 }
