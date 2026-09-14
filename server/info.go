@@ -16,6 +16,10 @@ type UserInfo struct {
 	Instances   *Instances `json:"instances"`
 
 	connectable *Instances
+	// Set when GetUserInfo dropped no-longer-installed instances from User.
+	// Pass the info to healUserRecord to make that cleanup durable.
+	reconciled     bool
+	staleInstances []types.ID
 }
 
 func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -25,7 +29,29 @@ func (p *Plugin) httpGetUserInfo(w http.ResponseWriter, r *http.Request) (int, e
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
+	if err := p.healUserRecord(info); err != nil {
+		p.client.Log.Warn("Failed to persist reconciled user record",
+			"mattermostUserID", mattermostUserID, "error", err.Error())
+	}
+
 	return respondJSON(w, info.AsConfigMap())
+}
+
+func (p *Plugin) healUserRecord(info *UserInfo) error {
+	if !info.reconciled {
+		return nil
+	}
+
+	if err := p.userStore.StoreUser(info.User); err != nil {
+		return err
+	}
+
+	for _, instanceID := range info.staleInstances {
+		p.deleteOrphanedConnection(instanceID, info.User.MattermostUserID)
+		p.cleanupDMSubscriptionsOnDisconnect(instanceID, info.User.MattermostUserID.String())
+	}
+
+	return nil
 }
 
 func (p *Plugin) GetUserInfo(mattermostUserID types.ID, user *User) (*UserInfo, error) {
@@ -43,6 +69,8 @@ func (p *Plugin) GetUserInfo(mattermostUserID types.ID, user *User) (*UserInfo, 
 		}
 	}
 
+	staleInstances, reconciled := reconcileUserInstances(user, instances)
+
 	isConnected := !user.ConnectedInstances.IsEmpty()
 	connectable := NewInstances()
 	for _, instanceID := range instances.IDs() {
@@ -51,17 +79,14 @@ func (p *Plugin) GetUserInfo(mattermostUserID types.ID, user *User) (*UserInfo, 
 		}
 	}
 
-	for _, instanceID := range user.ConnectedInstances.IDs() {
-		if !instances.Contains(instanceID) {
-			user.ConnectedInstances.Delete(instanceID)
-		}
-	}
 	return &UserInfo{
-		CanConnect:  !connectable.IsEmpty(),
-		IsConnected: isConnected,
-		Instances:   instances,
-		User:        user,
-		connectable: connectable,
+		CanConnect:     !connectable.IsEmpty(),
+		IsConnected:    isConnected,
+		Instances:      instances,
+		User:           user,
+		connectable:    connectable,
+		reconciled:     reconciled,
+		staleInstances: staleInstances,
 	}, nil
 }
 

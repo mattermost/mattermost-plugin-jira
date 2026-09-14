@@ -12,8 +12,12 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
 func TestUserSettings_String(t *testing.T) {
@@ -53,13 +57,33 @@ func TestUserSettings_String(t *testing.T) {
 	}
 }
 
-func TestRouteUserStart(t *testing.T) {
+func TestRouteUserConnectAndStart(t *testing.T) {
+	// A record listing no instances, but with a connection row left behind
+	// by a since-removed instance at this URL.
+	const orphanedRowUserID = "orphaned_row_user"
+
 	tests := map[string]struct {
+		route      string
 		userID     string
 		statusCode int
+		// Only checked for the cases whose fixture starts with a row.
+		expectRowKept bool
 	}{
-		"user connected to jira will re-direct to docs":  {userID: "connected_user", statusCode: http.StatusSeeOther},
-		"user not connected to jira will atempt connect": {userID: "non_connected_user", statusCode: http.StatusFound},
+		"user connected to jira will re-direct to docs": {
+			route: routeUserStart, userID: "connected_user", statusCode: http.StatusSeeOther, expectRowKept: true,
+		},
+		"user not connected to jira will atempt connect": {
+			route: routeUserStart, userID: "non_connected_user", statusCode: http.StatusFound,
+		},
+		"user with an orphaned connection row will attempt connect": {
+			route:      instancePath(routeUserConnect, testInstance1.InstanceID),
+			userID:     orphanedRowUserID,
+			statusCode: http.StatusFound,
+		},
+		"user whose record backs the connection row is told to disconnect": {
+			route: instancePath(routeUserConnect, testInstance1.InstanceID), userID: "connected_user",
+			statusCode: http.StatusBadRequest, expectRowKept: true,
+		},
 	}
 	api := &plugintest.API{}
 
@@ -71,18 +95,108 @@ func TestRouteUserStart(t *testing.T) {
 	p.initializeRouter()
 	p.SetAPI(api)
 
-	p.userStore = getMockUserStoreKV()
+	store := getMockUserStoreKV()
+	store.users[orphanedRowUserID] = NewUser(orphanedRowUserID)
+	store.connections[orphanedRowUserID] = &Connection{User: jira.User{AccountID: "stale-account"}}
+	p.userStore = store
 	p.instanceStore = p.getMockInstanceStoreKV(1)
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			request := httptest.NewRequest("GET", routeUserStart, nil)
+			request := httptest.NewRequest("GET", tc.route, nil)
 			request.Header.Set("Mattermost-User-Id", tc.userID)
+			_, hadRow := store.connections[types.ID(tc.userID)]
+
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, request)
 			assert.Equal(t, tc.statusCode, w.Result().StatusCode)
+
+			if hadRow {
+				_, kept := store.connections[types.ID(tc.userID)]
+				assert.Equal(t, tc.expectRowKept, kept,
+					"an orphaned row must be cleared, and a row the user's record backs must be left alone")
+			}
 		})
 	}
+}
+
+func TestDisconnectUserFromUninstalledInstance(t *testing.T) {
+	const userID = types.ID("test-user")
+	firstDead := types.ID("https://dead-one.example.com")
+	secondDead := types.ID("https://dead-two.example.com")
+
+	setup := func(withConnectionRows bool) (*Plugin, *limboUserStore) {
+		user := NewUser(userID)
+		user.ConnectedInstances.Set(testInstance1.Common())
+		user.ConnectedInstances.Set(&InstanceCommon{InstanceID: firstDead})
+		user.ConnectedInstances.Set(&InstanceCommon{InstanceID: secondDead})
+		user.DefaultInstanceID = secondDead
+
+		store := &limboUserStore{
+			users:       map[types.ID]*User{userID: user},
+			connections: map[connKey]*Connection{},
+		}
+		if withConnectionRows {
+			store.connections[connKey{testInstance1.InstanceID, userID}] = &Connection{User: jira.User{AccountID: "live-account"}}
+			store.connections[connKey{firstDead, userID}] = &Connection{User: jira.User{AccountID: "first-account", DisplayName: "First Account"}}
+			store.connections[connKey{secondDead, userID}] = &Connection{User: jira.User{AccountID: "second-account"}}
+		}
+
+		// instances/v3 lists only testInstance1; both dead instances are gone.
+		p := newPluginForStoreTests(t, newInstanceStoreDouble(testInstance1))
+		p.userStore = store
+		return p, store
+	}
+
+	t.Run("clears every dangling reference and its connection row", func(t *testing.T) {
+		p, store := setup(true)
+
+		conn, err := p.DisconnectUser(firstDead.String(), userID)
+		require.NoError(t, err, "a removed instance must still be disconnectable")
+		assert.Equal(t, "First Account", conn.DisplayName)
+
+		updated, err := store.LoadUser(userID)
+		require.NoError(t, err)
+		assert.True(t, updated.ConnectedInstances.Contains(testInstance1.InstanceID), "the installed instance must be kept")
+		assert.False(t, updated.ConnectedInstances.Contains(firstDead))
+		assert.False(t, updated.ConnectedInstances.Contains(secondDead), "one disconnect must clear every dangling reference, not just the one named")
+		assert.Empty(t, updated.DefaultInstanceID)
+
+		assert.ElementsMatch(t,
+			[]connKey{{firstDead, userID}, {secondDead, userID}},
+			store.deletedConnections,
+			"both orphaned rows must go, or they keep blocking a reconnect at the same URL, and the live one must survive")
+	})
+
+	t.Run("succeeds when the connection row is already gone", func(t *testing.T) {
+		p, store := setup(false)
+
+		conn, err := p.DisconnectUser(firstDead.String(), userID)
+		require.NoError(t, err, "a missing row must not block cleanup of the record")
+		require.NotNil(t, conn, "executeDisconnect dereferences the returned Connection unconditionally")
+
+		updated, err := store.LoadUser(userID)
+		require.NoError(t, err)
+		assert.False(t, updated.ConnectedInstances.Contains(firstDead))
+		assert.Empty(t, updated.DefaultInstanceID)
+	})
+
+	t.Run("reports success when only the opportunistic heal fails", func(t *testing.T) {
+		p, store := setup(true)
+		// Fail the second write: the heal, not the requested disconnect.
+		store.storeUserErrAfter = 1
+
+		conn, err := p.DisconnectUser(firstDead.String(), userID)
+		require.NoError(t, err, "the requested disconnect is already persisted, so a failed heal must not be reported as a failed disconnect")
+		require.NotNil(t, conn)
+
+		updated, err := store.LoadUser(userID)
+		require.NoError(t, err)
+		assert.False(t, updated.ConnectedInstances.Contains(firstDead), "the requested disconnect must stand")
+
+		p.API.(*plugintest.API).AssertCalled(t, "PublishWebSocketEvent",
+			websocketEventDisconnect, mock.Anything, mock.Anything)
+	})
 }
 
 func TestGetJiraUserFromMentions(t *testing.T) {

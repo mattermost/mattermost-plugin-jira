@@ -62,6 +62,25 @@ func (store mockUserStoreKV) LoadUser(mattermostUserID types.ID) (*User, error) 
 	return user, nil
 }
 
+func (store mockUserStoreKV) DeleteConnection(instanceID, mattermostUserID types.ID) error {
+	delete(store.connections, mattermostUserID)
+	return nil
+}
+
+func (store mockUserStoreKV) StoreUser(user *User) error {
+	store.users[user.MattermostUserID] = user
+	return nil
+}
+
+func (store mockUserStoreKV) MapUsers(f func(*User) error) (int, error) {
+	for _, user := range store.users {
+		if err := f(user); err != nil {
+			return 0, err
+		}
+	}
+	return 0, nil
+}
+
 func getMockUserStoreKV() mockUserStoreKV {
 	newuser := func(id types.ID) *User {
 		u := NewUser(id)
@@ -89,6 +108,7 @@ func getMockUserStoreKV() mockUserStoreKV {
 	return mockUserStoreKV{
 		users: map[types.ID]*User{
 			"connected_user":               newuser("connected_user"),
+			"non_connected_user":           NewUser("non_connected_user"),
 			mockUserIDWithNotifications:    newuser(mockUserIDWithNotifications),
 			mockUserIDWithoutNotifications: newuser(mockUserIDWithoutNotifications),
 		},
