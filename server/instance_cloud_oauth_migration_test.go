@@ -233,7 +233,8 @@ func TestCloudOAuthMigration(t *testing.T) {
 			runAssertions: func(p *Plugin, api *plugintest.API, instanceID string) {
 				fakeJiraResourcesServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					accessibleResources := JiraAccessibleResources{{
-						ID: "someid",
+						ID:  "someid",
+						URL: jiraCloudURL,
 					}}
 					_ = json.NewEncoder(w).Encode(accessibleResources)
 				}))
@@ -286,7 +287,8 @@ func TestCloudOAuthMigration(t *testing.T) {
 			runAssertions: func(p *Plugin, api *plugintest.API, instanceID string) {
 				fakeJiraResourcesServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					accessibleResources := JiraAccessibleResources{{
-						ID: "someid",
+						ID:  "someid",
+						URL: jiraCloudURL,
 					}}
 					_ = json.NewEncoder(w).Encode(accessibleResources)
 				}))
@@ -360,7 +362,8 @@ func TestCloudOAuthMigration(t *testing.T) {
 			runAssertions: func(p *Plugin, api *plugintest.API, instanceID string) {
 				fakeJiraResourcesServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					accessibleResources := JiraAccessibleResources{{
-						ID: "someid",
+						ID:  "someid",
+						URL: jiraCloudURL,
 					}}
 					_ = json.NewEncoder(w).Encode(accessibleResources)
 				}))
@@ -415,7 +418,8 @@ func TestCloudOAuthMigration(t *testing.T) {
 			runAssertions: func(p *Plugin, api *plugintest.API, instanceID string) {
 				fakeJiraResourcesServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					accessibleResources := JiraAccessibleResources{{
-						ID: "someid",
+						ID:  "someid",
+						URL: jiraCloudURL,
 					}}
 					_ = json.NewEncoder(w).Encode(accessibleResources)
 				}))

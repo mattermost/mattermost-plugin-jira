@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -43,7 +44,8 @@ type CloudOAuthConfigure struct {
 }
 
 type JiraAccessibleResources []struct {
-	ID string
+	ID  string `json:"id"`
+	URL string `json:"url"`
 }
 
 type PKCEParams struct {
@@ -169,15 +171,23 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 		}
 	}
 
-	// TODO: Get resource ID if not in the KV Store?
-	jiraID, err := ci.getJiraCloudResourceID(*client)
-	ci.JiraResourceID = jiraID
+	resourceID, err := ci.resolveJiraCloudResourceID(*client)
 	if err != nil {
 		if errors.Is(err, errTokenExpired) {
 			ci.Plugin.disconnectUserDueToExpiredToken(connection.MattermostUserID, ci.GetID())
 			return nil, nil, errors.New("your Jira token has expired, please use `/jira connect` to reconnect your account")
 		}
 		return nil, nil, err
+	}
+
+	if ci.JiraResourceID != resourceID {
+		ci.JiraResourceID = resourceID
+		// Cached so the lookup above stops running on every Jira request. A
+		// failure only costs the next request another lookup.
+		if err := ci.Plugin.instanceStore.StoreInstance(ci); err != nil {
+			ci.Plugin.client.Log.Warn("Failed to cache the resolved Jira resource ID",
+				"instance_id", string(ci.InstanceID), "error", err.Error())
+		}
 	}
 
 	jiraClient, err := jira.NewClient(client, ci.GetURL())
@@ -243,7 +253,11 @@ func (ci *cloudOAuthInstance) GetMattermostKey() string {
 
 var errTokenExpired = errors.New("token expired or revoked")
 
-func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string, error) {
+func (ci *cloudOAuthInstance) resolveJiraCloudResourceID(client http.Client) (string, error) {
+	if ci.JiraResourceID != "" {
+		return ci.JiraResourceID, nil
+	}
+
 	request, err := http.NewRequest(
 		http.MethodGet,
 		jiraOAuthAccessibleResourcesURL,
@@ -275,10 +289,43 @@ func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string
 		return "", errors.Wrap(err, "failed to unmarshal JiraAccessibleResources")
 	}
 
-	// We return the first resource ID only
+	return ci.selectResourceID(resources)
+}
+
+// selectResourceID picks the resource for this instance's own site. A token can
+// grant access to several Jira sites in an unspecified order, and each site has
+// its own project key sequences, so taking the wrong one sends reads and writes
+// to one site while every link we render points at another. No match has to be
+// an error rather than a guess.
+func (ci *cloudOAuthInstance) selectResourceID(resources JiraAccessibleResources) (string, error) {
 	if len(resources) < 1 {
 		return "", errors.New("No resources are available for this Jira Cloud Account.")
 	}
 
-	return resources[0].ID, nil
+	wantHost := jiraURLHost(ci.JiraBaseURL)
+	if wantHost == "" {
+		return "", errors.Errorf("instance has an unusable Jira base URL %q", ci.JiraBaseURL)
+	}
+
+	available := make([]string, 0, len(resources))
+	for _, resource := range resources {
+		if jiraURLHost(resource.URL) == wantHost {
+			return resource.ID, nil
+		}
+		available = append(available, resource.URL)
+	}
+
+	return "", errors.Errorf(
+		"your Jira account does not have access to %s, only to: %s. Please use `/jira disconnect` and `/jira connect`, and authorize %s",
+		ci.JiraBaseURL, strings.Join(available, ", "), ci.JiraBaseURL)
+}
+
+// jiraURLHost reduces a Jira site URL to the only part that identifies the
+// site, so scheme, case, port and trailing path cannot cause a false mismatch.
+func jiraURLHost(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	return strings.ToLower(u.Hostname())
 }
