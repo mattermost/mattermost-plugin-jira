@@ -49,13 +49,10 @@ const (
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
-// externalConfig fields must all carry an explicit lowercase json tag
-// matching System Console's key casing (strings.ToLower of the plugin.json
-// setting key). The server always persists Console-driven writes under the
-// lowercase key; a field without a matching tag marshals under its Go
-// (PascalCase) name, which creates a second, colliding copy of the same
-// setting the next time the plugin writes its own config. See
-// normalizePluginConfigMap for the cleanup of any pre-existing duplicates.
+// Every field needs an explicit lowercase json tag: the server stores and
+// reads plugin settings under strings.ToLower of the plugin.json key, so an
+// untagged field makes storeConfig write a second, colliding PascalCase copy
+// of the same setting.
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
@@ -698,28 +695,6 @@ func (p *Plugin) setDefaultConfiguration() error {
 	}
 
 	return nil
-}
-
-// normalizeStoredPluginConfig reads this plugin's raw, unsanitized settings
-// map and rewrites it in place if it contains any case-variant duplicate
-// keys. See normalizePluginConfigMap for the collapsing rules.
-func (p *Plugin) normalizeStoredPluginConfig() error {
-	unsanitized := p.client.Configuration.GetUnsanitizedConfig()
-	if unsanitized == nil {
-		return nil
-	}
-
-	pluginConfig, ok := unsanitized.PluginSettings.Plugins[manifest.Id]
-	if !ok {
-		return nil
-	}
-
-	normalized, changed := normalizePluginConfigMap(pluginConfig)
-	if !changed {
-		return nil
-	}
-
-	return p.client.Configuration.SavePluginConfig(normalized)
 }
 
 func (p *Plugin) OnInstall(c *plugin.Context, event model.OnInstallEvent) error {

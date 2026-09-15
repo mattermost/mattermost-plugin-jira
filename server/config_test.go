@@ -14,185 +14,94 @@ import (
 )
 
 func TestExternalConfigMarshalsOnlyLowercaseKeys(t *testing.T) {
-	ec := externalConfig{
-		EnableJiraUI:                            true,
-		Secret:                                  "secretvalue",
-		RolesAllowedToEditJiraSubscriptions:     "system_admin",
-		GroupsAllowedToEditJiraSubscriptions:    "group1,group2",
-		MaxAttachmentSize:                       "10mb",
-		JiraAdminAdditionalHelpText:             "help text",
-		SecurityLevelEmptyForJiraSubscriptions:  true,
-		HideDecriptionComment:                   false,
-		EnableAutocomplete:                      true,
-		EnableWebhookEventLogging:               false,
-		DisplaySubscriptionNameInNotifications:  true,
-		EncryptionKey:                           "encryptionkeyvalue",
-		AdminAPIToken:                           "tokenvalue",
-		AdminEmail:                              "admin@example.com",
-		ThreadedJiraCommentSubscriptionDuration: "30",
-		TeamIDs:                                 "[team](id)",
-	}
-
-	data, err := json.Marshal(ec)
+	data, err := json.Marshal(externalConfig{
+		AdminAPIToken: "tokenvalue",
+		AdminEmail:    "admin@example.com",
+		EncryptionKey: "encryptionkeyvalue",
+	})
 	require.NoError(t, err)
 
 	var raw map[string]any
 	require.NoError(t, json.Unmarshal(data, &raw))
 
 	for key := range raw {
-		assert.Equal(t, strings.ToLower(key), key, "config key %q must marshal in lowercase to match System Console", key)
+		assert.Equal(t, strings.ToLower(key), key, "config key %q must marshal in lowercase to match the stored key", key)
 	}
-
 	assert.Equal(t, "tokenvalue", raw["adminapitoken"])
 	assert.Equal(t, "admin@example.com", raw["adminemail"])
 	assert.Equal(t, "encryptionkeyvalue", raw["encryptionkey"])
 }
 
 func TestNormalizePluginConfigMap(t *testing.T) {
-	t.Run("no duplicates leaves the map untouched", func(t *testing.T) {
-		in := map[string]any{"adminemail": "admin@example.com", "adminapitoken": "tok"}
-		out, changed := normalizePluginConfigMap(in)
-		assert.False(t, changed)
-		assert.Equal(t, in, out)
-	})
-
-	t.Run("lone PascalCase leftover is rewritten to lowercase", func(t *testing.T) {
-		in := map[string]any{"AdminEmail": "admin@example.com"}
-		out, changed := normalizePluginConfigMap(in)
-		assert.True(t, changed)
-		assert.Equal(t, map[string]any{"adminemail": "admin@example.com"}, out)
-	})
-
-	t.Run("real lowercase value wins over empty PascalCase leftover", func(t *testing.T) {
-		// This is the reported 403 case: the plugin's own PascalCase write
-		// left AdminEmail empty, but System Console has since saved the
-		// real address under the lowercase key.
-		in := map[string]any{
-			"adminemail": "real@example.com",
-			"AdminEmail": "",
-		}
-		out, changed := normalizePluginConfigMap(in)
-		assert.True(t, changed)
-		assert.Equal(t, map[string]any{"adminemail": "real@example.com"}, out)
-	})
-
-	t.Run("intentional empty lowercase value wins over a stale real PascalCase leftover", func(t *testing.T) {
-		// The admin cleared Admin Email in System Console; that intent must
-		// not be overridden by an older leftover duplicate.
-		in := map[string]any{
-			"adminemail": "",
-			"AdminEmail": "old@example.com",
-		}
-		out, changed := normalizePluginConfigMap(in)
-		assert.True(t, changed)
-		assert.Equal(t, map[string]any{"adminemail": ""}, out)
-	})
-
-	t.Run("FakeSetting lowercase falls back to a real PascalCase value", func(t *testing.T) {
-		in := map[string]any{
-			"encryptionkey": model.FakeSetting,
-			"EncryptionKey": "realgeneratedkey",
-		}
-		out, changed := normalizePluginConfigMap(in)
-		assert.True(t, changed)
-		assert.Equal(t, map[string]any{"encryptionkey": "realgeneratedkey"}, out)
-	})
-
-	t.Run("lone FakeSetting with no real duplicate is preserved for desanitize", func(t *testing.T) {
-		in := map[string]any{
-			"encryptionkey": model.FakeSetting,
-			"EncryptionKey": "",
-		}
-		out, changed := normalizePluginConfigMap(in)
-		assert.True(t, changed)
-		assert.Equal(t, map[string]any{"encryptionkey": model.FakeSetting}, out)
-	})
-
-	t.Run("non-string values under a single casing are rewritten to lowercase", func(t *testing.T) {
-		in := map[string]any{"EnableJiraUI": true}
-		out, changed := normalizePluginConfigMap(in)
-		assert.True(t, changed)
-		assert.Equal(t, map[string]any{"enablejiraui": true}, out)
-	})
+	for name, tc := range map[string]struct {
+		in      map[string]any
+		want    map[string]any
+		changed bool
+	}{
+		"no duplicates leaves the map untouched": {
+			in:      map[string]any{"adminemail": "admin@example.com", "adminapitoken": "tok"},
+			want:    map[string]any{"adminemail": "admin@example.com", "adminapitoken": "tok"},
+			changed: false,
+		},
+		"lone leftover is rewritten to lowercase": {
+			in:      map[string]any{"AdminEmail": "admin@example.com"},
+			want:    map[string]any{"adminemail": "admin@example.com"},
+			changed: true,
+		},
+		"non-string leftover is rewritten to lowercase": {
+			in:      map[string]any{"EnableJiraUI": true},
+			want:    map[string]any{"enablejiraui": true},
+			changed: true,
+		},
+		"real lowercase value wins over an empty leftover": {
+			in:      map[string]any{"adminemail": "real@example.com", "AdminEmail": ""},
+			want:    map[string]any{"adminemail": "real@example.com"},
+			changed: true,
+		},
+		"intentionally cleared lowercase value wins over a stale leftover": {
+			in:      map[string]any{"adminemail": "", "AdminEmail": "old@example.com"},
+			want:    map[string]any{"adminemail": ""},
+			changed: true,
+		},
+		"placeholder falls back to the real leftover": {
+			in:      map[string]any{"encryptionkey": model.FakeSetting, "EncryptionKey": "realgeneratedkey"},
+			want:    map[string]any{"encryptionkey": "realgeneratedkey"},
+			changed: true,
+		},
+		"placeholder with no real leftover is preserved for desanitize": {
+			in:      map[string]any{"encryptionkey": model.FakeSetting, "EncryptionKey": ""},
+			want:    map[string]any{"encryptionkey": model.FakeSetting},
+			changed: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			out, changed := normalizePluginConfigMap(tc.in)
+			assert.Equal(t, tc.changed, changed)
+			assert.Equal(t, tc.want, out)
+		})
+	}
 }
 
-func TestConfigurationWillBeSaved(t *testing.T) {
-	t.Run("collapses duplicate keys for this plugin", func(t *testing.T) {
-		p := &Plugin{}
-
-		cfg := &model.Config{}
-		cfg.SetDefaults()
-		cfg.PluginSettings.Plugins[manifest.Id] = map[string]any{
-			"adminemail": "real@example.com",
-			"AdminEmail": "",
-		}
-
-		newCfg, err := p.ConfigurationWillBeSaved(cfg)
-		require.NoError(t, err)
-		require.NotNil(t, newCfg)
-
-		assert.Equal(t, map[string]any{"adminemail": "real@example.com"}, newCfg.PluginSettings.Plugins[manifest.Id])
-
-		// The config passed in must not have been mutated in place; the
-		// caller is expected to swap in the returned config instead.
-		assert.Equal(t, map[string]any{
-			"adminemail": "real@example.com",
-			"AdminEmail": "",
-		}, cfg.PluginSettings.Plugins[manifest.Id])
-	})
-
-	t.Run("no duplicates returns nil so the caller's config is used as-is", func(t *testing.T) {
-		p := &Plugin{}
-
-		cfg := &model.Config{}
-		cfg.SetDefaults()
-		cfg.PluginSettings.Plugins[manifest.Id] = map[string]any{
-			"adminemail": "real@example.com",
-		}
-
-		newCfg, err := p.ConfigurationWillBeSaved(cfg)
-		require.NoError(t, err)
-		assert.Nil(t, newCfg)
-	})
-
-	t.Run("plugin without any settings yet is a no-op", func(t *testing.T) {
-		p := &Plugin{}
-
-		cfg := &model.Config{}
-		cfg.SetDefaults()
-
-		newCfg, err := p.ConfigurationWillBeSaved(cfg)
-		require.NoError(t, err)
-		assert.Nil(t, newCfg)
-	})
-}
-
-// TestNormalizeThenSetDefaultsDoesNotRotateEncryptionKey exercises the exact
-// regression described in the bug report: a real EncryptionKey recovered
-// from a PascalCase duplicate behind a FakeSetting lowercase key must not
-// look "missing" to setDefaults and get rotated.
+// The reported regression: a real encryption key recovered from a duplicate
+// must survive the load path rather than looking unset and being rotated.
 func TestNormalizeThenSetDefaultsDoesNotRotateEncryptionKey(t *testing.T) {
-	raw := map[string]any{
+	normalized, changed := normalizePluginConfigMap(map[string]any{
 		"secret":        "existingsecret",
 		"encryptionkey": model.FakeSetting,
 		"EncryptionKey": "existingrealencryptionkey123456",
-	}
-
-	normalized, changed := normalizePluginConfigMap(raw)
+	})
 	require.True(t, changed)
-	require.Equal(t, "existingrealencryptionkey123456", normalized["encryptionkey"])
 
-	// LoadPluginConfiguration on the server marshals the lowercased map to
-	// JSON and unmarshals it into the destination struct; mirror that here.
+	// LoadPluginConfiguration marshals the lowercased map and unmarshals it
+	// into the destination struct; mirror that here.
 	data, err := json.Marshal(normalized)
 	require.NoError(t, err)
 
 	var ec externalConfig
 	require.NoError(t, json.Unmarshal(data, &ec))
-	require.Equal(t, "existingrealencryptionkey123456", ec.EncryptionKey)
 
 	setDefaultsChanged, err := ec.setDefaults()
 	require.NoError(t, err)
-	assert.False(t, setDefaultsChanged, "a real encryption key recovered from a duplicate must not be rotated")
+	assert.False(t, setDefaultsChanged)
 	assert.Equal(t, "existingrealencryptionkey123456", ec.EncryptionKey)
 }
