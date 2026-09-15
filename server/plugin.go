@@ -49,6 +49,13 @@ const (
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
+// externalConfig fields must all carry an explicit lowercase json tag
+// matching System Console's key casing (strings.ToLower of the plugin.json
+// setting key). The server always persists Console-driven writes under the
+// lowercase key; a field without a matching tag marshals under its Go
+// (PascalCase) name, which creates a second, colliding copy of the same
+// setting the next time the plugin writes its own config. See
+// normalizePluginConfigMap for the cleanup of any pre-existing duplicates.
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
@@ -57,41 +64,41 @@ type externalConfig struct {
 	Secret string `json:"secret"`
 
 	// What MM roles that can create subscriptions
-	RolesAllowedToEditJiraSubscriptions string
+	RolesAllowedToEditJiraSubscriptions string `json:"rolesallowedtoeditjirasubscriptions"`
 
 	// Comma separated list of jira groups with permission. Empty is all.
-	GroupsAllowedToEditJiraSubscriptions string
+	GroupsAllowedToEditJiraSubscriptions string `json:"groupsallowedtoeditjirasubscriptions"`
 
 	// Maximum attachment size allowed to be uploaded to Jira, can be a
 	// number, optionally followed by one of [b, kb, mb, gb, tb]
-	MaxAttachmentSize string
+	MaxAttachmentSize string `json:"maxattachmentsize"`
 
 	// Additional Help Text to be shown in the output of '/jira help' command
-	JiraAdminAdditionalHelpText string
+	JiraAdminAdditionalHelpText string `json:"jiraadminadditionalhelptext"`
 
 	// When enabled, a subscription without security level rules will filter out an issue that has a security level assigned
-	SecurityLevelEmptyForJiraSubscriptions bool
+	SecurityLevelEmptyForJiraSubscriptions bool `json:"securitylevelemptyforjirasubscriptions"`
 
 	// Hide issue descriptions and comments in Webhook and Subscription messages
-	HideDecriptionComment bool
+	HideDecriptionComment bool `json:"hidedecriptioncomment"`
 
 	// Enable slash command autocomplete
-	EnableAutocomplete bool
+	EnableAutocomplete bool `json:"enableautocomplete"`
 
 	// Enable Webhook Event Logging
-	EnableWebhookEventLogging bool
+	EnableWebhookEventLogging bool `json:"enablewebhookeventlogging"`
 
 	// Display subscription name in notifications
-	DisplaySubscriptionNameInNotifications bool
+	DisplaySubscriptionNameInNotifications bool `json:"displaysubscriptionnameinnotifications"`
 
 	// The encryption key used to encrypt stored api tokens
-	EncryptionKey string
+	EncryptionKey string `json:"encryptionkey"`
 
 	// API token from Jira
-	AdminAPIToken string
+	AdminAPIToken string `json:"adminapitoken"`
 
 	// Email of the admin
-	AdminEmail string
+	AdminEmail string `json:"adminemail"`
 
 	// Number of days Jira comments will be posted as threaded replies instead of a new post
 	ThreadedJiraCommentSubscriptionDuration string `json:"threadedjiracommentsubscriptionduration"`
@@ -103,8 +110,8 @@ type externalConfig struct {
 }
 
 type TeamList struct {
-	Name string
-	ID   string
+	Name string `json:"name"`
+	ID   string `json:"id"`
 }
 
 const defaultMaxAttachmentSize = types.ByteSize(100 * 1024 * 1024) // 100Mb
@@ -668,6 +675,10 @@ func (c *externalConfig) setDefaults() (bool, error) {
 }
 
 func (p *Plugin) setDefaultConfiguration() error {
+	if err := p.normalizeStoredPluginConfig(); err != nil {
+		return err
+	}
+
 	ec := externalConfig{}
 	err := p.client.Configuration.LoadPluginConfiguration(&ec)
 	if err != nil {
@@ -687,6 +698,28 @@ func (p *Plugin) setDefaultConfiguration() error {
 	}
 
 	return nil
+}
+
+// normalizeStoredPluginConfig reads this plugin's raw, unsanitized settings
+// map and rewrites it in place if it contains any case-variant duplicate
+// keys. See normalizePluginConfigMap for the collapsing rules.
+func (p *Plugin) normalizeStoredPluginConfig() error {
+	unsanitized := p.client.Configuration.GetUnsanitizedConfig()
+	if unsanitized == nil {
+		return nil
+	}
+
+	pluginConfig, ok := unsanitized.PluginSettings.Plugins[manifest.Id]
+	if !ok {
+		return nil
+	}
+
+	normalized, changed := normalizePluginConfigMap(pluginConfig)
+	if !changed {
+		return nil
+	}
+
+	return p.client.Configuration.SavePluginConfig(normalized)
 }
 
 func (p *Plugin) OnInstall(c *plugin.Context, event model.OnInstallEvent) error {
