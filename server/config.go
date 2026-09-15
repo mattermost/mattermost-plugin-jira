@@ -4,6 +4,7 @@
 package main
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -20,21 +21,24 @@ import (
 // it.
 func normalizePluginConfigMap(in map[string]any) (map[string]any, bool) {
 	out := make(map[string]any, len(in))
+	leftovers := make([]string, 0, len(in))
 	changed := false
 
 	for k, v := range in {
 		if k != strings.ToLower(k) {
+			leftovers = append(leftovers, k)
 			changed = true
 			continue
 		}
 		out[k] = v
 	}
 
-	for k, v := range in {
-		lower := strings.ToLower(k)
-		if k == lower {
-			continue
-		}
+	// Sorted so that a setting left behind under several casings resolves to
+	// the same value on every run, since the result gets persisted.
+	sort.Strings(leftovers)
+
+	for _, k := range leftovers {
+		lower, v := strings.ToLower(k), in[k]
 		if current, hasLower := out[lower]; hasLower && (current != model.FakeSetting || !isRealConfigValue(v)) {
 			continue
 		}
@@ -44,11 +48,13 @@ func normalizePluginConfigMap(in map[string]any) (map[string]any, bool) {
 	return out, changed
 }
 
-// isRealConfigValue reports whether v is an actual configured value rather
-// than an empty one or the placeholder the server substitutes for secrets.
+// isRealConfigValue reports whether v holds a usable secret rather than an
+// empty value or the placeholder the server substitutes for secrets. Only
+// strings qualify: the placeholder stands in for string settings alone, so a
+// leftover of any other type is malformed and must not displace it.
 func isRealConfigValue(v any) bool {
 	s, ok := v.(string)
-	return !ok || (s != "" && s != model.FakeSetting)
+	return ok && s != "" && s != model.FakeSetting
 }
 
 // normalizeStoredPluginConfig rewrites this plugin's stored settings if older

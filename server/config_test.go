@@ -73,12 +73,35 @@ func TestNormalizePluginConfigMap(t *testing.T) {
 			want:    map[string]any{"encryptionkey": model.FakeSetting},
 			changed: true,
 		},
+		"placeholder is not displaced by a null leftover": {
+			in:      map[string]any{"encryptionkey": model.FakeSetting, "EncryptionKey": nil},
+			want:    map[string]any{"encryptionkey": model.FakeSetting},
+			changed: true,
+		},
+		"placeholder is not displaced by a non-string leftover": {
+			in:      map[string]any{"encryptionkey": model.FakeSetting, "EncryptionKey": true},
+			want:    map[string]any{"encryptionkey": model.FakeSetting},
+			changed: true,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			out, changed := normalizePluginConfigMap(tc.in)
 			assert.Equal(t, tc.changed, changed)
 			assert.Equal(t, tc.want, out)
 		})
+	}
+}
+
+func TestNormalizePluginConfigMapPicksTheSameVariantEveryRun(t *testing.T) {
+	in := map[string]any{
+		"AdminEmail": "first@example.com",
+		"adminEMAIL": "second@example.com",
+	}
+
+	for range 50 {
+		out, changed := normalizePluginConfigMap(in)
+		assert.True(t, changed)
+		assert.Equal(t, map[string]any{"adminemail": "first@example.com"}, out)
 	}
 }
 
