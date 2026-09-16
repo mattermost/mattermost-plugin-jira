@@ -199,6 +199,36 @@ func TestDisconnectUserFromUninstalledInstance(t *testing.T) {
 	})
 }
 
+// The single-instance flow from the ticket: the admin removed the only
+// instance, so `/jira disconnect` carries no URL to name it by.
+func TestDisconnectUserAfterOnlyInstanceRemoved(t *testing.T) {
+	const userID = types.ID("test-user")
+	deadInstanceID := types.ID("https://dead-instance.example.com")
+
+	user := NewUser(userID)
+	user.ConnectedInstances.Set(&InstanceCommon{InstanceID: deadInstanceID})
+	user.DefaultInstanceID = deadInstanceID
+
+	store := &limboUserStore{
+		users: map[types.ID]*User{userID: user},
+		connections: map[connKey]*Connection{
+			{deadInstanceID, userID}: {User: jira.User{AccountID: "dead-account", DisplayName: "Dead Account"}},
+		},
+	}
+	p := newPluginForStoreTests(t, newInstanceStoreDouble())
+	p.userStore = store
+
+	conn, err := p.DisconnectUser("", userID)
+	require.NoError(t, err, "a user left with nothing installed must still be able to disconnect")
+	assert.Equal(t, "Dead Account", conn.DisplayName)
+
+	updated, err := store.LoadUser(userID)
+	require.NoError(t, err)
+	assert.True(t, updated.ConnectedInstances.IsEmpty())
+	assert.Empty(t, updated.DefaultInstanceID)
+	assert.Equal(t, []connKey{{deadInstanceID, userID}}, store.deletedConnections)
+}
+
 func TestGetJiraUserFromMentions(t *testing.T) {
 	p := Plugin{}
 	p.userStore = getMockUserStoreKV()

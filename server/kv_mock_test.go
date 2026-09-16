@@ -158,6 +158,7 @@ type instanceStoreDouble struct {
 	blobs             map[types.ID]Instance
 	writes            []string
 	storeInstancesErr error
+	deleteInstanceErr error
 }
 
 func newInstanceStoreDouble(installed ...Instance) *instanceStoreDouble {
@@ -196,6 +197,9 @@ func (s *instanceStoreDouble) StoreInstance(instance Instance) error {
 }
 
 func (s *instanceStoreDouble) DeleteInstance(id types.ID) error {
+	if s.deleteInstanceErr != nil {
+		return s.deleteInstanceErr
+	}
 	delete(s.blobs, id)
 	s.writes = append(s.writes, "DeleteInstance")
 	return nil
@@ -217,6 +221,21 @@ type limboUserStore struct {
 	// When positive, fails every StoreUser call past the first that many.
 	storeUserErrAfter int
 	storeUserCalls    int
+
+	mapUsersErr       error
+	unreadableRecords int
+}
+
+func (s *limboUserStore) MapUsers(f func(*User) error) (int, error) {
+	if s.mapUsersErr != nil {
+		return s.unreadableRecords, s.mapUsersErr
+	}
+	for _, user := range s.users {
+		if err := f(user); err != nil {
+			return s.unreadableRecords, err
+		}
+	}
+	return s.unreadableRecords, nil
 }
 
 func (s *limboUserStore) LoadUser(id types.ID) (*User, error) {

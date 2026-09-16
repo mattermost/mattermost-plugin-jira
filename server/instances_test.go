@@ -143,12 +143,38 @@ func TestResolveUserInstanceURL_StaleInstances(t *testing.T) {
 		assert.Equal(t, testInstance1.InstanceID, instanceID)
 	})
 
-	t.Run("being connected only to an uninstalled instance reports not-connected", func(t *testing.T) {
+	t.Run("being connected only to an uninstalled instance resolves to it anyway", func(t *testing.T) {
 		user := NewUser("test-user")
 		user.ConnectedInstances.Set(&InstanceCommon{InstanceID: deadInstanceID})
 		user.DefaultInstanceID = deadInstanceID
 
+		instanceID, err := p.resolveUserInstanceURL(user, "")
+		require.NoError(t, err)
+		assert.Equal(t, deadInstanceID, instanceID,
+			"`/jira disconnect` with no URL has to reach the stale reference to clear it")
+	})
+
+	t.Run("a single uninstalled instance resolves without a default set", func(t *testing.T) {
+		user := NewUser("test-user")
+		user.ConnectedInstances.Set(&InstanceCommon{InstanceID: deadInstanceID})
+
+		instanceID, err := p.resolveUserInstanceURL(user, "")
+		require.NoError(t, err)
+		assert.Equal(t, deadInstanceID, instanceID)
+	})
+
+	t.Run("several uninstalled instances and no default ask for one", func(t *testing.T) {
+		user := NewUser("test-user")
+		user.ConnectedInstances.Set(&InstanceCommon{InstanceID: deadInstanceID})
+		user.ConnectedInstances.Set(&InstanceCommon{InstanceID: types.ID("https://other-dead.example.com")})
+
 		_, err := p.resolveUserInstanceURL(user, "")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "default jira instance not found")
+	})
+
+	t.Run("an empty record reports not-connected", func(t *testing.T) {
+		_, err := p.resolveUserInstanceURL(NewUser("test-user"), "")
 		require.Error(t, err)
 		assert.Equal(t, kvstore.ErrNotFound, errors.Cause(err))
 	})
@@ -195,6 +221,30 @@ func TestUninstallInstance(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, updated.ConnectedInstances.Contains(testInstance1.InstanceID),
 			"sweeping users before the list write cuts them off from an instance that is still installed")
+	})
+
+	t.Run("cleanup failures are reported back instead of being swallowed", func(t *testing.T) {
+		sweepErr := errors.New("TESTING kv store unavailable")
+		deleteErr := errors.New("TESTING instance blob locked")
+
+		store := newInstanceStoreDouble(testInstance1)
+		store.deleteInstanceErr = deleteErr
+
+		p := newPluginForStoreTests(t, store)
+		p.userStore = &limboUserStore{
+			users:             map[types.ID]*User{},
+			connections:       map[connKey]*Connection{},
+			mapUsersErr:       sweepErr,
+			unreadableRecords: 2,
+		}
+
+		_, cleanup, err := p.UninstallInstance(testInstance1.InstanceID, testInstance1.Type)
+		require.NoError(t, err, "neither failure keeps the instance installed")
+		assert.Equal(t, UninstallCleanup{
+			UnreadableRecords: 2,
+			SweepErr:          sweepErr,
+			DeleteInstanceErr: deleteErr,
+		}, cleanup, "a silent cleanup failure leaves the admin told the uninstall was clean")
 	})
 
 	t.Run("a missing instance blob still removes the list entry and disconnects users", func(t *testing.T) {

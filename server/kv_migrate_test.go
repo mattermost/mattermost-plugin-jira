@@ -223,3 +223,43 @@ func TestMapUsers(t *testing.T) {
 	assert.ElementsMatch(t, userIDs, visited,
 		"every user must be visited exactly once, even though the callback deletes keys that sort before user_ keys")
 }
+
+func TestMapUsersCountsVanishedRecords(t *testing.T) {
+	present := NewUser("present-user")
+	presentKey := hashkey(prefixUser, present.MattermostUserID.String())
+	data, err := json.Marshal(present)
+	require.NoError(t, err)
+
+	api := &plugintest.API{}
+	api.On("KVList", mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(
+		func(page, _ int) ([]string, *model.AppError) {
+			if page > 0 {
+				return nil, nil
+			}
+			return []string{presentKey, hashkey(prefixUser, "vanished-user")}, nil
+		})
+	// A key deleted after it was listed: KVGet reports no error for it.
+	api.On("KVGet", mock.AnythingOfType("string")).Return(
+		func(key string) ([]byte, *model.AppError) {
+			if key == presentKey {
+				return data, nil
+			}
+			return nil, nil
+		})
+	api.On("LogError", mockAnythingBatch(1)...).Maybe()
+
+	p := &Plugin{}
+	p.SetAPI(api)
+	p.client = pluginapi.NewClient(api, p.Driver)
+
+	var visited []types.ID
+	failedReads, err := NewStore(p).MapUsers(func(user *User) error {
+		visited = append(visited, user.MattermostUserID)
+		return nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, []types.ID{present.MattermostUserID}, visited,
+		"an empty record must not be handed to the callback as a user with no ID")
+	assert.Equal(t, 1, failedReads)
+}

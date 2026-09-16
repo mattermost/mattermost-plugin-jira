@@ -309,6 +309,14 @@ func (store store) MapUsers(f func(user *User) error) (int, error) {
 			continue
 		}
 
+		// A key deleted between the listing and this read comes back as an
+		// empty value and no error, leaving the record untouched.
+		if user.MattermostUserID == "" {
+			store.plugin.errorf("MapUsers: no Jira user record to read for key %q", key)
+			failedReads++
+			continue
+		}
+
 		if err := f(user); err != nil {
 			return failedReads, err
 		}

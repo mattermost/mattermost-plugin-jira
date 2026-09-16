@@ -646,6 +646,23 @@ func TestPlugin_ExecuteCommand_Uninstall(t *testing.T) {
 	}
 }
 
+func TestUninstallCleanupWarnings(t *testing.T) {
+	assert.Empty(t, uninstallCleanupWarnings(UninstallCleanup{}),
+		"a clean uninstall must not warn about anything")
+
+	warnings := uninstallCleanupWarnings(UninstallCleanup{
+		FailedDisconnects: 1,
+		UnreadableRecords: 2,
+		SweepErr:          errors.New("TESTING kv store unavailable"),
+		DeleteInstanceErr: errors.New("TESTING instance blob locked"),
+	})
+	require.Len(t, warnings, 4, "every cleanup failure has to reach the admin who ran the uninstall")
+	assert.Contains(t, warnings[0], "TESTING kv store unavailable")
+	assert.Contains(t, warnings[1], "disconnect 1 user(s)")
+	assert.Contains(t, warnings[2], "read 2 Jira user record(s)")
+	assert.Contains(t, warnings[3], "TESTING instance blob locked")
+}
+
 func TestPlugin_ExecuteCommand_Assign(t *testing.T) {
 	p := &Plugin{}
 	tc := TestConfiguration{}

@@ -217,9 +217,10 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 	// Sweeping before the list write would disconnect everyone and then, if
 	// that write failed, leave them cut off from a still-installed instance.
 	// This order strands records instead, which reconcileUserInstances heals.
-	cleanup, err := p.disconnectAllUsersFromInstance(instanceID)
-	if err != nil {
-		p.errorf("UninstallInstance: failed to sweep users of instance %q, leaving their records to self-heal: %v", instanceID, err)
+	cleanup, sweepErr := p.disconnectAllUsersFromInstance(instanceID)
+	if sweepErr != nil {
+		p.errorf("UninstallInstance: failed to sweep users of instance %q, leaving their records to self-heal: %v", instanceID, sweepErr)
+		cleanup.SweepErr = sweepErr
 	}
 
 	// Delete the blob only after the list no longer references it: a list
@@ -227,6 +228,7 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 	// leftover blob does not, but nothing can reach it to retry either.
 	if err := p.instanceStore.DeleteInstance(instanceID); err != nil {
 		p.errorf("UninstallInstance: failed to delete instance blob %q: %v", instanceID, err)
+		cleanup.DeleteInstanceErr = err
 	}
 
 	if updated == nil {
@@ -244,11 +246,17 @@ func (p *Plugin) UninstallInstance(instanceID types.ID, instanceType InstanceTyp
 	return instance, cleanup, nil
 }
 
+// UninstallCleanup reports what the uninstall could not finish. None of it
+// keeps the instance installed, so it is reported to the admin who ran the
+// command rather than returned as an error.
+//
 // An unreadable record may belong to a user who was never connected to this
 // instance, so the two are counted separately.
 type UninstallCleanup struct {
 	FailedDisconnects int
 	UnreadableRecords int
+	SweepErr          error
+	DeleteInstanceErr error
 }
 
 func (p *Plugin) disconnectAllUsersFromInstance(instanceID types.ID) (UninstallCleanup, error) {
@@ -398,14 +406,20 @@ func (p *Plugin) resolveUserInstanceURL(user *User, instanceURL string) (types.I
 			connected.Set(instances.Get(id))
 		}
 	}
-	if connected.IsEmpty() {
-		return "", errors.Wrap(kvstore.ErrNotFound, "your account is not connected to Jira. Please use `/jira connect`")
+
+	// With none of the record's instances still installed, resolve against
+	// the stale references themselves, so that `/jira disconnect` without a
+	// URL can clean them up. Callers needing a live instance still fail when
+	// they load it.
+	candidates := connected
+	if candidates.IsEmpty() {
+		candidates = user.ConnectedInstances
 	}
-	if user.DefaultInstanceID != "" && connected.Contains(user.DefaultInstanceID) {
+	if user.DefaultInstanceID != "" && candidates.Contains(user.DefaultInstanceID) {
 		return user.DefaultInstanceID, nil
 	}
-	if connected.Len() == 1 {
-		return connected.IDs()[0], nil
+	if candidates.Len() == 1 {
+		return candidates.IDs()[0], nil
 	}
 	return "", errors.New("default jira instance not found, please run `/jira instance default <jiraURL>` to set one")
 }
