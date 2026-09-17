@@ -49,6 +49,10 @@ const (
 	PluginRepo               = "https://github.com/mattermost/mattermost-plugin-jira"
 )
 
+// Every field needs an explicit lowercase json tag: the server stores and
+// reads plugin settings under strings.ToLower of the plugin.json key, so an
+// untagged field makes storeConfig write a second, colliding PascalCase copy
+// of the same setting.
 type externalConfig struct {
 	// Setting to turn on/off the webapp components of this plugin
 	EnableJiraUI bool `json:"enablejiraui"`
@@ -57,41 +61,41 @@ type externalConfig struct {
 	Secret string `json:"secret"`
 
 	// What MM roles that can create subscriptions
-	RolesAllowedToEditJiraSubscriptions string
+	RolesAllowedToEditJiraSubscriptions string `json:"rolesallowedtoeditjirasubscriptions"`
 
 	// Comma separated list of jira groups with permission. Empty is all.
-	GroupsAllowedToEditJiraSubscriptions string
+	GroupsAllowedToEditJiraSubscriptions string `json:"groupsallowedtoeditjirasubscriptions"`
 
 	// Maximum attachment size allowed to be uploaded to Jira, can be a
 	// number, optionally followed by one of [b, kb, mb, gb, tb]
-	MaxAttachmentSize string
+	MaxAttachmentSize string `json:"maxattachmentsize"`
 
 	// Additional Help Text to be shown in the output of '/jira help' command
-	JiraAdminAdditionalHelpText string
+	JiraAdminAdditionalHelpText string `json:"jiraadminadditionalhelptext"`
 
 	// When enabled, a subscription without security level rules will filter out an issue that has a security level assigned
-	SecurityLevelEmptyForJiraSubscriptions bool
+	SecurityLevelEmptyForJiraSubscriptions bool `json:"securitylevelemptyforjirasubscriptions"`
 
 	// Hide issue descriptions and comments in Webhook and Subscription messages
-	HideDecriptionComment bool
+	HideDecriptionComment bool `json:"hidedecriptioncomment"`
 
 	// Enable slash command autocomplete
-	EnableAutocomplete bool
+	EnableAutocomplete bool `json:"enableautocomplete"`
 
 	// Enable Webhook Event Logging
-	EnableWebhookEventLogging bool
+	EnableWebhookEventLogging bool `json:"enablewebhookeventlogging"`
 
 	// Display subscription name in notifications
-	DisplaySubscriptionNameInNotifications bool
+	DisplaySubscriptionNameInNotifications bool `json:"displaysubscriptionnameinnotifications"`
 
 	// The encryption key used to encrypt stored api tokens
-	EncryptionKey string
+	EncryptionKey string `json:"encryptionkey"`
 
 	// API token from Jira
-	AdminAPIToken string
+	AdminAPIToken string `json:"adminapitoken"`
 
 	// Email of the admin
-	AdminEmail string
+	AdminEmail string `json:"adminemail"`
 
 	// Number of days Jira comments will be posted as threaded replies instead of a new post
 	ThreadedJiraCommentSubscriptionDuration string `json:"threadedjiracommentsubscriptionduration"`
@@ -103,8 +107,8 @@ type externalConfig struct {
 }
 
 type TeamList struct {
-	Name string
-	ID   string
+	Name string `json:"name"`
+	ID   string `json:"id"`
 }
 
 const defaultMaxAttachmentSize = types.ByteSize(100 * 1024 * 1024) // 100Mb
@@ -668,6 +672,10 @@ func (c *externalConfig) setDefaults() (bool, error) {
 }
 
 func (p *Plugin) setDefaultConfiguration() error {
+	if err := p.normalizeStoredPluginConfig(); err != nil {
+		return err
+	}
+
 	ec := externalConfig{}
 	err := p.client.Configuration.LoadPluginConfiguration(&ec)
 	if err != nil {
