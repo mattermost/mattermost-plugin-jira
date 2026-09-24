@@ -1788,8 +1788,8 @@ func TestPreProcessTeamFields(t *testing.T) {
 	})
 }
 
-// The webapp maps these keys verbatim, so renaming them empties the Team
-// autocomplete (MM-70879).
+// The webapp maps these keys verbatim, so adding json tags to TeamList empties
+// the Team autocomplete (MM-70879).
 func TestGetTeamFieldsWireFormat(t *testing.T) {
 	p := &Plugin{}
 	p.updateConfig(func(conf *config) {
@@ -1806,7 +1806,7 @@ func TestGetTeamFieldsWireFormat(t *testing.T) {
 	var teams []map[string]any
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &teams))
 	require.Len(t, teams, 1)
-	assert.Equal(t, map[string]any{"id": "alpha-1", "name": "Alpha Team"}, teams[0])
+	assert.Equal(t, map[string]any{"ID": "alpha-1", "Name": "Alpha Team"}, teams[0])
 }
 
 func TestSprintAndBoardTypes(t *testing.T) {

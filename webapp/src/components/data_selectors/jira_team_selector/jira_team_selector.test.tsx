@@ -6,17 +6,17 @@ import {act, screen} from '@testing-library/react';
 
 import Preferences from 'mattermost-redux/constants/preferences';
 
-import {IssueMetadata, TeamItem} from 'types/model';
+import {IssueMetadata} from 'types/model';
 import {renderWithRedux} from 'testlib/test-utils';
 
 import JiraTeamSelector from './jira_team_selector';
 
 describe('components/JiraTeamSelector', () => {
-    // Keys match the server's TeamList json tags. Changing them on either side
-    // silently blanks out every option, as in MM-70879.
-    const teams: TeamItem[] = [
-        {id: 'team-1', name: 'Alpha Team'},
-        {id: 'team-2', name: '<b>Beta</b> Team'},
+    // Keys match Go's default serialization of the server's untagged TeamList.
+    // Renaming them on either side silently blanks out every option (MM-70879).
+    const teams = [
+        {ID: 'team-1', Name: 'Alpha Team'},
+        {ID: 'team-2', Name: '<b>Beta</b> Team'},
     ];
 
     const baseProps = {
@@ -58,13 +58,23 @@ describe('components/JiraTeamSelector', () => {
         expect(screen.getByText('Beta Team')).toBeTruthy();
     });
 
-    test('should not render teams missing an id or a name', async () => {
-        const searchTeamFields = jest.fn().mockResolvedValue({
-            data: [{id: 'team-1'}, {name: 'Alpha Team'}],
-        });
+    // Channel subscription filters hold their value as FilterValue.values. An
+    // unresolved array sends BackendSelector down its recovery path, which
+    // labels the team correctly but costs a second request.
+    test('should resolve an array value without searching twice', async () => {
+        const searchTeamFields = jest.fn().mockResolvedValue({data: teams});
 
-        await renderSelector({value: 'team-1', searchTeamFields});
+        await renderSelector({value: ['team-1'] as unknown as string, searchTeamFields});
 
-        expect(screen.queryByText('Alpha Team')).toBeNull();
+        expect(screen.getByText('Alpha Team')).toBeTruthy();
+        expect(searchTeamFields).toHaveBeenCalledTimes(1);
+    });
+
+    test('should not search for teams when nothing is selected', async () => {
+        const searchTeamFields = jest.fn().mockResolvedValue({data: teams});
+
+        await renderSelector({value: '', searchTeamFields});
+
+        expect(searchTeamFields).not.toHaveBeenCalled();
     });
 });

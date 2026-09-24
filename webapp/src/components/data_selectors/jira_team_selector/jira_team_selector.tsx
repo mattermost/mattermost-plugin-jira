@@ -1,7 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ReactSelectOption, SearchTeamFields, TeamItem} from 'types/model';
+import {ReactSelectOption} from 'types/model';
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 import {TEAM_FIELD} from '../../../constant';
 
@@ -13,10 +13,12 @@ const stripHTML = (text: string): string => {
     return doc.body.textContent || '';
 };
 
+type TeamItem = {Name: string; ID: string};
+
 type Props = Omit<BackendSelectorProps, 'fetchInitialSelectedValues' | 'search'> & {
     fieldName: string;
     instanceID: string;
-    searchTeamFields: SearchTeamFields;
+    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: TeamItem[]}>;
 };
 
 const JiraTeamSelector = (props: Props): JSX.Element => {
@@ -32,29 +34,27 @@ const JiraTeamSelector = (props: Props): JSX.Element => {
             instance_id: instanceID,
         };
 
-        return searchTeamFields(params).then(({data}) => {
+        return searchTeamFields(params).then(({data}: {data: TeamItem[]}) => {
             if (!data || !Array.isArray(data)) {
                 return [];
             }
 
-            // Drop entries the server could not fully populate, so they never
-            // render as blank options.
-            const teams = data.filter((team: TeamItem) => team && team.id && team.name);
-
-            return teams.map((team: TeamItem) => ({
-                value: team.id,
-                label: stripHTML(team.name),
+            return data.map((team: TeamItem) => ({
+                value: team.ID,
+                label: stripHTML(team.Name),
             }));
         });
     };
 
     const fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> => {
-        const all = await teamFields('');
-        if (!value) {
+        // Channel subscription filters store the value as a single-element array.
+        const selectedID = Array.isArray(value) ? value[0] : value;
+        if (!selectedID) {
             return [];
         }
 
-        return all.filter((option) => option.value === value);
+        const all = await teamFields('');
+        return all.filter((option) => option.value === selectedID);
     };
 
     return (

@@ -11,7 +11,6 @@ import {
     GetConnectedResponse,
     Instance,
     IssueMetadata,
-    SearchTeamFields,
 } from 'types/model';
 
 export type SharedProps = {
@@ -37,5 +36,5 @@ export type SharedProps = {
     close: () => void;
     sendEphemeralPost: (message: string) => void;
     securityLevelEmptyForJiraSubscriptions?: boolean;
-    searchTeamFields: SearchTeamFields;
+    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: {Name: string; ID: string}[]}>;
 };
