@@ -1788,6 +1788,27 @@ func TestPreProcessTeamFields(t *testing.T) {
 	})
 }
 
+// The webapp maps these keys verbatim, so renaming them empties the Team
+// autocomplete (MM-70879).
+func TestGetTeamFieldsWireFormat(t *testing.T) {
+	p := &Plugin{}
+	p.updateConfig(func(conf *config) {
+		conf.TeamIDList = []TeamList{{Name: "Alpha Team", ID: "alpha-1"}}
+	})
+
+	request := httptest.NewRequest(http.MethodGet, makeAPIRoute(routeAPIGetTeamFields), nil)
+	request.Header.Set(headerMattermostUserID, "connected_user")
+	recorder := httptest.NewRecorder()
+
+	_, err := p.httpGetTeamFields(recorder, request)
+	require.NoError(t, err)
+
+	var teams []map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &teams))
+	require.Len(t, teams, 1)
+	assert.Equal(t, map[string]any{"id": "alpha-1", "name": "Alpha Team"}, teams[0])
+}
+
 func TestSprintAndBoardTypes(t *testing.T) {
 	t.Run("Sprint JSON marshaling", func(t *testing.T) {
 		sprint := Sprint{ID: 1, Name: "Sprint 1", State: "active"}

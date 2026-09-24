@@ -8,6 +8,7 @@ import {
     FilterFieldInclusion,
     FilterValue,
     IssueMetadata,
+    SearchTeamFields,
 } from 'types/model';
 
 import {getConflictingFields} from 'utils/jira_issue_metadata';
@@ -25,10 +26,7 @@ export type Props = {
     onChange: (f: FilterValue[]) => void;
     instanceID: string;
     securityLevelEmptyForJiraSubscriptions?: boolean;
-    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{
-        data: {items: {Name: string; ID: string}[]};
-        error?: Error;
-    }>;
+    searchTeamFields: SearchTeamFields;
     projectKey: string;
 };
 

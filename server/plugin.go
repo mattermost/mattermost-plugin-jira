@@ -106,6 +106,8 @@ type externalConfig struct {
 	TeamIDList []TeamList `json:"teamidlist"`
 }
 
+// TeamList is also the response body of routeAPIGetTeamFields, so these tags
+// are a contract with the webapp's TeamItem type, not just a config detail.
 type TeamList struct {
 	Name string `json:"name"`
 	ID   string `json:"id"`

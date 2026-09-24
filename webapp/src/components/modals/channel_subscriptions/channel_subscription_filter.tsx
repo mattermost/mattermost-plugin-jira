@@ -27,6 +27,7 @@ import {
     IssueMetadata,
     IssueType,
     ReactSelectOption,
+    SearchTeamFields,
 } from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
 import JiraAutoCompleteSelector from 'components/data_selectors/jira_autocomplete_selector';
@@ -46,7 +47,7 @@ export type Props = {
     removeValidate: (isValid: () => boolean) => void;
     instanceID: string;
     securityLevelEmptyForJiraSubscriptions?: boolean;
-    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: {items: {name: string; id: string}[]}; error?: Error}>;
+    searchTeamFields: SearchTeamFields;
     projectKey: string;
 };
 

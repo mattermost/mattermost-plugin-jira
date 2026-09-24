@@ -209,6 +209,14 @@ export type APIResponse<T> = {
     data: T;
 };
 
+// Mirrors the server's TeamList struct, as serialized by /api/v2/get-team-fields.
+export type TeamItem = {
+    id: string;
+    name: string;
+};
+
+export type SearchTeamFields = (params: {fieldValue: string; instance_id: string}) => Promise<APIResponse<TeamItem[]>>;
+
 export type CreateIssueRequest = {
     instance_id: string;
     required_fields_not_covered: string[][];

@@ -1,7 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ReactSelectOption} from 'types/model';
+import {ReactSelectOption, SearchTeamFields, TeamItem} from 'types/model';
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 import {TEAM_FIELD} from '../../../constant';
 
@@ -13,12 +13,10 @@ const stripHTML = (text: string): string => {
     return doc.body.textContent || '';
 };
 
-type TeamItem = {Name: string; ID: string};
-
 type Props = Omit<BackendSelectorProps, 'fetchInitialSelectedValues' | 'search'> & {
     fieldName: string;
     instanceID: string;
-    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: TeamItem[]}>;
+    searchTeamFields: SearchTeamFields;
 };
 
 const JiraTeamSelector = (props: Props): JSX.Element => {
@@ -34,14 +32,18 @@ const JiraTeamSelector = (props: Props): JSX.Element => {
             instance_id: instanceID,
         };
 
-        return searchTeamFields(params).then(({data}: {data: TeamItem[]}) => {
+        return searchTeamFields(params).then(({data}) => {
             if (!data || !Array.isArray(data)) {
                 return [];
             }
 
-            return data.map((team: TeamItem) => ({
-                value: team.ID,
-                label: stripHTML(team.Name),
+            // Drop entries the server could not fully populate, so they never
+            // render as blank options.
+            const teams = data.filter((team: TeamItem) => team && team.id && team.name);
+
+            return teams.map((team: TeamItem) => ({
+                value: team.id,
+                label: stripHTML(team.name),
             }));
         });
     };
