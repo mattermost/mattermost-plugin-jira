@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -34,6 +35,10 @@ const (
 	nonExistantProjectKey = "FP"
 	noIssueFoundError     = "We couldn't find the issue key. Please confirm the issue key and try again. You may not have permissions to access this issue."
 	noPermissionsError    = "You do not have the appropriate permissions to perform this action. Please contact your Jira administrator."
+
+	// Only this query yields autocomplete suggestions, so tests that do not opt
+	// in keep falling through to the manually configured team list.
+	autocompleteTeamQuery = "discoverable-team"
 )
 
 type testClient struct {
@@ -42,6 +47,18 @@ type testClient struct {
 	ProjectService
 	SearchService
 	IssueService
+}
+
+func (client testClient) ListFields() ([]JiraField, error) { return nil, nil }
+
+func (client testClient) SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error) {
+	if params["fieldValue"] != autocompleteTeamQuery {
+		return &AutoCompleteResult{}, nil
+	}
+
+	return &AutoCompleteResult{
+		Results: []Result{{Value: "discovered-1", DisplayName: "Discovered Team"}},
+	}, nil
 }
 
 func (client testClient) GetProject(key string) (*jira.Project, error) {
@@ -1807,6 +1824,40 @@ func TestGetTeamFieldsWireFormat(t *testing.T) {
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &teams))
 	require.Len(t, teams, 1)
 	assert.Equal(t, map[string]any{"ID": "alpha-1", "Name": "Alpha Team"}, teams[0])
+}
+
+// Auto-discovery builds its own TeamList values from Jira's autocomplete
+// results, so the manually configured path above cannot catch Name and ID
+// being mapped to the wrong suggestion fields.
+func TestGetTeamFieldsAutoDiscoveryWireFormat(t *testing.T) {
+	api := &plugintest.API{}
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 5)...).Maybe()
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 5)...).Maybe()
+
+	p := &Plugin{}
+	p.SetAPI(api)
+	p.client = pluginapi.NewClient(api, p.Driver)
+	p.instanceStore = p.getMockInstanceStoreKV(1)
+	p.userStore = getMockUserStoreKV()
+	p.teamFieldCache = map[types.ID]map[string]struct{}{
+		testInstance1.InstanceID: {"customfield_10800": {}},
+	}
+
+	route := fmt.Sprintf("%s?instance_id=%s&fieldValue=%s",
+		makeAPIRoute(routeAPIGetTeamFields),
+		url.QueryEscape(string(testInstance1.InstanceID)),
+		autocompleteTeamQuery)
+	request := httptest.NewRequest(http.MethodGet, route, nil)
+	request.Header.Set(headerMattermostUserID, "connected_user")
+	recorder := httptest.NewRecorder()
+
+	_, err := p.httpGetTeamFields(recorder, request)
+	require.NoError(t, err)
+
+	var teams []map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &teams))
+	require.Len(t, teams, 1)
+	assert.Equal(t, map[string]any{"ID": "discovered-1", "Name": "Discovered Team"}, teams[0])
 }
 
 func TestSprintAndBoardTypes(t *testing.T) {
