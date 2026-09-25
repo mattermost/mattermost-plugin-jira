@@ -12,11 +12,11 @@ import {renderWithRedux} from 'testlib/test-utils';
 import JiraTeamSelector from './jira_team_selector';
 
 describe('components/JiraTeamSelector', () => {
-    // Keys match Go's default serialization of the server's untagged TeamList.
-    // Renaming them on either side silently blanks out every option (MM-70879).
+    // Keys match the json tags on the server's TeamList. Renaming them on
+    // either side silently blanks out every option (MM-70879).
     const teams = [
-        {ID: 'team-1', Name: 'Alpha Team'},
-        {ID: 'team-2', Name: '<b>Beta</b> Team'},
+        {id: 'team-1', name: 'Alpha Team'},
+        {id: 'team-2', name: '<b>Beta</b> Team'},
     ];
 
     const baseProps = {
@@ -35,14 +35,14 @@ describe('components/JiraTeamSelector', () => {
         jest.clearAllMocks();
     });
 
-    // BackendSelector's inherited react-select props make `value` unsatisfiable
-    // for a plain string, so the assembled props are cast at the render site.
-    type SelectorProps = React.ComponentProps<typeof JiraTeamSelector>;
-
     const renderSelector = async (props: Partial<typeof baseProps> = {}) => {
-        const allProps = {...baseProps, ...props} as unknown as SelectorProps;
         await act(async () => {
-            renderWithRedux(<JiraTeamSelector {...allProps}/>);
+            renderWithRedux(
+                <JiraTeamSelector
+                    {...baseProps}
+                    {...props}
+                />,
+            );
         });
     };
 
@@ -58,13 +58,12 @@ describe('components/JiraTeamSelector', () => {
         expect(screen.getByText('Beta Team')).toBeTruthy();
     });
 
-    // Channel subscription filters hold their value as FilterValue.values. An
-    // unresolved array sends BackendSelector down its recovery path, which
+    // An unresolved value sends BackendSelector down its recovery path, which
     // labels the team correctly but costs a second request.
-    test('should resolve an array value without searching twice', async () => {
+    test('should resolve a saved value without searching twice', async () => {
         const searchTeamFields = jest.fn().mockResolvedValue({data: teams});
 
-        await renderSelector({value: ['team-1'] as unknown as string, searchTeamFields});
+        await renderSelector({value: 'team-1', searchTeamFields});
 
         expect(screen.getByText('Alpha Team')).toBeTruthy();
         expect(searchTeamFields).toHaveBeenCalledTimes(1);

@@ -18,7 +18,7 @@ import {TEAM_FIELD} from '../../constant';
 
 const searchDebounceDelay = 400;
 
-export type Props = ReactSelectSettingProps & {
+export type Props = Omit<ReactSelectSettingProps, 'onChange' | 'value'> & {
     hideRequiredStar?: boolean;
     onChange: (values: string | string[]) => void;
     value?: string | string[];

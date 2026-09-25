@@ -13,11 +13,12 @@ const stripHTML = (text: string): string => {
     return doc.body.textContent || '';
 };
 
-type TeamItem = {Name: string; ID: string};
+type TeamItem = {name: string; id: string};
 
-type Props = Omit<BackendSelectorProps, 'fetchInitialSelectedValues' | 'search'> & {
+type Props = Omit<BackendSelectorProps, 'fetchInitialSelectedValues' | 'search' | 'value'> & {
     fieldName: string;
     instanceID: string;
+    value?: string;
     searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: TeamItem[]}>;
 };
 
@@ -40,21 +41,19 @@ const JiraTeamSelector = (props: Props): JSX.Element => {
             }
 
             return data.map((team: TeamItem) => ({
-                value: team.ID,
-                label: stripHTML(team.Name),
+                value: team.id,
+                label: stripHTML(team.name),
             }));
         });
     };
 
     const fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> => {
-        // Channel subscription filters store the value as a single-element array.
-        const selectedID = Array.isArray(value) ? value[0] : value;
-        if (!selectedID) {
+        if (!value) {
             return [];
         }
 
         const all = await teamFields('');
-        return all.filter((option) => option.value === selectedID);
+        return all.filter((option) => option.value === value);
     };
 
     return (

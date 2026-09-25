@@ -22,9 +22,8 @@ jest.mock('./data_selectors/jira_team_selector', () => ({
 }));
 
 describe('components/JiraField team field', () => {
-    // The server reads the submitted Team field as m["id"], and create-meta
-    // ships teams as {id, name} — both lowercase, unlike the capitalized
-    // get-team-fields payload. Renaming this key breaks issue creation.
+    // The server reads the submitted Team field as m["id"], so renaming this
+    // key breaks issue creation.
     const teamField = {
         key: 'customfield_10800',
         name: 'Team',

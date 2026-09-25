@@ -106,13 +106,9 @@ type externalConfig struct {
 	TeamIDList []TeamList `json:"teamidlist"`
 }
 
-// TeamList is a value inside teamidlist rather than a setting key, so the
-// lowercase rule above does not apply to it. It is also the response body of
-// routeAPIGetTeamFields: tagging these fields renames them for the webapp and
-// blanks out the Team autocomplete (MM-70879). Leave them untagged.
 type TeamList struct {
-	Name string
-	ID   string
+	Name string `json:"name"`
+	ID   string `json:"id"`
 }
 
 const defaultMaxAttachmentSize = types.ByteSize(100 * 1024 * 1024) // 100Mb
