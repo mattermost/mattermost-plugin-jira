@@ -25,10 +25,7 @@ export type Props = {
     onChange: (f: FilterValue[]) => void;
     instanceID: string;
     securityLevelEmptyForJiraSubscriptions?: boolean;
-    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{
-        data: {items: {Name: string; ID: string}[]};
-        error?: Error;
-    }>;
+    searchTeamFields: (params: {fieldValue: string; instance_id: string}) => Promise<{data: {name: string; id: string}[]}>;
     projectKey: string;
 };
 
