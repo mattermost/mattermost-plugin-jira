@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {act} from '@testing-library/react';
+import {act, screen} from '@testing-library/react';
 import {Provider} from 'react-redux';
 import {IntlProvider} from 'react-intl';
 import configureStore from 'redux-mock-store';
@@ -11,12 +11,20 @@ import thunk from 'redux-thunk';
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 
 import {FilterField, FilterFieldInclusion, IssueMetadata} from 'types/model';
-import {getCustomFieldFiltersForProjects, isEpicLinkField} from 'utils/jira_issue_metadata';
+import {getCustomFieldFiltersForProjects, isEpicLinkField, isTeamField} from 'utils/jira_issue_metadata';
 import {defaultMockState, mockTheme, renderWithRedux} from 'testlib/test-utils';
 
 import ChannelSubscriptionFilter, {Props} from './channel_subscription_filter';
 
 const mockStore = configureStore([thunk]);
+
+// The selector is connected to redux and fetches on mount, so it is replaced
+// with a stub that exposes the value it receives. It is serialized so that a
+// single-element array is distinguishable from a plain ID.
+jest.mock('components/data_selectors/jira_team_selector', () => ({
+    __esModule: true,
+    default: (props: {value: string}) => <span data-testid='team-selector-value'>{JSON.stringify(props.value)}</span>,
+}));
 
 describe('components/ChannelSubscriptionFilter', () => {
     const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []);
@@ -87,6 +95,26 @@ describe('components/ChannelSubscriptionFilter', () => {
         });
 
         expect(ref.current).toBeDefined();
+    });
+
+    // A saved team is stored as a single-element values array, but the selector
+    // takes a plain team ID, so the filter has to unwrap it (MM-70879).
+    test('should pass the saved team of a team filter down as a plain ID', async () => {
+        const props: Props = {
+            ...baseProps,
+            field: fields.find(isTeamField) as FilterField,
+            value: {
+                key: 'teamField',
+                inclusion: FilterFieldInclusion.INCLUDE_ANY,
+                values: ['team-1'],
+            },
+        };
+
+        await act(async () => {
+            renderWithRedux(<ChannelSubscriptionFilter {...props}/>);
+        });
+
+        expect(screen.getByTestId('team-selector-value').textContent).toEqual('"team-1"');
     });
 
     test('should render correct inclusion captions for different include choices', async () => {
