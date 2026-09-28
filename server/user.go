@@ -96,9 +96,11 @@ func (p *Plugin) httpUserConnect(w http.ResponseWriter, r *http.Request, instanc
 	}
 
 	// Users shouldn't be able to make multiple connections.
-	// TODO <> this block needs to be updated. Though idk if this route will still get called?
-	connection, err := p.userStore.LoadConnection(instance.GetID(), types.ID(mattermostUserID))
-	if err == nil && len(connection.JiraAccountID()) != 0 {
+	connectable, err := p.ensureConnectable(instance.GetID(), types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+	if !connectable {
 		return respondErr(w, http.StatusBadRequest,
 			errors.New("you already have a Jira account linked to your Mattermost account. Please use `/jira disconnect` to disconnect"))
 	}
@@ -159,8 +161,11 @@ func (p *Plugin) httpUserStart(w http.ResponseWriter, r *http.Request, instanceI
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 
 	// If user is already connected we show them the docs
-	connection, err := p.userStore.LoadConnection(instanceID, types.ID(mattermostUserID))
-	if err == nil && len(connection.JiraAccountID()) != 0 {
+	connectable, err := p.ensureConnectable(instanceID, types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
+	if !connectable {
 		http.Redirect(w, r, PluginRepo, http.StatusSeeOther)
 		return http.StatusSeeOther, nil
 	}
@@ -263,11 +268,22 @@ func (p *Plugin) connectUser(instance Instance, mattermostUserID types.ID, conne
 }
 
 func (p *Plugin) DisconnectUser(instanceURL string, mattermostUserID types.ID) (*Connection, error) {
-	user, instance, err := p.LoadUserInstance(mattermostUserID, instanceURL)
+	user, instanceID, err := p.ResolveUserInstanceURL(mattermostUserID, instanceURL)
 	if err != nil {
 		return nil, err
 	}
-	return p.disconnectUser(instance, user)
+
+	// An uninstalled instance must not block the disconnect: it is the one
+	// command that can clean up a record still referencing it.
+	if _, err := p.instanceStore.LoadInstance(instanceID); err != nil {
+		if errors.Cause(err) != kvstore.ErrNotFound {
+			return nil, err
+		}
+		p.client.Log.Info("Disconnecting user from an instance that is no longer installed",
+			"mattermostUserID", mattermostUserID, "instanceID", instanceID)
+	}
+
+	return p.disconnectUser(instanceID, user)
 }
 
 func (p *Plugin) SetDefaultInstance(instanceURL string, mattermostUserID types.ID) error {
@@ -289,22 +305,24 @@ func (p *Plugin) SetDefaultInstance(instanceURL string, mattermostUserID types.I
 	return nil
 }
 
-func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, error) {
-	if !user.ConnectedInstances.Contains(instance.GetID()) {
-		return nil, errors.Wrapf(kvstore.ErrNotFound, "user is not connected to %q", instance.GetID())
+func (p *Plugin) disconnectUser(instanceID types.ID, user *User) (*Connection, error) {
+	if !user.ConnectedInstances.Contains(instanceID) {
+		return nil, errors.Wrapf(kvstore.ErrNotFound, "user is not connected to %q", instanceID)
 	}
-	conn, err := p.userStore.LoadConnection(instance.GetID(), user.MattermostUserID)
+	// A missing row is not an error here: LoadConnection returns an empty
+	// Connection, and only its DisplayName is used, for the caller's reply.
+	conn, err := p.userStore.LoadConnection(instanceID, user.MattermostUserID)
 	if err != nil {
 		return nil, err
 	}
 
-	if user.DefaultInstanceID == instance.GetID() {
+	if user.DefaultInstanceID == instanceID {
 		user.DefaultInstanceID = ""
 	}
 
-	user.ConnectedInstances.Delete(instance.GetID())
+	user.ConnectedInstances.Delete(instanceID)
 
-	err = p.userStore.DeleteConnection(instance.GetID(), user.MattermostUserID)
+	err = p.userStore.DeleteConnection(instanceID, user.MattermostUserID)
 	if err != nil && errors.Cause(err) != kvstore.ErrNotFound {
 		return nil, err
 	}
@@ -313,18 +331,73 @@ func (p *Plugin) disconnectUser(instance Instance, user *User) (*Connection, err
 		return nil, err
 	}
 
-	p.cleanupDMSubscriptionsOnDisconnect(instance.GetID(), user.MattermostUserID.String())
+	p.cleanupDMSubscriptionsOnDisconnect(instanceID, user.MattermostUserID.String())
 
 	info, err := p.GetUserInfo(user.MattermostUserID, user)
 	if err != nil {
 		return nil, err
 	}
+	// The requested disconnect is already persisted, so a failure to heal the
+	// rest of the record must not be reported as a failed disconnect.
+	if err := p.healUserRecord(info); err != nil {
+		p.client.Log.Warn("Failed to persist reconciled user record after disconnect",
+			"mattermostUserID", user.MattermostUserID, "instanceID", instanceID, "error", err.Error())
+	}
+
 	p.client.Frontend.PublishWebSocketEvent(websocketEventDisconnect, info.AsConfigMap(),
 		&model.WebsocketBroadcast{UserId: user.MattermostUserID.String()})
 
 	p.TrackUserEvent("userDisconnected", user.MattermostUserID.String(), nil)
 
 	return conn, nil
+}
+
+func reconcileUserInstances(user *User, instances *Instances) (dropped []types.ID, changed bool) {
+	for _, instanceID := range user.ConnectedInstances.IDs() {
+		if !instances.Contains(instanceID) {
+			user.ConnectedInstances.Delete(instanceID)
+			dropped = append(dropped, instanceID)
+		}
+	}
+	changed = len(dropped) > 0
+	if user.DefaultInstanceID != "" && !user.ConnectedInstances.Contains(user.DefaultInstanceID) {
+		user.DefaultInstanceID = ""
+		changed = true
+	}
+	return dropped, changed
+}
+
+// ensureConnectable reports whether the user may start a connection flow for
+// an already-installed instanceID. Only the user's own record decides that,
+// so a connection row the record does not back is orphaned, and cleared here.
+func (p *Plugin) ensureConnectable(instanceID, mattermostUserID types.ID) (bool, error) {
+	user, err := p.userStore.LoadUser(mattermostUserID)
+	if err != nil {
+		if errors.Cause(err) != kvstore.ErrNotFound {
+			return false, err
+		}
+		user = NewUser(mattermostUserID)
+	}
+	if user.ConnectedInstances.Contains(instanceID) {
+		return false, nil
+	}
+
+	p.deleteOrphanedConnection(instanceID, mattermostUserID)
+	return true, nil
+}
+
+// deleteOrphanedConnection removes a connection row, and the Jira account
+// reverse index it owns, that the user's record does not list as connected.
+func (p *Plugin) deleteOrphanedConnection(instanceID, mattermostUserID types.ID) {
+	conn, err := p.userStore.LoadConnection(instanceID, mattermostUserID)
+	if err != nil || len(conn.JiraAccountID()) == 0 {
+		return
+	}
+
+	if err := p.userStore.DeleteConnection(instanceID, mattermostUserID); err != nil {
+		p.client.Log.Warn("Failed to delete orphaned Jira connection",
+			"mattermostUserID", mattermostUserID, "instanceID", instanceID, "error", err.Error())
+	}
 }
 
 func (p *Plugin) GetJiraUserFromMentions(instanceID types.ID, mentions model.UserMentionMap, userKey string) (*jira.User, error) {

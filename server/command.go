@@ -541,12 +541,7 @@ func executeConnect(p *Plugin, c *plugin.Context, header *model.CommandArgs, arg
 			"Jira instance %s is not installed, please contact the system administrator.",
 			instanceID)
 	}
-	conn, err := p.userStore.LoadConnection(instanceID, types.ID(header.UserId))
-	if err == nil && len(conn.JiraAccountID()) != 0 {
-		return p.responsef(header,
-			"You already have a Jira account linked to your Mattermost account from %s. Please use `/jira disconnect --instance=%s` to disconnect.",
-			instanceID, instanceID)
-	}
+	p.deleteOrphanedConnection(instanceID, types.ID(header.UserId))
 
 	link := routeUserConnect
 	link = instancePath(link, instanceID)
@@ -976,16 +971,44 @@ func executeInstanceUninstall(p *Plugin, c *plugin.Context, header *model.Comman
 	if err != nil {
 		return p.response(header, err.Error())
 	}
-	uninstalled, err := p.UninstallInstance(types.ID(id), instanceType)
+	uninstalled, cleanup, err := p.UninstallInstance(types.ID(id), instanceType)
 	if err != nil {
 		return p.response(header, err.Error())
 	}
 
-	uninstallInstructions := `` +
-		`Jira instance successfully uninstalled. Navigate to [**your app management URL**](%s) in order to remove the application from your Jira instance.
+	uninstallInstructions := fmt.Sprintf(`Jira instance successfully uninstalled. Navigate to [**your app management URL**](%s) in order to remove the application from your Jira instance.
 Don't forget to remove Jira-side webhook in [Jira System Settings/Webhooks](%s)'
-`
-	return p.responsef(header, uninstallInstructions, uninstalled.GetManageAppsURL(), uninstalled.GetManageWebhooksURL())
+`, uninstalled.GetManageAppsURL(), uninstalled.GetManageWebhooksURL())
+
+	for _, warning := range uninstallCleanupWarnings(cleanup) {
+		uninstallInstructions += "\n:warning: " + warning
+	}
+	return p.response(header, uninstallInstructions)
+}
+
+func uninstallCleanupWarnings(cleanup UninstallCleanup) []string {
+	var warnings []string
+	if cleanup.SweepErr != nil {
+		warnings = append(warnings, fmt.Sprintf(
+			"Could not scan the Jira user records, so users connected to this instance were left connected; they may need to run `/jira disconnect` manually. Error: %v.",
+			cleanup.SweepErr))
+	}
+	if cleanup.FailedDisconnects > 0 {
+		warnings = append(warnings, fmt.Sprintf(
+			"Failed to disconnect %d user(s) from this instance; they may need to run `/jira disconnect` manually.",
+			cleanup.FailedDisconnects))
+	}
+	if cleanup.UnreadableRecords > 0 {
+		warnings = append(warnings, fmt.Sprintf(
+			"Could not read %d Jira user record(s), so they were skipped; any of those users who were connected to this instance may need to run `/jira disconnect` manually.",
+			cleanup.UnreadableRecords))
+	}
+	if cleanup.DeleteInstanceErr != nil {
+		warnings = append(warnings, fmt.Sprintf(
+			"Failed to delete the stored settings of this instance; nothing refers to them anymore, and installing the instance again will overwrite them. Error: %v.",
+			cleanup.DeleteInstanceErr))
+	}
+	return warnings
 }
 
 func executeUnassign(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
