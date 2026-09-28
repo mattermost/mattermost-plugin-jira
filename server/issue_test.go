@@ -49,8 +49,6 @@ type testClient struct {
 	IssueService
 }
 
-func (client testClient) ListFields() ([]JiraField, error) { return nil, nil }
-
 func (client testClient) SearchAutoCompleteFields(params map[string]string) (*AutoCompleteResult, error) {
 	if params["fieldValue"] != autocompleteTeamQuery {
 		return &AutoCompleteResult{}, nil
