@@ -8,95 +8,10 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"io"
-	"time"
 
 	"github.com/pkg/errors"
 )
-
-const authTokenTTL = 15 * time.Minute
-
-type AuthToken struct {
-	MattermostUserID string    `json:"mattermost_user_id,omitempty"`
-	Secret           string    `json:"secret,omitempty"`
-	Expires          time.Time `json:"expires,omitempty"`
-}
-
-func (p *Plugin) NewEncodedAuthToken(mattermostUserID, secret string) (returnToken string, returnErr error) {
-	defer func() {
-		if returnErr == nil {
-			return
-		}
-		returnErr = errors.WithMessage(returnErr, "failed to create auth token")
-	}()
-
-	encryptSecret, err := p.secretsStore.EnsureAuthTokenEncryptSecret()
-	if err != nil {
-		return "", err
-	}
-
-	t := AuthToken{
-		MattermostUserID: mattermostUserID,
-		Secret:           secret,
-		Expires:          time.Now().Add(authTokenTTL),
-	}
-
-	jsonBytes, err := json.Marshal(t)
-	if err != nil {
-		return "", err
-	}
-
-	encrypted, err := encrypt(jsonBytes, encryptSecret)
-	if err != nil {
-		return "", err
-	}
-
-	return encode(encrypted), nil
-}
-
-func (p *Plugin) ParseAuthToken(encoded string) (mattermostUserID, tokenSecret string, returnErr error) {
-	defer func() {
-		if returnErr == nil {
-			return
-		}
-		returnErr = errors.WithMessage(returnErr, "failed to parse auth token")
-	}()
-
-	t := AuthToken{}
-	err := func() error {
-		encryptSecret, err := p.secretsStore.EnsureAuthTokenEncryptSecret()
-		if err != nil {
-			return err
-		}
-
-		decoded, err := decode(encoded)
-		if err != nil {
-			return err
-		}
-
-		jsonBytes, err := decrypt(decoded, encryptSecret)
-		if err != nil {
-			return err
-		}
-
-		err = json.Unmarshal(jsonBytes, &t)
-		if err != nil {
-			return err
-		}
-
-		if t.Expires.Before(time.Now()) {
-			return errors.New("expired token")
-		}
-
-		return nil
-	}()
-	if err != nil {
-		return "", "", err
-	}
-
-	return t.MattermostUserID, t.Secret, nil
-}
 
 func encode(encrypted []byte) string {
 	encoded := make([]byte, base64.URLEncoding.EncodedLen(len(encrypted)))

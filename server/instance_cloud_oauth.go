@@ -18,7 +18,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -34,7 +33,6 @@ type cloudOAuthInstance struct {
 	JiraBaseURL      string
 	CodeVerifier     string
 	CodeChallenge    string
-	JWTInstance      *cloudInstance
 }
 
 type CloudOAuthConfigure struct {
@@ -86,38 +84,6 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthIn
 		CodeChallenge:  params.CodeChallenge,
 	}
 
-	existingInstance, err := p.instanceStore.LoadInstance(types.ID(jiraURL))
-	if err != nil && !errors.Is(err, kvstore.ErrNotFound) {
-		return "", nil, errors.Wrapf(err, "failed to load existing jira instance. ID: %s", jiraURL)
-	}
-
-	// Handle backwards compatibility with existing JWT instance
-	if existingInstance != nil {
-		if existingInstance.Common().Type == CloudOAuthInstanceType {
-			oauthInstance, ok := existingInstance.(*cloudOAuthInstance)
-			if !ok {
-				return "", nil, errors.Wrapf(err, "failed to assert existing cloud-oauth instance as cloudOAuthInstance. ID: %s", jiraURL)
-			}
-
-			newInstance.JWTInstance = oauthInstance.JWTInstance
-			if newInstance.JWTInstance != nil {
-				p.API.LogDebug("Installing cloud-oauth over existing cloud-oauth instance. Carrying over existing saved JWT instance.")
-			} else {
-				p.API.LogDebug("Installing cloud-oauth over existing cloud-oauth instance. There exists no previous JWT instance to carry over.")
-			}
-		} else if existingInstance.Common().Type == CloudInstanceType {
-			jwtInstance, ok := existingInstance.(*cloudInstance)
-			if !ok {
-				return "", nil, errors.Wrapf(err, "failed to assert existing cloud instance as cloudInstance. ID: %s", jiraURL)
-			}
-
-			newInstance.JWTInstance = jwtInstance
-			p.API.LogDebug("Installing cloud-oauth over existing cloud JWT instance. Carrying over existing saved JWT instance.")
-		}
-	} else {
-		p.API.LogDebug("Installing new cloud-oauth instance. There exists no previous JWT instance to carry over.")
-	}
-
 	if err = p.InstallInstance(newInstance); err != nil {
 		return "", nil, errors.Wrapf(err, "failed to install cloud-oauth instance. ID: %s", jiraURL)
 	}
@@ -137,14 +103,13 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 	oauth2Conf := ci.GetOAuthConfig()
 	ctx := context.Background()
 
-	// Checking if this user's connection is for a JWT instance
 	if connection.OAuth2Token == nil {
-		if ci.JWTInstance != nil {
-			ci.Plugin.API.LogDebug("Returning a JWT token client since the stored JWT instance is not nil and the user's oauth token is nil")
-			return ci.JWTInstance.getClientForConnection(connection)
+		// A stored connection without an OAuth token was made through the Atlassian Connect app.
+		if connection.MattermostUserID != "" {
+			ci.Plugin.disconnectUserWithNotice(connection.MattermostUserID, ci.GetID(), connectConnectionRemovedNotice)
+			return nil, nil, errors.New("your Jira connection was made with the Atlassian Connect app, which is no longer supported. Please use `/jira connect` to reconnect your account")
 		}
-
-		return nil, nil, errors.New("failed to create client for OAuth instance: no JWT instance found, and connection's OAuth token is missing")
+		return nil, nil, errors.New("your Jira account is not connected, please use `/jira connect`")
 	}
 
 	tokenSource := oauth2Conf.TokenSource(ctx, connection.OAuth2Token)

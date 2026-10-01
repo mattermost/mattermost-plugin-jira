@@ -39,7 +39,6 @@ const (
 )
 
 const (
-	keyAtlassianConnectURL = "ACURL"
 	keyConnectURL          = "ConnectURL"
 	keyDelegatedFromUserID = "DelegatedFromUserID"
 	keyDelegatedTo         = "Delegated"
@@ -666,6 +665,8 @@ func (p *Plugin) submitCreateCloudOAuthInstance(f *flow.Flow, submission map[str
 	if err = p.instanceStore.StoreInstance(instance); err != nil {
 		return "", nil, nil, errors.Wrap(err, "failed to store cloud-oauth instance")
 	}
+
+	go p.disconnectConnectUsers(instance.GetID())
 
 	return stepInstalledJiraApp, flow.State{
 		keyEdition:          string(CloudOAuthInstanceType),

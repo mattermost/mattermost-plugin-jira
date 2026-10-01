@@ -96,7 +96,16 @@ func (p *Plugin) CreateBotDMtoMMUserID(mattermostUserID, format string, args ...
 	return post, nil
 }
 
+const (
+	connectionExpiredNotice        = "Your Jira connection has expired."
+	connectConnectionRemovedNotice = "Your Jira connection was made with the Atlassian Connect app, which is no longer supported."
+)
+
 func (p *Plugin) disconnectUserDueToExpiredToken(mattermostUserID types.ID, instanceID types.ID) {
+	p.disconnectUserWithNotice(mattermostUserID, instanceID, connectionExpiredNotice)
+}
+
+func (p *Plugin) disconnectUserWithNotice(mattermostUserID types.ID, instanceID types.ID, notice string) {
 	_, disconnectErr := p.DisconnectUser(instanceID.String(), mattermostUserID)
 	if disconnectErr != nil && errors.Cause(disconnectErr) == kvstore.ErrNotFound {
 		disconnectErr = nil
@@ -125,14 +134,14 @@ func (p *Plugin) disconnectUserDueToExpiredToken(mattermostUserID types.ID, inst
 	var notifyErr error
 	if disconnectErr != nil {
 		_, notifyErr = p.CreateBotDMtoMMUserID(mattermostUserID.String(),
-			":warning: Your Jira connection has expired. Please manually disconnect and reconnect your account using:\n"+
+			":warning: %s Please manually disconnect and reconnect your account using:\n"+
 				"1. `/jira disconnect %s`\n"+
 				"2. `/jira connect %s`",
-			instanceID, instanceID)
+			notice, instanceID, instanceID)
 	} else {
 		_, notifyErr = p.CreateBotDMtoMMUserID(mattermostUserID.String(),
-			":warning: Your Jira connection has expired. Please reconnect your account using `/jira connect %s`.",
-			instanceID)
+			":warning: %s Please reconnect your account using `/jira connect %s`.",
+			notice, instanceID)
 	}
 	if notifyErr != nil {
 		label := "Failed to send token expiry notification to user"
