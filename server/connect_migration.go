@@ -39,7 +39,9 @@ func (p *Plugin) migrateAwayFromConnect(instances *Instances) {
 				fmt.Sprintf(legacyConnectInstanceNotice, instance.GetJiraBaseURL(), instance.GetManageAppsURL()))
 		case *cloudOAuthInstance:
 			if p.markOnce(prefixConnectUsersMigrated, instance.GetID()) {
-				p.disconnectConnectUsers(instance.GetID())
+				if err := p.disconnectConnectUsers(instance.GetID()); err != nil {
+					p.unmarkOnce(prefixConnectUsersMigrated, instance.GetID())
+				}
 			}
 		}
 
@@ -51,7 +53,8 @@ func (p *Plugin) migrateAwayFromConnect(instances *Instances) {
 
 // disconnectConnectUsers disconnects users of an OAuth 2.0 instance whose
 // connection was made with the Atlassian Connect app, and asks them to reconnect.
-func (p *Plugin) disconnectConnectUsers(instanceID types.ID) {
+// Users found before a listing error are still processed.
+func (p *Plugin) disconnectConnectUsers(instanceID types.ID) error {
 	var userIDs []types.ID
 	err := p.userStore.MapUsers(func(user *User) error {
 		if user.ConnectedInstances == nil || !user.ConnectedInstances.checkIfExists(instanceID) {
@@ -71,4 +74,5 @@ func (p *Plugin) disconnectConnectUsers(instanceID types.ID) {
 	for _, userID := range userIDs {
 		p.disconnectUserWithNotice(userID, instanceID, connectConnectionRemovedNotice)
 	}
+	return err
 }

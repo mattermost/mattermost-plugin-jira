@@ -666,7 +666,7 @@ func (p *Plugin) submitCreateCloudOAuthInstance(f *flow.Flow, submission map[str
 		return "", nil, nil, errors.Wrap(err, "failed to store cloud-oauth instance")
 	}
 
-	go p.disconnectConnectUsers(instance.GetID())
+	go func() { _ = p.disconnectConnectUsers(instance.GetID()) }()
 
 	return stepInstalledJiraApp, flow.State{
 		keyEdition:          string(CloudOAuthInstanceType),

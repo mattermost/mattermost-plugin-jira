@@ -29,6 +29,7 @@ const (
 type mapUsersStore struct {
 	*mockUserStoreForTokenExpiry
 	users []*User
+	err   error
 }
 
 func (s *mapUsersStore) MapUsers(f func(*User) error) error {
@@ -37,7 +38,11 @@ func (s *mapUsersStore) MapUsers(f func(*User) error) error {
 			return err
 		}
 	}
-	return nil
+	return s.err
+}
+
+func expectMarkerCleared(api *plugintest.API) {
+	api.On("KVSetWithOptions", mock.AnythingOfType("string"), []byte(nil), mock.Anything).Return(true, (*model.AppError)(nil)).Once()
 }
 
 func newConnectTestPlugin(api *plugintest.API, userStore UserStore, instanceStore InstanceStore) *Plugin {
@@ -176,6 +181,55 @@ func TestMigrateAwayFromConnect(t *testing.T) {
 		api.AssertExpectations(t)
 		instanceStore.AssertExpectations(t)
 	})
+
+	t.Run("admin notice is retried when admins can't be listed", func(t *testing.T) {
+		api := &plugintest.API{}
+		instanceStore := &mockInstanceStore{}
+		p := newConnectTestPlugin(api, &mockUserStoreForTokenExpiry{}, instanceStore)
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = "token"
+			conf.AdminEmail = "admin@example.com"
+		})
+
+		instanceStore.On("LoadInstance", connectTestInstanceID).Return(legacyConnectInstance(), nil).Once()
+		api.On("KVSetWithOptions", mock.AnythingOfType("string"), []byte("1"), mock.Anything).Return(true, (*model.AppError)(nil)).Once()
+		api.On("GetUsers", mock.Anything).Return(nil, &model.AppError{Message: "db down"}).Once()
+		api.On("LogWarn", "Failed to list system admins for admin notice", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Once()
+		expectMarkerCleared(api)
+
+		instances := NewInstances()
+		instances.Set(&InstanceCommon{InstanceID: connectTestInstanceID, Type: CloudInstanceType})
+		p.migrateAwayFromConnect(instances)
+
+		api.AssertExpectations(t)
+		instanceStore.AssertExpectations(t)
+	})
+
+	t.Run("user migration is retried when users can't be listed", func(t *testing.T) {
+		api := &plugintest.API{}
+		instanceStore := &mockInstanceStore{}
+		userStore := &mapUsersStore{mockUserStoreForTokenExpiry: &mockUserStoreForTokenExpiry{}, err: errors.New("kv down")}
+		p := newConnectTestPlugin(api, userStore, instanceStore)
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = "token"
+			conf.AdminEmail = "admin@example.com"
+		})
+
+		instanceStore.On("LoadInstance", connectTestInstanceID).Return(&cloudOAuthInstance{
+			InstanceCommon: &InstanceCommon{InstanceID: connectTestInstanceID, Type: CloudOAuthInstanceType},
+			JiraBaseURL:    connectTestJiraURL,
+		}, nil).Once()
+		api.On("KVSetWithOptions", mock.AnythingOfType("string"), []byte("1"), mock.Anything).Return(true, (*model.AppError)(nil)).Once()
+		api.On("LogWarn", "Failed to list users for the Connect migration", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Once()
+		expectMarkerCleared(api)
+
+		instances := NewInstances()
+		instances.Set(&InstanceCommon{InstanceID: connectTestInstanceID, Type: CloudOAuthInstanceType})
+		p.migrateAwayFromConnect(instances)
+
+		api.AssertExpectations(t)
+		instanceStore.AssertExpectations(t)
+	})
 }
 
 func TestDisconnectConnectUsers(t *testing.T) {
@@ -221,7 +275,7 @@ func TestDisconnectConnectUsers(t *testing.T) {
 			"2. `/jira connect https://mmtest.atlassian.net`"
 	})).Return(&model.Post{}, nil).Once()
 
-	p.disconnectConnectUsers(connectTestInstanceID)
+	require.NoError(t, p.disconnectConnectUsers(connectTestInstanceID))
 
 	api.AssertExpectations(t)
 	userStore.AssertExpectations(t)

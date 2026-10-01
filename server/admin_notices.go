@@ -46,6 +46,7 @@ func (p *Plugin) notifyAdminsOnce(notice string, instanceID types.ID, message st
 	adminIDs, err := p.listSystemAdminIDs()
 	if err != nil {
 		p.client.Log.Warn("Failed to list system admins for admin notice", "notice", notice, "error", err.Error())
+		p.unmarkOnce(prefixAdminNotice+notice, instanceID)
 		return
 	}
 	for _, adminID := range adminIDs {
@@ -64,6 +65,13 @@ func (p *Plugin) markOnce(prefix string, instanceID types.ID) bool {
 		return false
 	}
 	return firstTime
+}
+
+// unmarkOnce releases a marker claimed by markOnce so the work can be retried.
+func (p *Plugin) unmarkOnce(prefix string, instanceID types.ID) {
+	if err := p.client.KV.Delete(hashkey(prefix, instanceID.String())); err != nil {
+		p.client.Log.Warn("Failed to clear one-time marker", "prefix", prefix, "instance", instanceID.String(), "error", err.Error())
+	}
 }
 
 func (p *Plugin) listSystemAdminIDs() ([]string, error) {
