@@ -42,7 +42,7 @@ func TestMigrateV2Instances(t *testing.T) {
 				"Installed": true,
 				"RawAtlassianSecurityContext": "{\"BaseURL\":\"https://mmtest.atlassian.net\"}"
 			}`,
-			expectInstance:       `{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Alias":"","Type":"cloud","IsV2Legacy":true,"SetupWizardUserID":"","Installed":true,"RawAtlassianSecurityContext":"{\"BaseURL\":\"https://mmtest.atlassian.net\"}"}`,
+			expectInstance:       `{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Alias":"","Type":"cloud","IsV2Legacy":true,"SetupWizardUserID":"","RawAtlassianSecurityContext":"{\"BaseURL\":\"https://mmtest.atlassian.net\"}"}`,
 			expectInstances:      `[{"PluginVersion":"3.0.0","InstanceID":"https://mmtest.atlassian.net","Alias":"","Type":"cloud","IsV2Legacy":true,"SetupWizardUserID":""}]`,
 			numExpectedInstances: 1,
 		},

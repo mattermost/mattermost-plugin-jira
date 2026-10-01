@@ -53,13 +53,6 @@ const (
 	routeAPISettingsInfo                        = "/settingsinfo"
 	routeIssueTransition                        = "/transition"
 	routeAPIUserDisconnect                      = "/api/v3/disconnect"
-	routeACInstalled                            = "/ac/installed"
-	routeACJSON                                 = "/ac/atlassian-connect.json"
-	routeACUninstalled                          = "/ac/uninstalled"
-	routeACUserRedirectWithToken                = "/ac/user_redirect.html" // #nosec G101
-	routeACUserConfirm                          = "/ac/user_confirm.html"
-	routeACUserConnected                        = "/ac/user_connected.html"
-	routeACUserDisconnected                     = "/ac/user_disconnected.html"
 	routeIncomingWebhook                        = "/webhook"
 	routeOAuth1Complete                         = "/oauth1/complete.html"
 	routeUserStart                              = "/user/start"
@@ -124,20 +117,6 @@ func (p *Plugin) initializeRouter() {
 	// User APIs
 	apiRouter.HandleFunc(routeAPIUserInfo, p.checkAuth(p.handleResponse(p.httpGetUserInfo))).Methods(http.MethodGet)
 	apiRouter.HandleFunc(routeAPISettingsInfo, p.checkAuth(p.handleResponse(p.httpGetSettingsInfo))).Methods(http.MethodGet)
-
-	// Atlassian Connect application
-	instanceRouter.HandleFunc(routeACJSON, p.handleResponseWithCallbackInstance(p.httpACJSON)).Methods(http.MethodGet)
-	// Do not use handleResponseWithCallbackInstance: ResolveWebhookInstanceURL errors
-	// would become 500 before processACInstalled can return 403/404.
-	instanceRouter.HandleFunc(routeACInstalled, p.handleResponse(p.httpACInstalledInstanceScoped)).Methods(http.MethodPost)
-	p.router.HandleFunc(routeACInstalled, p.handleResponse(p.httpACInstalledGlobal)).Methods(http.MethodPost)
-	p.router.HandleFunc(routeACUninstalled, p.handleResponse(p.httpACUninstalled)).Methods(http.MethodPost)
-
-	// Atlassian Connect user mapping
-	instanceRouter.HandleFunc(routeACUserRedirectWithToken, p.handleResponseWithCallbackInstance(p.httpACUserRedirect)).Methods(http.MethodGet)
-	instanceRouter.HandleFunc(routeACUserConfirm, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
-	instanceRouter.HandleFunc(routeACUserConnected, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
-	instanceRouter.HandleFunc(routeACUserDisconnected, p.handleResponseWithCallbackInstance(p.httpACUserInteractive)).Methods(http.MethodGet)
 
 	// Oauth1 (Jira Server)
 	instanceRouter.HandleFunc(routeOAuth1Complete, p.checkAuth(p.handleResponseWithCallbackInstance(p.httpOAuth1aComplete))).Methods(http.MethodGet)
@@ -300,23 +279,6 @@ func splitInstancePath(route string) (instanceURL string, remainingPath string) 
 		return "", route
 	}
 	return string(id), leadingSlash + strings.Join(ss[2:], "/")
-}
-
-// isOpaqueCloudSetupRoutingID reports whether s is the hex encoding of 32 random
-// bytes (SetupRoutingSecret), as used in instance paths during Jira Cloud Connect setup.
-func isOpaqueCloudSetupRoutingID(s string) bool {
-	if len(s) != 64 {
-		return false
-	}
-	for _, c := range s {
-		switch {
-		case c >= '0' && c <= '9':
-		case c >= 'a' && c <= 'f':
-		default:
-			return false
-		}
-	}
-	return true
 }
 
 func (p *Plugin) withRecovery(next http.Handler) http.Handler {

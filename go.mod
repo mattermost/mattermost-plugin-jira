@@ -6,14 +6,12 @@ require (
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/dghubble/oauth1 v0.5.0
-	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/mattermost-community/mattermost-plugin-autolink v1.4.1-0.20241105205450-79c240cde7d6
 	github.com/mattermost/mattermost/server/public v0.3.0
 	github.com/pkg/errors v0.9.1
-	github.com/rbriski/atlassian-jwt v0.0.0-20240408161306-6b6d681cf2d9
 	github.com/rudderlabs/analytics-go v3.3.3+incompatible
 	github.com/stretchr/testify v1.11.1
 	github.com/trivago/tgo v1.0.7

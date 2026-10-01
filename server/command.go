@@ -191,7 +191,7 @@ func createInstanceCommand(optInstance bool) *model.AutocompleteData {
 
 	install := model.NewAutocompleteData(
 		"install", "[server|cloud-oauth] [URL]", "Connect Mattermost to a Jira instance")
-	install.AddStaticListArgument("Jira type: server, cloud or cloud-oauth", true, jiraTypes)
+	install.AddStaticListArgument("Jira type: server or cloud-oauth", true, jiraTypes)
 	install.AddTextArgument("Jira URL", "Enter the Jira URL, e.g. https://mattermost.atlassian.net", "")
 	install.RoleID = model.SystemAdminRoleId
 
@@ -864,27 +864,8 @@ func authorizedSysAdmin(p *Plugin, userID string) (bool, error) {
 }
 
 func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, header.UserId)
-	if err != nil {
-		return p.response(header, err.Error())
-	}
-	if !authorized {
-		return p.responsef(header, "`/jira install` can only be run by a system administrator.")
-	}
-	if len(args) != 1 {
-		return p.help(header)
-	}
-
-	jiraURL, setupRoutingSecret, err := p.installInactiveCloudInstance(args[0], header.UserId)
-	if err != nil {
-		return p.response(header, err.Error())
-	}
-
-	return p.respondCommandTemplate(header, "/command/install_cloud.md", map[string]string{
-		"JiraURL":                 jiraURL,
-		"PluginURL":               p.GetPluginURL(),
-		"AtlassianConnectJSONURL": p.GetPluginURL() + instancePath(routeACJSON, types.ID(setupRoutingSecret)),
-	})
+	return p.responsef(header, "Installing Jira Cloud with the Atlassian Connect app is no longer supported. "+
+		"Run `/jira setup` and choose **Jira Cloud (OAuth 2.0)**, or run `/jira instance install cloud-oauth <jiraURL>`.")
 }
 
 func executeInstanceInstallCloudOAuth(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {

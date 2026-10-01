@@ -454,7 +454,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		},
 		"install cloud instance without URL": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: strings.TrimSpace(helpTextHeader + commonHelpText + sysAdminHelpText),
+			expectedMsgPrefix: "Installing Jira Cloud with the Atlassian Connect app is no longer supported.",
 		},
 		"install cloud instance as server": {
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
@@ -464,20 +464,10 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://somelink.com", UserId: mockUserIDSysAdmin},
 			expectedMsgPrefix: "https://somelink.com is the Mattermost site URL. Please use your Jira URL",
 		},
-		"install valid cloud instance": {
+		"install cloud instance with Atlassian Connect": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "https://mmtest.atlassian.net has been successfully added.",
-		},
-		"install inaccessible cloud instance": {
-			numInstances:      0,
-			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://non-existing-jira-page.atlassian.net", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: `we couldn't validate the connection to your Jira server. This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly: Jira server returned http status code "404" when checking for availability: "https://non-existing-jira-page.atlassian.net"`,
-		},
-		"install valid cloud instance with broken json response": {
-			numInstances:      0,
-			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://broken-json-response.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "we couldn't validate the connection to your Jira server. This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly: invalid character '}' looking for beginning of value",
+			expectedMsgPrefix: "Installing Jira Cloud with the Atlassian Connect app is no longer supported. Run `/jira setup`",
 		},
 		"install valid server instance 1 preinstalled": {
 			numInstances:      1,
@@ -503,10 +493,6 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://broken-json-response.com", UserId: mockUserIDSysAdmin},
 			expectedMsgPrefix: "we couldn't validate the connection to your Jira server. This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly: invalid character '}' looking for beginning of value",
-		},
-		"install non secure cloud instance": {
-			commandArgs:       &model.CommandArgs{Command: "/jira install cloud http://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "a secure HTTPS URL is required",
 		},
 	}
 	for name, tt := range tests {
