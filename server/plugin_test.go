@@ -24,13 +24,10 @@ import (
 )
 
 const (
-	MockInstanceID      = "mockInstanceID"
-	MockAPIToken        = "mockAPIToken"
-	MockAdminEmail      = "mockadmin@email.com"
-	MockBaseURL         = "mockBaseURL"
-	MockASCKey          = "mockAtlassianSecurityContextKey"
-	MockASCClientKey    = "mockAtlassianSecurityContextClientKey"
-	MockASCSharedSecret = "mockAtlassianSecurityContextSharedSecret" // #nosec G101: Potential hardcoded credentials - This is a mock for testing purposes
+	MockInstanceID = "mockInstanceID"
+	MockAPIToken   = "mockAPIToken"
+	MockAdminEmail = "mockadmin@email.com"
+	MockBaseURL    = "mockBaseURL"
 )
 
 func validRequestBody() io.ReadCloser {
@@ -214,6 +211,7 @@ func TestSetupAutolink(t *testing.T) {
 		{
 			name: "Error installing autolinks for cloud instance",
 			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
+				mockAPI.On("LogWarn", "Error unmarshalling admin API token", "error", mock.Anything).Times(1)
 				mockAPI.On("LogInfo", "could not install autolinks for cloud instance", "instance", "mockBaseURL", "error", mock.Anything).Return(nil).Times(1)
 				mockAPI.On("GetPluginStatus", autolinkPluginID).Return(&model.PluginStatus{State: model.PluginStateRunning}, nil).Times(1)
 				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(
@@ -222,10 +220,7 @@ func TestSetupAutolink(t *testing.T) {
 							Plugin: p,
 						},
 						AtlassianSecurityContext: &AtlassianSecurityContext{
-							BaseURL:      MockBaseURL,
-							Key:          MockASCKey,
-							ClientKey:    MockASCClientKey,
-							SharedSecret: MockASCSharedSecret,
+							BaseURL: MockBaseURL,
 						},
 					}, nil).Times(1)
 
@@ -237,7 +232,7 @@ func TestSetupAutolink(t *testing.T) {
 			name: "Error installing autolinks for cloud-oauth instance",
 			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
 				mockAPI.On("LogWarn", "Error unmarshalling admin API token", "error", mock.Anything).Times(1)
-				mockAPI.On("LogInfo", "could not install autolinks for cloud-oauth instance", "instance", "mockBaseURL", "error", mock.Anything).Return(nil).Times(1)
+				mockAPI.On("LogInfo", "could not install autolinks for cloud instance", "instance", "mockBaseURL", "error", mock.Anything).Return(nil).Times(1)
 				mockAPI.On("GetPluginStatus", autolinkPluginID).Return(&model.PluginStatus{State: model.PluginStateRunning}, nil).Times(1)
 
 				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(

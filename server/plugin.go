@@ -446,6 +446,7 @@ func (p *Plugin) OnActivate() error {
 
 	go func() {
 		p.SetupAutolink(instances)
+		p.migrateAwayFromConnect(instances)
 	}()
 
 	p.initializeTelemetry()
@@ -485,44 +486,21 @@ func (p *Plugin) SetupAutolink(instances *Instances) {
 			continue
 		}
 
-		switch instance := instance.(type) {
-		case *cloudInstance:
-			if err = p.AddAutolinksForCloudInstance(instance); err != nil {
-				p.client.Log.Info("could not install autolinks for cloud instance", "instance", instance.BaseURL, "error", err.Error())
-			} else {
-				p.client.Log.Info("successfully installed autolinks for cloud instance", "instance", instance.BaseURL)
-			}
-		case *cloudOAuthInstance:
-			if err = p.AddAutolinksForCloudOAuthInstance(instance); err != nil {
-				p.client.Log.Info("could not install autolinks for cloud-oauth instance", "instance", instance.JiraBaseURL, "error", err.Error())
-			} else {
-				p.client.Log.Info("successfully installed autolinks for cloud-oauth instance", "instance", instance.JiraBaseURL)
-			}
+		if err = p.AddAutolinksForCloudInstance(instance); err != nil {
+			p.client.Log.Info("could not install autolinks for cloud instance", "instance", instance.GetJiraBaseURL(), "error", err.Error())
+		} else {
+			p.client.Log.Info("successfully installed autolinks for cloud instance", "instance", instance.GetJiraBaseURL())
 		}
 	}
 }
 
-func (p *Plugin) AddAutolinksForCloudInstance(ci *cloudInstance) error {
-	client, err := ci.getClientForBot()
-	if err != nil {
-		return fmt.Errorf("unable to get jira client for server: %w", err)
-	}
-
-	plist, err := jiraCloudClient{JiraClient{Jira: client}}.ListProjects("", -1, false)
-	if err != nil {
-		return fmt.Errorf("unable to get project keys: %w", err)
-	}
-
-	return p.AddAutoLinkForProjects(plist, ci.GetJiraBaseURL())
-}
-
-func (p *Plugin) AddAutolinksForCloudOAuthInstance(coi *cloudOAuthInstance) error {
-	plist, err := p.GetProjectListWithAPIToken(string(coi.InstanceID))
+func (p *Plugin) AddAutolinksForCloudInstance(instance Instance) error {
+	plist, err := p.GetProjectListWithAPIToken(instance.GetID().String())
 	if err != nil {
 		return fmt.Errorf("error getting project list: %w", err)
 	}
 
-	return p.AddAutoLinkForProjects(*plist, coi.GetJiraBaseURL())
+	return p.AddAutoLinkForProjects(*plist, instance.GetJiraBaseURL())
 }
 
 func (p *Plugin) AddAutoLinkForProjects(plist jira.ProjectList, baseURL string) error {
