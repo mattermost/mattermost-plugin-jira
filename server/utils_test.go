@@ -377,22 +377,6 @@ type mockInstanceStoreForUtils struct {
 	err      error
 }
 
-func (m mockInstanceStoreForUtils) CreateInactiveCloudInstance(types.ID, string) (string, error) {
-	return "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", nil
-}
-
-func (m mockInstanceStoreForUtils) LoadPendingCloudSetupRoute(types.ID) (types.ID, error) {
-	return "", nil
-}
-
-func (m mockInstanceStoreForUtils) StorePendingCloudSetupRoute(types.ID, types.ID) error {
-	return nil
-}
-
-func (m mockInstanceStoreForUtils) DeletePendingCloudSetupRoute(types.ID) error {
-	return nil
-}
-
 func (m mockInstanceStoreForUtils) DeleteInstance(types.ID) error {
 	return nil
 }
