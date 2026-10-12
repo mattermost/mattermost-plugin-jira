@@ -865,6 +865,7 @@ func authorizedSysAdmin(p *Plugin, userID string) (bool, error) {
 
 func executeInstanceInstallCloud(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
 	return p.responsef(header, "Installing Jira Cloud with the Atlassian Connect app is no longer supported. "+
+		"Atlassian is ending support for Connect apps on January 31, 2027. "+
 		"Run `/jira setup` and choose **Jira Cloud (OAuth 2.0)**, or run `/jira instance install cloud-oauth <jiraURL>`.")
 }
 

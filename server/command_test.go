@@ -467,7 +467,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		"install cloud instance with Atlassian Connect": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install cloud https://mmtest.atlassian.net", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "Installing Jira Cloud with the Atlassian Connect app is no longer supported. Run `/jira setup`",
+			expectedMsgPrefix: "Installing Jira Cloud with the Atlassian Connect app is no longer supported. Atlassian is ending support for Connect apps on January 31, 2027",
 		},
 		"install valid server instance 1 preinstalled": {
 			numInstances:      1,
