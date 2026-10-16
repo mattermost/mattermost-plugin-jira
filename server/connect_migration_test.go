@@ -4,13 +4,18 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
@@ -291,6 +296,41 @@ func TestExpandIssueWithoutAPITokenNotifiesAdmins(t *testing.T) {
 	jwh := &JiraWebhook{}
 	err := jwh.expandIssueWithAPIToken(p, legacyConnectInstance(), errConnectInstanceUnsupported)
 	require.ErrorIs(t, err, errConnectInstanceUnsupported)
+
+	api.AssertExpectations(t)
+}
+
+// TestExpandIssueWithAPITokenOnServerDC confirms the Data Center fork: a
+// configured Admin API Token (PAT) is enough to proceed without an admin
+// email, and the request authenticates with a Bearer header rather than Basic.
+func TestExpandIssueWithAPITokenOnServerDC(t *testing.T) {
+	issuePayload := jira.Issue{
+		Key: "PROJ-1",
+		Fields: &jira.IssueFields{
+			Summary: "Test Issue",
+		},
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "Bearer admin-pat", r.Header.Get("Authorization"))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(issuePayload) //nolint:errcheck
+	}))
+	defer ts.Close()
+
+	api := &plugintest.API{}
+	p := newConnectTestPlugin(api, &mockUserStoreForTokenExpiry{}, &mockInstanceStore{})
+	tokenJSON, _ := json.Marshal("admin-pat")
+	p.updateConfig(func(conf *config) {
+		conf.AdminAPIToken = string(tokenJSON)
+		conf.AdminEmail = ""
+		conf.EncryptionKey = ""
+	})
+
+	serverInstance := &testInstance{InstanceCommon: InstanceCommon{InstanceID: types.ID(ts.URL), Type: ServerInstanceType}}
+	jwh := &JiraWebhook{Issue: jira.Issue{Key: "PROJ-1"}}
+	err := jwh.expandIssueWithAPIToken(p, serverInstance, errors.New("no connected author"))
+	require.NoError(t, err)
+	assert.Equal(t, "Test Issue", jwh.Issue.Fields.Summary)
 
 	api.AssertExpectations(t)
 }

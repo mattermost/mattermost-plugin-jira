@@ -1603,14 +1603,14 @@ func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey s
 	return issue, nil
 }
 
-func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Issue, error) {
+func (p *Plugin) GetIssueDataWithAPIToken(issueID string, instance Instance) (*jira.Issue, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/2/issue/%s", instanceID, issueID), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/2/issue/%s", instance.GetURL(), issueID), nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create http request for fetching issue data. IssueID: %s", issueID)
 	}
 
-	err = p.SetAdminAPITokenRequestHeader(req)
+	err = p.SetAdminAPITokenRequestHeader(req, instance.Common().IsCloudInstance())
 	if err != nil {
 		return nil, err
 	}
@@ -1648,11 +1648,12 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID, instanceID string) (*jira.Iss
 // GetWatchersWithAPIToken fetches the watcher list for an issue using the
 // admin API token configured in plugin settings. This serves as a fallback
 // when none of the issue's Creator, Assignee, or Reporter have connected
-// Jira accounts. Works with both Jira Cloud (email + API token) and
-// Server/Data Center (username + password/PAT) via HTTP Basic auth.
+// Jira accounts. Works with both Jira Cloud (email + API token via HTTP
+// Basic auth) and Server/Data Center (PAT via HTTP Bearer auth).
 func (p *Plugin) GetWatchersWithAPIToken(issueKeyOrID string, instance Instance) (*jira.Watches, error) {
+	isCloud := instance.Common().IsCloudInstance()
 	apiVersion := "2"
-	if instance.Common().IsCloudInstance() {
+	if isCloud {
 		apiVersion = "3"
 	}
 
@@ -1662,7 +1663,7 @@ func (p *Plugin) GetWatchersWithAPIToken(issueKeyOrID string, instance Instance)
 		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching watchers. Issue: %s", issueKeyOrID)
 	}
 
-	if err = p.SetAdminAPITokenRequestHeader(req); err != nil {
+	if err = p.SetAdminAPITokenRequestHeader(req, isCloud); err != nil {
 		return nil, err
 	}
 
@@ -1684,7 +1685,14 @@ func (p *Plugin) GetWatchersWithAPIToken(issueKeyOrID string, instance Instance)
 	case http.StatusOK:
 	case http.StatusNotFound:
 		return nil, errors.Errorf("issue does not exist or admin does not have permission to view watchers. StatusCode: %d, Issue: %s", resp.StatusCode, issueKeyOrID)
-	case http.StatusForbidden:
+	case http.StatusUnauthorized, http.StatusForbidden:
+		// Log the auth rejection reason (never the token) to help diagnose cases like
+		// expired/invalid credentials, CAPTCHA challenges, or missing project permissions.
+		p.client.Log.Debug("Admin API token request for watchers was rejected",
+			"statusCode", resp.StatusCode,
+			"seraphLoginReason", resp.Header.Get("X-Seraph-LoginReason"),
+			"isCloud", isCloud,
+			"issue", issueKeyOrID)
 		return nil, errors.Errorf("admin does not have permission to view watchers. StatusCode: %d, Issue: %s", resp.StatusCode, issueKeyOrID)
 	default:
 		return nil, errors.Errorf("unexpected status code when fetching watchers. StatusCode: %d, Issue: %s", resp.StatusCode, issueKeyOrID)
@@ -1723,14 +1731,14 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 		return
 	}
 	if client == nil {
-		if p.getConfig().AdminAPIToken == "" {
-			p.errorf("no connected user found and no admin API token configured for instanceID %v", instanceID)
-			return
-		}
-
 		instance, loadErr := p.instanceStore.LoadInstance(instanceID)
 		if loadErr != nil {
 			p.errorf("error loading instance for admin-token watcher lookup, instanceID %v, err: %v", instanceID, loadErr)
+			return
+		}
+
+		if !p.hasAdminAPIToken(instance) {
+			p.errorf("no connected user found and no admin API token configured for instanceID %v", instanceID)
 			return
 		}
 
@@ -1937,6 +1945,8 @@ type ProjectSearchResponse struct {
 	Values     jira.ProjectList `json:"values"`
 }
 
+// GetProjectListWithAPIToken fetches the project list for autolink setup, which
+// is only supported for Cloud instances, so it always uses Basic auth.
 func (p *Plugin) GetProjectListWithAPIToken(instanceID string) (*jira.ProjectList, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/3/project/search", instanceID), nil)
@@ -1944,7 +1954,7 @@ func (p *Plugin) GetProjectListWithAPIToken(instanceID string) (*jira.ProjectLis
 		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching project list data. InstanceID: %s", instanceID)
 	}
 
-	err = p.SetAdminAPITokenRequestHeader(req)
+	err = p.SetAdminAPITokenRequestHeader(req, true)
 	if err != nil {
 		return nil, err
 	}
