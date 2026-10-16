@@ -300,6 +300,25 @@ func TestExpandIssueWithoutAPITokenNotifiesAdmins(t *testing.T) {
 	api.AssertExpectations(t)
 }
 
+// TestExpandIssueWithoutAPITokenNotifiesAdminsDC confirms Server/DC admins get
+// PAT-specific instructions (no Admin Email, no Cloud API-token link) when the
+// token itself is missing, instead of the Cloud-worded notice.
+func TestExpandIssueWithoutAPITokenNotifiesAdminsDC(t *testing.T) {
+	api := &plugintest.API{}
+	p := newConnectTestPlugin(api, &mockUserStoreForTokenExpiry{}, &mockInstanceStore{})
+
+	serverInstance := &testInstance{InstanceCommon: InstanceCommon{InstanceID: connectTestInstanceID, Type: ServerInstanceType}}
+
+	api.On("KVSetWithOptions", mock.AnythingOfType("string"), []byte("1"), mock.Anything).Return(true, (*model.AppError)(nil)).Once()
+	expectAdminDM(api, fmt.Sprintf(missingAPITokenNoticeDC, serverInstance.GetJiraBaseURL()))
+
+	jwh := &JiraWebhook{}
+	err := jwh.expandIssueWithAPIToken(p, serverInstance, errConnectInstanceUnsupported)
+	require.ErrorIs(t, err, errConnectInstanceUnsupported)
+
+	api.AssertExpectations(t)
+}
+
 // TestExpandIssueWithAPITokenOnServerDC confirms the Data Center fork: a
 // configured Admin API Token (PAT) is enough to proceed without an admin
 // email, and the request authenticates with a Bearer header rather than Basic.
