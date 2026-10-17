@@ -58,8 +58,16 @@ docker run -d \
   -v mm-postgres-data:/var/lib/postgresql/data \
   "$POSTGRES_IMAGE"
 
+timeout=120
+elapsed=0
 until [ "$(docker inspect -f '{{.State.Health.Status}}' mm-postgres)" = "healthy" ]; do
+  if [ $elapsed -ge $timeout ]; then
+    echo "PostgreSQL failed to become healthy within ${timeout}s"
+    docker logs mm-postgres
+    exit 1
+  fi
   sleep 2
+  elapsed=$((elapsed + 2))
 done
 
 mkdir -p /tmp/mattermost/{config,data,logs,plugins,client-plugins,bleve-indexes}
@@ -69,7 +77,7 @@ docker run -d \
   --name mattermost \
   --platform "$MM_PLATFORM" \
   --network mattermost-dev \
-  -p 8065:8065 \
+  -p 127.0.0.1:8065:8065 \
   -e MM_SQLSETTINGS_DRIVERNAME=postgres \
   -e "MM_SQLSETTINGS_DATASOURCE=postgres://$MM_DB_USER:$MM_DB_PASSWORD@mm-postgres:5432/$MM_DB_NAME?sslmode=disable&connect_timeout=10" \
   -e MM_SERVICESETTINGS_SITEURL=http://localhost:8065 \
@@ -90,8 +98,16 @@ docker run -d \
 Wait for Mattermost, then create a system admin:
 
 ```bash
+timeout=120
+elapsed=0
 until curl -fsS http://localhost:8065/api/v4/system/ping | jq -e '.status == "OK"' >/dev/null; do
+  if [ $elapsed -ge $timeout ]; then
+    echo "Mattermost failed to become ready within ${timeout}s"
+    docker logs mattermost | tail -50
+    exit 1
+  fi
   sleep 2
+  elapsed=$((elapsed + 2))
 done
 
 docker exec mattermost mmctl --local user search "$MM_ADMIN_USERNAME" | grep -q "$MM_ADMIN_USERNAME" || \
