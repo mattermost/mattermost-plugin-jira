@@ -1626,7 +1626,7 @@ func TestGetWatchersWithAPIToken(t *testing.T) {
 		watchers, err := p.GetWatchersWithAPIToken("PROJ-123", newCloudInst(ts.URL))
 		require.Error(t, err)
 		assert.Nil(t, watchers)
-		assert.Contains(t, err.Error(), "admin email/username is empty in plugin config")
+		assert.Contains(t, err.Error(), "admin email is empty in plugin config (required for Jira Cloud)")
 	})
 
 	// --- Server/Data Center: PAT must be sent as a Bearer token, never Basic ---
@@ -1748,6 +1748,118 @@ func TestGetWatchersWithAPIToken(t *testing.T) {
 		api.AssertCalled(t, "LogDebug", "Admin API token request for watchers was rejected",
 			"statusCode", http.StatusForbidden, "seraphLoginReason", "AUTHENTICATED_FAILED", "isCloud", false, "issue", "ISSUE-456")
 	})
+
+	t.Run("Server/DC retries with Basic auth after a 401 when a username is set", func(t *testing.T) {
+		var authHeaders []string
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authHeaders = append(authHeaders, r.Header.Get("Authorization"))
+			if strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(watchersPayload) //nolint:errcheck
+		}))
+		defer ts.Close()
+
+		p := setupTestPlugin(&plugintest.API{})
+		tokenJSON, _ := json.Marshal("admin-password")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin"
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("ISSUE-456", newServerInst(ts.URL))
+		require.NoError(t, err)
+		require.NotNil(t, watchers)
+		assert.Equal(t, []string{
+			"Bearer admin-password",
+			"Basic " + base64.StdEncoding.EncodeToString([]byte("admin:admin-password")),
+		}, authHeaders)
+	})
+
+	t.Run("Server/DC does not retry with Basic auth when no username is set", func(t *testing.T) {
+		requests := 0
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requests++
+			w.WriteHeader(http.StatusUnauthorized)
+		}))
+		defer ts.Close()
+
+		api := &plugintest.API{}
+		api.On("LogDebug", "Admin API token request for watchers was rejected",
+			"statusCode", http.StatusUnauthorized,
+			"seraphLoginReason", "",
+			"isCloud", false,
+			"issue", "ISSUE-456").Return().Once()
+		p := setupTestPlugin(api)
+		tokenJSON, _ := json.Marshal("admin-pat")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = ""
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("ISSUE-456", newServerInst(ts.URL))
+		require.Error(t, err)
+		assert.Nil(t, watchers)
+		assert.Equal(t, 1, requests)
+	})
+
+	t.Run("Cloud does not retry after a 401", func(t *testing.T) {
+		requests := 0
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requests++
+			w.WriteHeader(http.StatusUnauthorized)
+		}))
+		defer ts.Close()
+
+		api := &plugintest.API{}
+		api.On("LogDebug", "Admin API token request for watchers was rejected",
+			"statusCode", http.StatusUnauthorized,
+			"seraphLoginReason", "",
+			"isCloud", true,
+			"issue", "PROJ-123").Return().Once()
+		p := setupTestPlugin(api)
+		tokenJSON, _ := json.Marshal("test-api-token")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin@example.com"
+			conf.EncryptionKey = ""
+		})
+
+		watchers, err := p.GetWatchersWithAPIToken("PROJ-123", newCloudInst(ts.URL))
+		require.Error(t, err)
+		assert.Nil(t, watchers)
+		assert.Equal(t, 1, requests)
+	})
+
+	t.Run("CloudOAuth uses the Jira base URL, not the api.atlassian.com gateway", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/rest/api/3/issue/PROJ-123/watchers", r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(watchersPayload) //nolint:errcheck
+		}))
+		defer ts.Close()
+
+		p := setupTestPlugin(&plugintest.API{})
+		tokenJSON, _ := json.Marshal("test-api-token")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin@example.com"
+			conf.EncryptionKey = ""
+		})
+
+		instance := &cloudOAuthInstance{
+			InstanceCommon: &InstanceCommon{InstanceID: types.ID(ts.URL), Type: CloudOAuthInstanceType},
+			JiraBaseURL:    ts.URL,
+			JiraResourceID: "resource-id",
+		}
+		watchers, err := p.GetWatchersWithAPIToken("PROJ-123", instance)
+		require.NoError(t, err)
+		require.NotNil(t, watchers)
+	})
 }
 
 func TestGetIssueDataWithAPIToken(t *testing.T) {
@@ -1782,24 +1894,28 @@ func TestGetIssueDataWithAPIToken(t *testing.T) {
 		assert.Equal(t, "PROJ-123", issue.Key)
 	})
 
-	t.Run("Server/DC sends Bearer auth and works without an admin email", func(t *testing.T) {
+	t.Run("CloudOAuth uses the Jira base URL, not the api.atlassian.com gateway", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, "/rest/api/2/issue/PROJ-123", r.URL.Path)
-			assert.Equal(t, "Bearer admin-pat", r.Header.Get("Authorization"))
+			assert.True(t, strings.HasPrefix(r.Header.Get("Authorization"), "Basic "))
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(issuePayload) //nolint:errcheck
 		}))
 		defer ts.Close()
 
 		p := setupTestPlugin(&plugintest.API{})
-		tokenJSON, _ := json.Marshal("admin-pat")
+		tokenJSON, _ := json.Marshal("test-api-token")
 		p.updateConfig(func(conf *config) {
 			conf.AdminAPIToken = string(tokenJSON)
-			conf.AdminEmail = ""
+			conf.AdminEmail = "admin@example.com"
 			conf.EncryptionKey = ""
 		})
 
-		instance := &testInstance{InstanceCommon: InstanceCommon{InstanceID: types.ID(ts.URL), Type: ServerInstanceType}}
+		instance := &cloudOAuthInstance{
+			InstanceCommon: &InstanceCommon{InstanceID: types.ID(ts.URL), Type: CloudOAuthInstanceType},
+			JiraBaseURL:    ts.URL,
+			JiraResourceID: "resource-id",
+		}
 		issue, err := p.GetIssueDataWithAPIToken("PROJ-123", instance)
 		require.NoError(t, err)
 		require.NotNil(t, issue)
@@ -1828,7 +1944,8 @@ func TestGetProjectListWithAPIToken(t *testing.T) {
 		conf.EncryptionKey = ""
 	})
 
-	plist, err := p.GetProjectListWithAPIToken(ts.URL)
+	instance := &testInstance{InstanceCommon: InstanceCommon{InstanceID: types.ID(ts.URL), Type: CloudInstanceType}}
+	plist, err := p.GetProjectListWithAPIToken(instance)
 	require.NoError(t, err)
 	require.NotNil(t, plist)
 	require.Len(t, *plist, 1)

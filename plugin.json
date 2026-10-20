@@ -137,7 +137,7 @@
                 "key": "AdminEmail",
                 "display_name": "Admin Email",
                 "type": "text",
-                "help_text": "**Note:** Required for Jira Cloud to setup autolink and to get notified for comment and issue created events when the user triggering the event is not connected to Jira. Not used for Jira Server/Data Center, which authenticates with the Admin API Token alone.",
+                "help_text": "**Note:** Required for Jira Cloud to set up autolink and to get notified for comment and issue created events when the user triggering the event is not connected to Jira. Not used for Jira Server/Data Center, which authenticates with the Admin API Token alone.",
                 "placeholder": "",
                 "default": ""
             },

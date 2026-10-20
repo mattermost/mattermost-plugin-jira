@@ -1605,17 +1605,12 @@ func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey s
 
 func (p *Plugin) GetIssueDataWithAPIToken(issueID string, instance Instance) (*jira.Issue, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/2/issue/%s", instance.GetURL(), issueID), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/2/issue/%s", instance.GetJiraBaseURL(), issueID), nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create http request for fetching issue data. IssueID: %s", issueID)
 	}
 
-	err = p.SetAdminAPITokenRequestHeader(req, instance.Common().IsCloudInstance())
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := client.Do(req)
+	resp, err := p.doAdminAPITokenRequest(client, req, instance)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get issue data. IssueID: %s", issueID)
 	}
@@ -1658,16 +1653,12 @@ func (p *Plugin) GetWatchersWithAPIToken(issueKeyOrID string, instance Instance)
 	}
 
 	httpClient := &http.Client{Timeout: 30 * time.Second}
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/%s/issue/%s/watchers", instance.GetURL(), apiVersion, issueKeyOrID), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/%s/issue/%s/watchers", instance.GetJiraBaseURL(), apiVersion, issueKeyOrID), nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching watchers. Issue: %s", issueKeyOrID)
 	}
 
-	if err = p.SetAdminAPITokenRequestHeader(req, isCloud); err != nil {
-		return nil, err
-	}
-
-	resp, err := httpClient.Do(req)
+	resp, err := p.doAdminAPITokenRequest(httpClient, req, instance)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch watchers. Issue: %s", issueKeyOrID)
 	}
@@ -1945,21 +1936,15 @@ type ProjectSearchResponse struct {
 	Values     jira.ProjectList `json:"values"`
 }
 
-// GetProjectListWithAPIToken fetches the project list for autolink setup, which
-// is only supported for Cloud instances, so it always uses Basic auth.
-func (p *Plugin) GetProjectListWithAPIToken(instanceID string) (*jira.ProjectList, error) {
+func (p *Plugin) GetProjectListWithAPIToken(instance Instance) (*jira.ProjectList, error) {
+	instanceID := instance.GetID().String()
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/3/project/search", instanceID), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/3/project/search", instance.GetJiraBaseURL()), nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching project list data. InstanceID: %s", instanceID)
 	}
 
-	err = p.SetAdminAPITokenRequestHeader(req, true)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := client.Do(req)
+	resp, err := p.doAdminAPITokenRequest(client, req, instance)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch project list data. InstanceID: %s", instanceID)
 	}

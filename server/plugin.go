@@ -462,17 +462,16 @@ func (p *Plugin) SetupAutolink(instances *Instances) {
 			continue
 		}
 
-		// Autolink is only set up for Cloud instances (checked below), which always
-		// require both the token and admin email for Basic auth.
-		if p.getConfig().AdminAPIToken == "" || p.getConfig().AdminEmail == "" {
-			p.client.Log.Info("unable to setup autolink due to missing API Token or Admin Email")
-			continue
-		}
-
 		switch instance.(type) {
 		case *cloudInstance, *cloudOAuthInstance:
 		default:
 			p.client.Log.Info("only cloud and cloud-oauth instances supported for autolink")
+			continue
+		}
+
+		// Cloud instances require both the token and admin email for Basic auth.
+		if p.getConfig().AdminAPIToken == "" || p.getConfig().AdminEmail == "" {
+			p.client.Log.Info("unable to setup autolink due to missing API Token or Admin Email")
 			continue
 		}
 
@@ -497,7 +496,7 @@ func (p *Plugin) SetupAutolink(instances *Instances) {
 }
 
 func (p *Plugin) AddAutolinksForCloudInstance(instance Instance) error {
-	plist, err := p.GetProjectListWithAPIToken(instance.GetID().String())
+	plist, err := p.GetProjectListWithAPIToken(instance)
 	if err != nil {
 		return fmt.Errorf("error getting project list: %w", err)
 	}
