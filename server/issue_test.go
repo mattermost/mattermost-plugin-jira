@@ -1779,6 +1779,46 @@ func TestGetWatchersWithAPIToken(t *testing.T) {
 		}, authHeaders)
 	})
 
+	t.Run("Server/DC stops retrying with Basic auth after the retry is also rejected", func(t *testing.T) {
+		var authHeaders []string
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authHeaders = append(authHeaders, r.Header.Get("Authorization"))
+			w.Header().Set("X-Seraph-LoginReason", "AUTHENTICATED_FAILED")
+			w.WriteHeader(http.StatusUnauthorized)
+		}))
+		defer ts.Close()
+
+		api := &plugintest.API{}
+		api.On("LogWarn", mock.AnythingOfType("string"), "seraphLoginReason", "AUTHENTICATED_FAILED").Return()
+		api.On("LogDebug", "Admin API token request for watchers was rejected",
+			"statusCode", http.StatusUnauthorized,
+			"seraphLoginReason", "AUTHENTICATED_FAILED",
+			"isCloud", false,
+			"issue", "ISSUE-456").Return()
+		p := setupTestPlugin(api)
+		tokenJSON, _ := json.Marshal("expired-pat")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin"
+			conf.EncryptionKey = ""
+		})
+		bearer := "Bearer expired-pat"
+		basic := "Basic " + base64.StdEncoding.EncodeToString([]byte("admin:expired-pat"))
+
+		for i := 0; i < 2; i++ {
+			_, err := p.GetWatchersWithAPIToken("ISSUE-456", newServerInst(ts.URL))
+			require.Error(t, err)
+		}
+		assert.Equal(t, []string{bearer, basic, bearer}, authHeaders)
+		api.AssertNumberOfCalls(t, "LogWarn", 1)
+
+		p.adminBasicFallbackFailed.Store(false)
+		authHeaders = nil
+		_, err := p.GetWatchersWithAPIToken("ISSUE-456", newServerInst(ts.URL))
+		require.Error(t, err)
+		assert.Equal(t, []string{bearer, basic}, authHeaders)
+	})
+
 	t.Run("Server/DC does not retry with Basic auth when no username is set", func(t *testing.T) {
 		requests := 0
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	textTemplate "text/template"
 
 	"github.com/andygrunwald/go-jira"
@@ -170,6 +171,10 @@ type Plugin struct {
 
 	teamFieldCache     map[types.ID]map[string]struct{}
 	teamFieldCacheLock sync.RWMutex
+
+	// Set when the Server/DC Basic auth retry of the Admin API Token is also
+	// rejected, so a bad credential doesn't add a failed login on every request.
+	adminBasicFallbackFailed atomic.Bool
 }
 
 func (p *Plugin) getConfig() config {
@@ -203,6 +208,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	if err != nil {
 		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
+	p.adminBasicFallbackFailed.Store(false)
 
 	ec.MaxAttachmentSize = strings.TrimSpace(ec.MaxAttachmentSize)
 	maxAttachmentSize := defaultMaxAttachmentSize

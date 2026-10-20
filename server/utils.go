@@ -292,7 +292,8 @@ func getS256PKCEParams() (*PKCEParams, error) {
 // https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html
 // Server/DC installs configured with a username and password (e.g. Jira
 // Server before 8.14, which has no PATs) get a 401 for the Bearer request,
-// so it's retried with Basic auth when an admin username is set.
+// so it's retried with Basic auth when an admin username is set. If that retry
+// is also rejected, retries stop until the plugin configuration changes.
 func (p *Plugin) doAdminAPITokenRequest(client *http.Client, req *http.Request, instance Instance) (*http.Response, error) {
 	isCloud := instance.Common().IsCloudInstance()
 	if err := p.setAdminAPITokenRequestHeader(req, isCloud); err != nil {
@@ -300,7 +301,8 @@ func (p *Plugin) doAdminAPITokenRequest(client *http.Client, req *http.Request, 
 	}
 
 	resp, err := client.Do(req)
-	if err != nil || isCloud || resp.StatusCode != http.StatusUnauthorized || p.getConfig().AdminEmail == "" {
+	if err != nil || isCloud || resp.StatusCode != http.StatusUnauthorized ||
+		p.getConfig().AdminEmail == "" || p.adminBasicFallbackFailed.Load() {
 		return resp, err
 	}
 	resp.Body.Close()
@@ -308,7 +310,13 @@ func (p *Plugin) doAdminAPITokenRequest(client *http.Client, req *http.Request, 
 	if err = p.setAdminAPITokenRequestHeader(req, true); err != nil {
 		return nil, err
 	}
-	return client.Do(req)
+	resp, err = client.Do(req)
+	if err == nil && resp.StatusCode == http.StatusUnauthorized && p.adminBasicFallbackFailed.CompareAndSwap(false, true) {
+		p.client.Log.Warn("Admin API Token was rejected as both a Bearer token and a Basic auth password; "+
+			"Basic auth retries are disabled until the plugin configuration is saved again",
+			"seraphLoginReason", resp.Header.Get("X-Seraph-LoginReason"))
+	}
+	return resp, err
 }
 
 func (p *Plugin) setAdminAPITokenRequestHeader(req *http.Request, useBasicAuth bool) error {
