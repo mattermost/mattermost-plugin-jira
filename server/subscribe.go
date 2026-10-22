@@ -426,7 +426,10 @@ func (p *Plugin) getSubscriptionTemplatesByID(instanceID, templateID types.ID) (
 	return &sub, nil
 }
 
-var errTemplateNotFound = errors.New("subscription template not found")
+var (
+	errTemplateNotFound       = errors.New("subscription template not found")
+	errTemplateChannelChanged = errors.New("subscription template channel changed, please retry")
+)
 
 func (p *Plugin) checkCanManageSubscriptionsInChannel(instanceID types.ID, userID, channelID string) (int, error) {
 	if len(channelID) != 26 {
@@ -442,8 +445,11 @@ func (p *Plugin) checkCanManageSubscriptionsInChannel(instanceID types.ID, userI
 }
 
 func (p *Plugin) loadTemplateStatus(err error) int {
-	if errors.Is(err, errTemplateNotFound) {
+	switch {
+	case errors.Is(err, errTemplateNotFound):
 		return http.StatusNotFound
+	case errors.Is(err, errTemplateChannelChanged):
+		return http.StatusConflict
 	}
 	return http.StatusInternalServerError
 }
@@ -698,7 +704,7 @@ func (p *Plugin) addSubscriptionTemplate(instanceID types.ID, newSubscriptionTem
 	})
 }
 
-func (p *Plugin) editSubscriptionTemplate(instanceID types.ID, modifiedSubscriptionTemplate *SubscriptionTemplate, client Client) error {
+func (p *Plugin) editSubscriptionTemplate(instanceID types.ID, modifiedSubscriptionTemplate *SubscriptionTemplate, client Client, authorizedChannelID string) error {
 	subKey := keyWithInstanceID(instanceID, templateKey)
 	return p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
 		subscriptionTemplates, err := SubscriptionTemplatesFromJSON(initialBytes)
@@ -708,7 +714,10 @@ func (p *Plugin) editSubscriptionTemplate(instanceID types.ID, modifiedSubscript
 
 		oldSubscriptionTemplate, ok := subscriptionTemplates.Templates.ByID[modifiedSubscriptionTemplate.ID]
 		if !ok {
-			return nil, errors.New("subscription template does not exist")
+			return nil, errTemplateNotFound
+		}
+		if oldSubscriptionTemplate.ChannelID != authorizedChannelID {
+			return nil, errTemplateChannelChanged
 		}
 
 		oldProjectKey := ""
@@ -737,12 +746,25 @@ func (p *Plugin) editSubscriptionTemplate(instanceID types.ID, modifiedSubscript
 	})
 }
 
-func (p *Plugin) removeSubscriptionTemplate(instanceID types.ID, subscriptionTemplateID, projectKey string) error {
+func (p *Plugin) removeSubscriptionTemplate(instanceID types.ID, subscriptionTemplateID, authorizedChannelID string) error {
 	subKey := keyWithInstanceID(instanceID, templateKey)
 	return p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
 		oldSubscriptionTemplates, err := SubscriptionTemplatesFromJSON(initialBytes)
 		if err != nil {
 			return nil, err
+		}
+
+		current, ok := oldSubscriptionTemplates.Templates.ByID[subscriptionTemplateID]
+		if !ok {
+			return nil, errTemplateNotFound
+		}
+		if current.ChannelID != authorizedChannelID {
+			return nil, errTemplateChannelChanged
+		}
+
+		projectKey := ""
+		if current.Filters != nil && current.Filters.Projects.Len() == 1 {
+			projectKey = current.Filters.Projects.Elems()[0]
 		}
 
 		oldSubscriptionTemplates.Templates.delete(projectKey, subscriptionTemplateID)
@@ -1616,8 +1638,8 @@ func (p *Plugin) httpEditSubscriptionTemplates(w http.ResponseWriter, r *http.Re
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	if err = p.editSubscriptionTemplate(subscriptionTemplate.InstanceID, &subscriptionTemplate, client); err != nil {
-		return respondErr(w, http.StatusInternalServerError, err)
+	if err = p.editSubscriptionTemplate(subscriptionTemplate.InstanceID, &subscriptionTemplate, client, existing.ChannelID); err != nil {
+		return respondErr(w, p.loadTemplateStatus(err), err)
 	}
 
 	_ = p.API.SendEphemeralPost(mattermostUserID, &model.Post{
@@ -1691,18 +1713,13 @@ func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.R
 		return respondErr(w, status, permErr)
 	}
 
-	projectKey := ""
-	if subscriptionTemplate.Filters != nil && subscriptionTemplate.Filters.Projects.Len() == 1 {
-		projectKey = subscriptionTemplate.Filters.Projects.Elems()[0]
-	}
-
 	_, _, connection, err := p.getClient(instanceID, types.ID(mattermostUserID))
 	if err != nil {
 		return respondErr(w, http.StatusInternalServerError, err)
 	}
 
-	if rErr := p.removeSubscriptionTemplate(instanceID, subscriptionTemplateID, projectKey); rErr != nil {
-		return respondErr(w, http.StatusInternalServerError, errors.Wrap(rErr, "unable to remove channel subscription template"))
+	if rErr := p.removeSubscriptionTemplate(instanceID, subscriptionTemplateID, subscriptionTemplate.ChannelID); rErr != nil {
+		return respondErr(w, p.loadTemplateStatus(rErr), errors.Wrap(rErr, "unable to remove channel subscription template"))
 	}
 
 	_ = p.API.SendEphemeralPost(mattermostUserID, &model.Post{

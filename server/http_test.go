@@ -1650,6 +1650,7 @@ func TestSubscriptionTemplateAccessChecks(t *testing.T) {
 		blockedChannels []string
 		stored          *SubscriptionTemplate
 		noStoredRecord  bool
+		movedAfterCheck bool
 		expectedStatus  int
 		checkSaved      func(*testing.T, *Templates)
 	}{
@@ -1686,12 +1687,14 @@ func TestSubscriptionTemplateAccessChecks(t *testing.T) {
 				assert.Equal(t, otherChannelID, saved.Templates.ByProjectID[mockProjectKey][templateID].ChannelID)
 			},
 		},
-		"Delete, no permission":             {method: http.MethodDelete, url: deleteURL, noPermission: true, expectedStatus: http.StatusForbidden},
-		"Delete, not a channel member":      {method: http.MethodDelete, url: deleteURL, notMember: true, expectedStatus: http.StatusForbidden},
-		"Delete, unknown template":          {method: http.MethodDelete, url: deleteURL, noStoredRecord: true, expectedStatus: http.StatusNotFound},
-		"Delete, without project key":       {method: http.MethodDelete, url: deleteURL, expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved(mockProjectKey)},
-		"Delete, query project key ignored": {method: http.MethodDelete, url: deleteURL + "project_key=other&", expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved(mockProjectKey)},
-		"Delete, multi-project template":    {method: http.MethodDelete, url: deleteURL, stored: &multiProjectTemplate, expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved("")},
+		"Edit, channel changed after check":   {method: http.MethodPut, url: templatesURL, body: body, movedAfterCheck: true, expectedStatus: http.StatusConflict},
+		"Delete, channel changed after check": {method: http.MethodDelete, url: deleteURL, movedAfterCheck: true, expectedStatus: http.StatusConflict},
+		"Delete, no permission":               {method: http.MethodDelete, url: deleteURL, noPermission: true, expectedStatus: http.StatusForbidden},
+		"Delete, not a channel member":        {method: http.MethodDelete, url: deleteURL, notMember: true, expectedStatus: http.StatusForbidden},
+		"Delete, unknown template":            {method: http.MethodDelete, url: deleteURL, noStoredRecord: true, expectedStatus: http.StatusNotFound},
+		"Delete, without project key":         {method: http.MethodDelete, url: deleteURL, expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved(mockProjectKey)},
+		"Delete, query project key ignored":   {method: http.MethodDelete, url: deleteURL + "project_key=other&", expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved(mockProjectKey)},
+		"Delete, multi-project template":      {method: http.MethodDelete, url: deleteURL, stored: &multiProjectTemplate, expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved("")},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
@@ -1732,7 +1735,18 @@ func TestSubscriptionTemplateAccessChecks(t *testing.T) {
 			}
 			existingBytes, err := json.Marshal(existing)
 			require.NoError(t, err)
-			api.On("KVGet", testTemplateKey).Return(existingBytes, nil)
+			if tc.movedAfterCheck {
+				moved := NewTemplates()
+				tpl := storedTemplate
+				tpl.ChannelID = otherChannelID
+				moved.Templates.add(mockProjectKey, &tpl)
+				movedBytes, marshalErr := json.Marshal(moved)
+				require.NoError(t, marshalErr)
+				api.On("KVGet", testTemplateKey).Return(existingBytes, nil).Once()
+				api.On("KVGet", testTemplateKey).Return(movedBytes, nil)
+			} else {
+				api.On("KVGet", testTemplateKey).Return(existingBytes, nil)
+			}
 
 			var savedBytes []byte
 			api.On("KVSetWithOptions", testTemplateKey, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
