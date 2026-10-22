@@ -1,0 +1,130 @@
+name: e2e
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  playwright:
+    name: playwright (${{ matrix.name }}, ${{ matrix.jira }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: min-server
+            image: mattermost/mattermost-enterprise-edition:release-12.0
+            jira: cloud
+          - name: master
+            image: mattermostdevelopment/mattermost-enterprise-edition:master
+            jira: cloud
+          - name: master
+            image: mattermostdevelopment/mattermost-enterprise-edition:master
+            jira: server
+    env:
+      CI: true
+      MM_IMAGE: ${{ matrix.image }}
+      JIRA_FLAVOR: ${{ matrix.jira }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            webapp/package-lock.json
+            e2e/playwright/package-lock.json
+
+      - name: Build E2E plugin bundle
+        run: make e2e-dist
+        env:
+          # Builds only for the runner's OS/arch.
+          MM_SERVICESETTINGS_ENABLEDEVELOPER: true
+
+      - name: Install e2e dependencies
+        working-directory: e2e/playwright
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Type-check e2e
+        working-directory: e2e/playwright
+        run: npm run tsc
+
+      - name: Start Mattermost
+        working-directory: e2e/playwright
+        run: docker compose up -d --wait
+
+      - name: Run Playwright
+        working-directory: e2e/playwright
+        run: npm run test:ci
+
+      - name: Collect server logs
+        if: failure()
+        working-directory: e2e/playwright
+        run: docker compose logs mattermost > playwright-report/mattermost.log 2>&1 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.name }}-${{ matrix.jira }}
+          path: e2e/playwright/playwright-report
+          retention-days: 14
+
+  contract-drift:
+    name: fake-jira contract drift
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Compare committed specs with Atlassian's published OpenAPI
+        working-directory: e2e/playwright
+        run: npm run contract:check
+
+  real-cloud-parity:
+    name: fake-jira parity with real Jira Cloud
+    if: github.event_name == 'schedule' && vars.JIRA_REAL_CLOUD_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: e2e/playwright/package-lock.json
+
+      - name: Install e2e dependencies
+        working-directory: e2e/playwright
+        run: npm ci
+
+      - name: Compare fake-jira responses with real Jira Cloud
+        working-directory: e2e/playwright
+        run: npm run test:real-cloud
+        env:
+          CI: true
+          JIRA_CLOUD_URL: ${{ secrets.JIRA_CLOUD_URL }}
+          JIRA_CLOUD_ADMIN_EMAIL: ${{ secrets.JIRA_CLOUD_ADMIN_EMAIL }}
+          JIRA_CLOUD_ADMIN_API_TOKEN: ${{ secrets.JIRA_CLOUD_ADMIN_API_TOKEN }}
+          JIRA_CLOUD_USER_EMAIL: ${{ secrets.JIRA_CLOUD_USER_EMAIL }}
+          JIRA_CLOUD_USER_API_TOKEN: ${{ secrets.JIRA_CLOUD_USER_API_TOKEN }}

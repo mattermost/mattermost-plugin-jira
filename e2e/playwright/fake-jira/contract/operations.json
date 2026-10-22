@@ -1,0 +1,14 @@
+{
+  "platform-v2": {
+    "url": "https://developer.atlassian.com/cloud/jira/platform/swagger.v3.json",
+    "operations": ["GET /rest/api/2/myself"]
+  },
+  "platform-v3": {
+    "url": "https://developer.atlassian.com/cloud/jira/platform/swagger-v3.v3.json",
+    "operations": ["GET /rest/api/3/myself"]
+  },
+  "software": {
+    "url": "https://developer.atlassian.com/cloud/jira/software/swagger.v3.json",
+    "operations": []
+  }
+}

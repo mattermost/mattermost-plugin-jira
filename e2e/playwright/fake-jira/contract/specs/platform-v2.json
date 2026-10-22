@@ -1,0 +1,349 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "The Jira Cloud platform REST API"
+  },
+  "paths": {
+    "/rest/api/2/myself": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "{\"accountId\":\"5b10a2844c20165700ede21g\",\"accountType\":\"atlassian\",\"active\":true,\"applicationRoles\":{\"items\":[],\"size\":1},\"avatarUrls\":{\"16x16\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=16&s=16\",\"24x24\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=24&s=24\",\"32x32\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=32&s=32\",\"48x48\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=48&s=48\"},\"displayName\":\"Mia Krystof\",\"emailAddress\":\"mia@example.com\",\"groups\":{\"items\":[],\"size\":3},\"key\":\"\",\"name\":\"\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\",\"timeZone\":\"Australia/Sydney\"}",
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "401": {
+            "description": "Returned if the authentication credentials are incorrect or missing."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApplicationRole": {
+        "additionalProperties": false,
+        "description": "Details of an application role.",
+        "properties": {
+          "defaultGroups": {
+            "description": "The groups that are granted default access for this application role. As a group's name can change, use of `defaultGroupsDetails` is recommended to identify a groups.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "defaultGroupsDetails": {
+            "description": "The groups that are granted default access for this application role.",
+            "items": {
+              "$ref": "#/components/schemas/GroupName"
+            },
+            "type": "array"
+          },
+          "defined": {
+            "description": "Deprecated.",
+            "type": "boolean"
+          },
+          "groupDetails": {
+            "description": "The groups associated with the application role.",
+            "items": {
+              "$ref": "#/components/schemas/GroupName"
+            },
+            "type": "array"
+          },
+          "groups": {
+            "description": "The groups associated with the application role. As a group's name can change, use of `groupDetails` is recommended to identify a groups.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "hasUnlimitedSeats": {
+            "type": "boolean"
+          },
+          "key": {
+            "description": "The key of the application role.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The display name of the application role.",
+            "type": "string"
+          },
+          "numberOfSeats": {
+            "description": "The maximum count of users on your license.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "platform": {
+            "description": "Indicates if the application role belongs to Jira platform (`jira-core`).",
+            "type": "boolean"
+          },
+          "remainingSeats": {
+            "description": "The count of users remaining on your license.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "selectedByDefault": {
+            "description": "Determines whether this application role should be selected by default on user creation.",
+            "type": "boolean"
+          },
+          "userCount": {
+            "description": "The number of users counting against your license.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "userCountDescription": {
+            "description": "The [type of users](https://confluence.atlassian.com/x/lRW3Ng) being counted against your license.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AvatarUrlsBean": {
+        "additionalProperties": false,
+        "properties": {
+          "16x16": {
+            "description": "The URL of the item's 16x16 pixel avatar.",
+            "format": "uri",
+            "type": "string"
+          },
+          "24x24": {
+            "description": "The URL of the item's 24x24 pixel avatar.",
+            "format": "uri",
+            "type": "string"
+          },
+          "32x32": {
+            "description": "The URL of the item's 32x32 pixel avatar.",
+            "format": "uri",
+            "type": "string"
+          },
+          "48x48": {
+            "description": "The URL of the item's 48x48 pixel avatar.",
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "GroupName": {
+        "additionalProperties": false,
+        "description": "Details about a group.",
+        "properties": {
+          "groupId": {
+            "description": "The ID of the group, which uniquely identifies the group across all Atlassian products. For example, *952d12c3-5b5b-4d04-bb32-44d383afc4b2*.",
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of group.",
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL for these group details.",
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ListWrapperCallbackApplicationRole": {
+        "additionalProperties": false,
+        "type": "object"
+      },
+      "ListWrapperCallbackGroupName": {
+        "additionalProperties": false,
+        "type": "object"
+      },
+      "SimpleListWrapperApplicationRole": {
+        "additionalProperties": false,
+        "properties": {
+          "callback": {
+            "$ref": "#/components/schemas/ListWrapperCallbackApplicationRole"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationRole"
+            },
+            "type": "array"
+          },
+          "max-results": {
+            "format": "int32",
+            "type": "integer",
+            "xml": {
+              "attribute": true,
+              "name": "max-results"
+            }
+          },
+          "pagingCallback": {
+            "$ref": "#/components/schemas/ListWrapperCallbackApplicationRole"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer",
+            "xml": {
+              "attribute": true
+            }
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "list"
+        }
+      },
+      "SimpleListWrapperGroupName": {
+        "additionalProperties": false,
+        "properties": {
+          "callback": {
+            "$ref": "#/components/schemas/ListWrapperCallbackGroupName"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GroupName"
+            },
+            "type": "array"
+          },
+          "max-results": {
+            "format": "int32",
+            "type": "integer",
+            "xml": {
+              "attribute": true,
+              "name": "max-results"
+            }
+          },
+          "pagingCallback": {
+            "$ref": "#/components/schemas/ListWrapperCallbackGroupName"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer",
+            "xml": {
+              "attribute": true
+            }
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "list"
+        }
+      },
+      "User": {
+        "additionalProperties": false,
+        "description": "A user with details as permitted by the user's Atlassian Account privacy settings. However, be aware of these exceptions:\n\n *  User record deleted from Atlassian: This occurs as the result of a right to be forgotten request. In this case, `displayName` provides an indication and other parameters have default values or are blank (for example, email is blank).\n *  User record corrupted: This occurs as a results of events such as a server import and can only happen to deleted users. In this case, `accountId` returns *unknown* and all other parameters have fallback values.\n *  User record unavailable: This usually occurs due to an internal service outage. In this case, all parameters have fallback values.",
+        "properties": {
+          "accountId": {
+            "description": "The account ID of the user, which uniquely identifies the user across all Atlassian products. For example, *5b10ac8d82e05b22cc7d4ef5*. Required in requests.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "accountType": {
+            "description": "The user account type. Can take the following values:\n\n *  `atlassian` regular Atlassian user account\n *  `app` system account used for Connect applications and OAuth to represent external systems\n *  `customer` Jira Service Desk account representing an external service desk",
+            "enum": [
+              "atlassian",
+              "app",
+              "customer",
+              "unknown"
+            ],
+            "readOnly": true,
+            "type": "string"
+          },
+          "active": {
+            "description": "Whether the user is active.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "appType": {
+            "description": "The app type of the user account when accountType is 'app'. Can take the following values:\n\n *  `service` Service Account\n *  `agent` Rovo Agent Account\n *  `unknown` Unknown app type",
+            "readOnly": true,
+            "type": "string"
+          },
+          "applicationRoles": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SimpleListWrapperApplicationRole"
+              }
+            ],
+            "description": "The application roles the user is assigned to.",
+            "readOnly": true
+          },
+          "avatarUrls": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarUrlsBean"
+              }
+            ],
+            "description": "The avatars of the user.",
+            "readOnly": true
+          },
+          "displayName": {
+            "description": "The display name of the user. Depending on the user’s privacy setting, this may return an alternative value.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "emailAddress": {
+            "description": "The email address of the user. Depending on the user’s privacy setting, this may be returned as null.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "expand": {
+            "description": "Expand options that include additional user details in the response.",
+            "readOnly": true,
+            "type": "string",
+            "xml": {
+              "attribute": true
+            }
+          },
+          "groups": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SimpleListWrapperGroupName"
+              }
+            ],
+            "description": "The groups that the user belongs to.",
+            "readOnly": true
+          },
+          "guest": {
+            "description": "Whether the user is a guest.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "key": {
+            "description": "This property is no longer available and will be removed from the documentation soon. See the [deprecation notice](https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-user-privacy-api-migration-guide/) for details.",
+            "type": "string"
+          },
+          "locale": {
+            "description": "The locale of the user. Depending on the user’s privacy setting, this may be returned as null.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "This property is no longer available and will be removed from the documentation soon. See the [deprecation notice](https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-user-privacy-api-migration-guide/) for details.",
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the user.",
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          },
+          "timeZone": {
+            "description": "The time zone specified in the user's profile. If the user's time zone is not visible to the current user (due to user's profile setting), or if a time zone has not been set, the instance's default time zone will be returned.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "user"
+        }
+      }
+    }
+  }
+}

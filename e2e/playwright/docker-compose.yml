@@ -1,0 +1,45 @@
+name: jira-plugin-e2e
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mmuser
+      POSTGRES_PASSWORD: mostest
+      POSTGRES_DB: mattermost_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mmuser -d mattermost_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  mattermost:
+    image: ${MM_IMAGE:-mattermostdevelopment/mattermost-enterprise-edition:master}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${MM_PORT:-8065}:8065"
+    extra_hosts:
+      - "fake-jira:host-gateway"
+      - "e2e.atlassian.net:host-gateway"
+    environment:
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SQLSETTINGS_DATASOURCE: postgres://mmuser:mostest@postgres:5432/mattermost_test?sslmode=disable&connect_timeout=10
+      # The plugin rejects "localhost" site URLs as unreachable from Jira.
+      MM_SERVICESETTINGS_SITEURL: http://127.0.0.1:${MM_PORT:-8065}
+      MM_SERVICESETTINGS_ENABLELOCALMODE: "true"
+      MM_PLUGINSETTINGS_ENABLE: "true"
+      MM_PLUGINSETTINGS_ENABLEUPLOADS: "true"
+      MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: "false"
+      MM_TEAMSETTINGS_ENABLEOPENSERVER: "true"
+      MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: "false"
+      MM_ANNOUNCEMENTSETTINGS_USERNOTICESENABLED: "false"
+      MM_LOGSETTINGS_CONSOLELEVEL: INFO
+    healthcheck:
+      test: ["CMD", "/mattermost/bin/mmctl", "--local", "system", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
