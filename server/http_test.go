@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -1091,18 +1092,18 @@ func TestDeleteSubscriptionTemplate(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 			apiCalls: checkNotSubscriptionTemplates([]SubscriptionTemplate{
 				{
-					ID:      "mockTemplateID1___________",
+					ID:      "mockTemplateID1aaaaaaaaaaa",
 					Filters: getMockSubscriptionFilter("jira:issue_created"),
 				},
 			},
 				withExistingChannelSubscriptionTemplates(
 					[]SubscriptionTemplate{
 						{
-							ID:      "mockTemplateID1___________",
+							ID:      "mockTemplateID1aaaaaaaaaaa",
 							Filters: getMockSubscriptionFilter("jira:issue_created"),
 						},
 						{
-							ID:      "mockTemplateID2___________",
+							ID:      "mockTemplateID2aaaaaaaaaaa",
 							Filters: getMockSubscriptionFilter("jira:issue_created"),
 						},
 					}), t),
@@ -1174,6 +1175,7 @@ func TestEditSubscriptionTemplate(t *testing.T) {
 				"instance_id": "https://jiraurl1.com",
 				"name": "mockName",
 				"id": "mockTemplateID1___________",
+				"channel_id": "mockChannelID_____________",
 				"filters": {
 				  "events": [
 					"jira:issue_created"
@@ -1333,7 +1335,7 @@ func TestCreateSubscriptionTemplate(t *testing.T) {
 	}{
 		"Invalid": {
 			subscriptionTemplate: "{}",
-			expectedStatusCode:   http.StatusInternalServerError,
+			expectedStatusCode:   http.StatusBadRequest,
 		},
 		"Not Authorized": {
 			subscriptionTemplate: "{}",
@@ -1541,7 +1543,7 @@ func TestGetSubscriptionTemplate(t *testing.T) {
 			p.instanceStore = p.getMockInstanceStoreKV(1)
 
 			w := httptest.NewRecorder()
-			request := httptest.NewRequest(http.MethodGet, "/api/v2/subscription-templates?instance_id="+testInstance1.GetID().String()+"&project_key=myproject", nil)
+			request := httptest.NewRequest(http.MethodGet, "/api/v2/subscription-templates?instance_id="+testInstance1.GetID().String()+"&project_key=myproject&channel_id="+mockChannelID, nil)
 			if !tc.skipAuthorize {
 				request.Header.Set(HeaderMattermostUserID, model.NewId())
 			}
@@ -1605,4 +1607,80 @@ func TestShareIssuePubliclyAuthentication(t *testing.T) {
 		p.ServeHTTP(&plugin.Context{}, w, req)
 		require.Equal(t, http.StatusUnauthorized, w.Result().StatusCode)
 	})
+}
+
+func TestSubscriptionTemplateAccessChecks(t *testing.T) {
+	const templateID = "mockTemplateID1aaaaaaaaaaa"
+	body := `{"instance_id": "https://jiraurl1.com", "id": "` + templateID + `", "name": "mockName", "channel_id": "` + mockChannelID + `", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`
+	otherChannelBody := strings.Replace(body, mockChannelID, "otherChannelID____________", 1)
+
+	for name, tc := range map[string]struct {
+		method          string
+		url             string
+		body            string
+		notMember       bool
+		noPermission    bool
+		noStoredRecord  bool
+		expectedStatus  int
+		blockedChannels []string
+	}{
+		"Get, missing channel":            {method: http.MethodGet, url: "/api/v2/subscription-templates?project_key=myproject&", expectedStatus: http.StatusBadRequest},
+		"Get, not a channel member":       {method: http.MethodGet, url: "/api/v2/subscription-templates?channel_id=" + mockChannelID + "&", notMember: true, expectedStatus: http.StatusForbidden},
+		"Get, no permission":              {method: http.MethodGet, url: "/api/v2/subscription-templates?channel_id=" + mockChannelID + "&", noPermission: true, expectedStatus: http.StatusForbidden},
+		"Create, not a channel member":    {method: http.MethodPost, url: "/api/v2/subscription-templates?", body: body, notMember: true, expectedStatus: http.StatusForbidden},
+		"Create, no permission":           {method: http.MethodPost, url: "/api/v2/subscription-templates?", body: body, noPermission: true, expectedStatus: http.StatusForbidden},
+		"Edit, no permission":             {method: http.MethodPut, url: "/api/v2/subscription-templates?", body: body, noPermission: true, expectedStatus: http.StatusForbidden},
+		"Edit, not a channel member":      {method: http.MethodPut, url: "/api/v2/subscription-templates?", body: body, notMember: true, expectedStatus: http.StatusForbidden},
+		"Edit, unknown template":          {method: http.MethodPut, url: "/api/v2/subscription-templates?", body: body, noStoredRecord: true, expectedStatus: http.StatusNotFound},
+		"Edit, target channel denied":     {method: http.MethodPut, url: "/api/v2/subscription-templates?", body: otherChannelBody, blockedChannels: []string{"otherChannelID____________"}, expectedStatus: http.StatusForbidden},
+		"Delete, no permission":           {method: http.MethodDelete, url: "/api/v2/subscription-templates/" + templateID + "?", noPermission: true, expectedStatus: http.StatusForbidden},
+		"Delete, not a channel member":    {method: http.MethodDelete, url: "/api/v2/subscription-templates/" + templateID + "?", notMember: true, expectedStatus: http.StatusForbidden},
+		"Delete, unknown template":        {method: http.MethodDelete, url: "/api/v2/subscription-templates/" + templateID + "?", noStoredRecord: true, expectedStatus: http.StatusNotFound},
+		"Delete, stored project key used": {method: http.MethodDelete, url: "/api/v2/subscription-templates/" + templateID + "?project_key=other&", expectedStatus: http.StatusOK},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			p := Plugin{}
+
+			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+			api.On("LogWarn", mockAnythingOfTypeBatch("string", 7)...).Return()
+			api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
+
+			for _, blocked := range tc.blockedChannels {
+				api.On("GetChannelMember", blocked, mock.Anything).Return(nil, &model.AppError{Message: "no"})
+			}
+			if tc.notMember {
+				api.On("GetChannelMember", mock.Anything, mock.Anything).Return(nil, &model.AppError{Message: "no"})
+			} else {
+				api.On("GetChannelMember", mock.Anything, mock.Anything).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			}
+			api.On("HasPermissionTo", mock.Anything, mock.Anything).Return(!tc.noPermission)
+			api.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.ChannelTypeOpen}, (*model.AppError)(nil))
+
+			templates := []SubscriptionTemplate{}
+			if !tc.noStoredRecord {
+				templates = append(templates, SubscriptionTemplate{ID: templateID, ChannelID: mockChannelID, Filters: getMockSubscriptionFilter("jira:issue_created")})
+			}
+			existing := withExistingChannelSubscriptionTemplates(templates)
+			existingBytes, err := json.Marshal(&existing)
+			assert.Nil(t, err)
+			api.On("KVGet", testTemplateKey).Return(existingBytes, nil)
+			api.On("KVSetWithOptions", mock.Anything, mock.Anything, mock.Anything).Return(true, nil).Maybe()
+
+			p.updateConfig(func(conf *config) { conf.Secret = someSecret })
+			p.initializeRouter()
+			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
+			p.userStore = mockUserStore{}
+			p.instanceStore = p.getMockInstanceStoreKV(1)
+
+			w := httptest.NewRecorder()
+			request := httptest.NewRequest(tc.method, tc.url+"instance_id="+testInstance1.GetID().String(), io.NopCloser(bytes.NewBufferString(tc.body)))
+			request.Header.Set(HeaderMattermostUserID, model.NewId())
+			p.ServeHTTP(&plugin.Context{}, w, request)
+
+			assert.Equal(t, tc.expectedStatus, w.Result().StatusCode)
+		})
+	}
 }

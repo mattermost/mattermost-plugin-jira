@@ -419,8 +419,33 @@ func (p *Plugin) getSubscriptionTemplatesByID(instanceID, templateID types.ID) (
 		return nil, err
 	}
 
-	sub := subs.Templates.ByID[string(templateID)]
+	sub, ok := subs.Templates.ByID[string(templateID)]
+	if !ok {
+		return nil, errTemplateNotFound
+	}
 	return &sub, nil
+}
+
+var errTemplateNotFound = errors.New("subscription template not found")
+
+func (p *Plugin) checkCanManageSubscriptionsInChannel(instanceID types.ID, userID, channelID string) (int, error) {
+	if len(channelID) != 26 {
+		return http.StatusBadRequest, errors.New("bad channel id")
+	}
+	if _, err := p.client.Channel.GetMember(channelID, userID); err != nil {
+		return http.StatusForbidden, errors.New("not a member of the channel specified")
+	}
+	if err := p.hasPermissionToManageSubscription(instanceID, userID, channelID); err != nil {
+		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
+	}
+	return http.StatusOK, nil
+}
+
+func (p *Plugin) loadTemplateStatus(err error) int {
+	if errors.Is(err, errTemplateNotFound) {
+		return http.StatusNotFound
+	}
+	return http.StatusInternalServerError
 }
 
 func (p *Plugin) getChannelSubscription(instanceID types.ID, subscriptionID string) (*ChannelSubscription, error) {
@@ -1513,11 +1538,14 @@ func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Requ
 }
 
 func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Request) (int, error) {
-	fmt.Print("/n httpGetSubscriptionTemplates")
 	mattermostUserID := r.Header.Get("Mattermost-User-Id")
 	instanceID := types.ID(r.FormValue(QueryParamInstanceID))
 	if len(instanceID) < 2 {
 		return respondErr(w, http.StatusBadRequest, errors.New("bad or missing instance id"))
+	}
+
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(instanceID, mattermostUserID, r.FormValue("channel_id")); permErr != nil {
+		return respondErr(w, status, permErr)
 	}
 
 	subscriptionTemplates, err := p.getSubscriptionTemplatesForInstance(instanceID)
@@ -1546,6 +1574,14 @@ func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Req
 			}
 		}
 	} else {
+		client, _, _, clientErr := p.getClient(instanceID, types.ID(mattermostUserID))
+		if clientErr != nil {
+			return respondErr(w, http.StatusInternalServerError, clientErr)
+		}
+		if _, projErr := client.GetProject(projectKey); projErr != nil {
+			return respondErr(w, http.StatusInternalServerError, errors.WithMessagef(projErr, "failed to get project %q", projectKey))
+		}
+
 		for _, subTemplate := range subscriptionTemplates.Templates.ByProjectID[projectKey] {
 			subTemplates = append(subTemplates, subTemplate)
 		}
@@ -1559,6 +1595,20 @@ func (p *Plugin) httpEditSubscriptionTemplates(w http.ResponseWriter, r *http.Re
 	subscriptionTemplate := SubscriptionTemplate{}
 	if err := json.NewDecoder(r.Body).Decode(&subscriptionTemplate); err != nil {
 		return respondErr(w, http.StatusBadRequest, errors.WithMessage(err, "failed to decode the incoming request"))
+	}
+
+	existing, err := p.getSubscriptionTemplatesByID(subscriptionTemplate.InstanceID, types.ID(subscriptionTemplate.ID))
+	if err != nil {
+		return respondErr(w, p.loadTemplateStatus(err), errors.Wrap(err, "unable to find the subscription template"))
+	}
+
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(subscriptionTemplate.InstanceID, mattermostUserID, existing.ChannelID); permErr != nil {
+		return respondErr(w, status, permErr)
+	}
+	if subscriptionTemplate.ChannelID != existing.ChannelID {
+		if status, permErr := p.checkCanManageSubscriptionsInChannel(subscriptionTemplate.InstanceID, mattermostUserID, subscriptionTemplate.ChannelID); permErr != nil {
+			return respondErr(w, status, permErr)
+		}
 	}
 
 	client, _, connection, err := p.getClient(subscriptionTemplate.InstanceID, types.ID(mattermostUserID))
@@ -1589,6 +1639,10 @@ func (p *Plugin) httpCreateSubscriptionTemplate(w http.ResponseWriter, r *http.R
 	subscriptionTemplate := SubscriptionTemplate{}
 	if err := json.NewDecoder(r.Body).Decode(&subscriptionTemplate); err != nil {
 		return respondErr(w, http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request"))
+	}
+
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(subscriptionTemplate.InstanceID, mattermostUserID, subscriptionTemplate.ChannelID); permErr != nil {
+		return respondErr(w, status, permErr)
 	}
 
 	client, _, connection, err := p.getClient(subscriptionTemplate.InstanceID, types.ID(mattermostUserID))
@@ -1628,14 +1682,18 @@ func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.R
 		return respondErr(w, http.StatusBadRequest, errors.New("bad or missing instance id"))
 	}
 
-	projectKey := r.FormValue(QueryParamProjectKey)
-	if projectKey == "" {
-		return respondErr(w, http.StatusBadRequest, errors.New("missing project key"))
-	}
-
 	subscriptionTemplate, err := p.getSubscriptionTemplatesByID(instanceID, types.ID(subscriptionTemplateID))
 	if err != nil {
-		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to find the subscription template"))
+		return respondErr(w, p.loadTemplateStatus(err), errors.Wrap(err, "unable to find the subscription template"))
+	}
+
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(instanceID, mattermostUserID, subscriptionTemplate.ChannelID); permErr != nil {
+		return respondErr(w, status, permErr)
+	}
+
+	projectKey := ""
+	if subscriptionTemplate.Filters != nil && subscriptionTemplate.Filters.Projects.Len() == 1 {
+		projectKey = subscriptionTemplate.Filters.Projects.Elems()[0]
 	}
 
 	_, _, connection, err := p.getClient(instanceID, types.ID(mattermostUserID))
@@ -1644,7 +1702,7 @@ func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.R
 	}
 
 	if rErr := p.removeSubscriptionTemplate(instanceID, subscriptionTemplateID, projectKey); rErr != nil {
-		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to remove channel subscription template"))
+		return respondErr(w, http.StatusInternalServerError, errors.Wrap(rErr, "unable to remove channel subscription template"))
 	}
 
 	_ = p.API.SendEphemeralPost(mattermostUserID, &model.Post{
