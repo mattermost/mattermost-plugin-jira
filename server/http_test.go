@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -1610,33 +1609,89 @@ func TestShareIssuePubliclyAuthentication(t *testing.T) {
 }
 
 func TestSubscriptionTemplateAccessChecks(t *testing.T) {
-	const templateID = "mockTemplateID1aaaaaaaaaaa"
-	body := `{"instance_id": "https://jiraurl1.com", "id": "` + templateID + `", "name": "mockName", "channel_id": "` + mockChannelID + `", "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`
-	otherChannelBody := strings.Replace(body, mockChannelID, "otherChannelID____________", 1)
+	const (
+		templateID     = "mockTemplateID1aaaaaaaaaaa"
+		otherChannelID = "otherChannelID____________"
+	)
+	templateBody := func(id, channelID string) string {
+		return fmt.Sprintf(`{"instance_id": "https://jiraurl1.com", "id": %q, "name": "mockName", "channel_id": %q, "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`, id, channelID)
+	}
+	body := templateBody(templateID, mockChannelID)
+	templatesURL := "/api/v2/subscription-templates?"
+	getURL := templatesURL + "channel_id=" + mockChannelID + "&"
+	deleteURL := "/api/v2/subscription-templates/" + templateID + "?"
+
+	storedTemplate := SubscriptionTemplate{ID: templateID, ChannelID: mockChannelID, Filters: getMockSubscriptionFilter("jira:issue_created")}
+	multiProjectTemplate := SubscriptionTemplate{
+		ID:        templateID,
+		ChannelID: mockChannelID,
+		Filters: &SubscriptionFilters{
+			Events:     NewStringSet("jira:issue_created"),
+			Projects:   NewStringSet("myproject", "otherproject"),
+			IssueTypes: NewStringSet("10001"),
+		},
+	}
+
+	assertTemplateRemoved := func(projectKey string) func(*testing.T, *Templates) {
+		return func(t *testing.T, saved *Templates) {
+			assert.NotContains(t, saved.Templates.ByID, templateID)
+			assert.NotContains(t, saved.Templates.ByProjectID[projectKey], templateID)
+		}
+	}
 
 	for name, tc := range map[string]struct {
 		method          string
 		url             string
 		body            string
+		roles           string
+		channelType     model.ChannelType
 		notMember       bool
 		noPermission    bool
+		blockedChannels []string
+		stored          *SubscriptionTemplate
 		noStoredRecord  bool
 		expectedStatus  int
-		blockedChannels []string
+		checkSaved      func(*testing.T, *Templates)
 	}{
-		"Get, missing channel":            {method: http.MethodGet, url: "/api/v2/subscription-templates?project_key=myproject&", expectedStatus: http.StatusBadRequest},
-		"Get, not a channel member":       {method: http.MethodGet, url: "/api/v2/subscription-templates?channel_id=" + mockChannelID + "&", notMember: true, expectedStatus: http.StatusForbidden},
-		"Get, no permission":              {method: http.MethodGet, url: "/api/v2/subscription-templates?channel_id=" + mockChannelID + "&", noPermission: true, expectedStatus: http.StatusForbidden},
-		"Create, not a channel member":    {method: http.MethodPost, url: "/api/v2/subscription-templates?", body: body, notMember: true, expectedStatus: http.StatusForbidden},
-		"Create, no permission":           {method: http.MethodPost, url: "/api/v2/subscription-templates?", body: body, noPermission: true, expectedStatus: http.StatusForbidden},
-		"Edit, no permission":             {method: http.MethodPut, url: "/api/v2/subscription-templates?", body: body, noPermission: true, expectedStatus: http.StatusForbidden},
-		"Edit, not a channel member":      {method: http.MethodPut, url: "/api/v2/subscription-templates?", body: body, notMember: true, expectedStatus: http.StatusForbidden},
-		"Edit, unknown template":          {method: http.MethodPut, url: "/api/v2/subscription-templates?", body: body, noStoredRecord: true, expectedStatus: http.StatusNotFound},
-		"Edit, target channel denied":     {method: http.MethodPut, url: "/api/v2/subscription-templates?", body: otherChannelBody, blockedChannels: []string{"otherChannelID____________"}, expectedStatus: http.StatusForbidden},
-		"Delete, no permission":           {method: http.MethodDelete, url: "/api/v2/subscription-templates/" + templateID + "?", noPermission: true, expectedStatus: http.StatusForbidden},
-		"Delete, not a channel member":    {method: http.MethodDelete, url: "/api/v2/subscription-templates/" + templateID + "?", notMember: true, expectedStatus: http.StatusForbidden},
-		"Delete, unknown template":        {method: http.MethodDelete, url: "/api/v2/subscription-templates/" + templateID + "?", noStoredRecord: true, expectedStatus: http.StatusNotFound},
-		"Delete, stored project key used": {method: http.MethodDelete, url: "/api/v2/subscription-templates/" + templateID + "?project_key=other&", expectedStatus: http.StatusOK},
+		"Get, missing channel":            {method: http.MethodGet, url: templatesURL + "project_key=myproject&", expectedStatus: http.StatusBadRequest},
+		"Get, malformed channel":          {method: http.MethodGet, url: templatesURL + "channel_id=short&project_key=myproject&", expectedStatus: http.StatusBadRequest},
+		"Get, not a channel member":       {method: http.MethodGet, url: getURL, notMember: true, expectedStatus: http.StatusForbidden},
+		"Get, no permission":              {method: http.MethodGet, url: getURL, noPermission: true, expectedStatus: http.StatusForbidden},
+		"Get, project not visible":        {method: http.MethodGet, url: getURL + "project_key=" + nonExistantProjectKey + "&", expectedStatus: http.StatusInternalServerError},
+		"Create, missing channel":         {method: http.MethodPost, url: templatesURL, body: templateBody("", ""), expectedStatus: http.StatusBadRequest},
+		"Create, not a channel member":    {method: http.MethodPost, url: templatesURL, body: body, notMember: true, expectedStatus: http.StatusForbidden},
+		"Create, no permission":           {method: http.MethodPost, url: templatesURL, body: body, noPermission: true, expectedStatus: http.StatusForbidden},
+		"Create, channel admin policy DM": {method: http.MethodPost, url: templatesURL, body: body, roles: "channel_admin", channelType: model.ChannelTypeDirect, expectedStatus: http.StatusForbidden},
+		"Create, users policy": {
+			method: http.MethodPost, url: templatesURL, body: templateBody("", mockChannelID), roles: "users", noPermission: true, noStoredRecord: true, expectedStatus: http.StatusOK,
+			checkSaved: func(t *testing.T, saved *Templates) {
+				require.Len(t, saved.Templates.ByID, 1)
+				for _, tpl := range saved.Templates.ByID {
+					assert.Equal(t, mockChannelID, tpl.ChannelID)
+				}
+			},
+		},
+		"Edit, no permission":            {method: http.MethodPut, url: templatesURL, body: body, noPermission: true, expectedStatus: http.StatusForbidden},
+		"Edit, not a channel member":     {method: http.MethodPut, url: templatesURL, body: body, notMember: true, expectedStatus: http.StatusForbidden},
+		"Edit, unknown template":         {method: http.MethodPut, url: templatesURL, body: body, noStoredRecord: true, expectedStatus: http.StatusNotFound},
+		"Edit, missing template id":      {method: http.MethodPut, url: templatesURL, body: templateBody("", mockChannelID), expectedStatus: http.StatusNotFound},
+		"Edit, stored channel denied":    {method: http.MethodPut, url: templatesURL, body: templateBody(templateID, otherChannelID), blockedChannels: []string{mockChannelID}, expectedStatus: http.StatusForbidden},
+		"Edit, target channel denied":    {method: http.MethodPut, url: templatesURL, body: templateBody(templateID, otherChannelID), blockedChannels: []string{otherChannelID}, expectedStatus: http.StatusForbidden},
+		"Edit, malformed target channel": {method: http.MethodPut, url: templatesURL, body: templateBody(templateID, "short"), expectedStatus: http.StatusBadRequest},
+		"Edit, move to permitted channel": {
+			method: http.MethodPut, url: templatesURL, body: templateBody(templateID, otherChannelID), expectedStatus: http.StatusOK,
+			checkSaved: func(t *testing.T, saved *Templates) {
+				assert.Equal(t, otherChannelID, saved.Templates.ByID[templateID].ChannelID)
+				require.Contains(t, saved.Templates.ByProjectID[mockProjectKey], templateID)
+				assert.Equal(t, otherChannelID, saved.Templates.ByProjectID[mockProjectKey][templateID].ChannelID)
+			},
+		},
+		"Delete, no permission":             {method: http.MethodDelete, url: deleteURL, noPermission: true, expectedStatus: http.StatusForbidden},
+		"Delete, not a channel member":      {method: http.MethodDelete, url: deleteURL, notMember: true, expectedStatus: http.StatusForbidden},
+		"Delete, unknown template":          {method: http.MethodDelete, url: deleteURL, noStoredRecord: true, expectedStatus: http.StatusNotFound},
+		"Delete, without project key":       {method: http.MethodDelete, url: deleteURL, expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved(mockProjectKey)},
+		"Delete, query project key ignored": {method: http.MethodDelete, url: deleteURL + "project_key=other&", expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved(mockProjectKey)},
+		"Delete, multi-project template":    {method: http.MethodDelete, url: deleteURL, stored: &multiProjectTemplate, expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved("")},
 	} {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
@@ -1656,19 +1711,41 @@ func TestSubscriptionTemplateAccessChecks(t *testing.T) {
 				api.On("GetChannelMember", mock.Anything, mock.Anything).Return(&model.ChannelMember{}, (*model.AppError)(nil))
 			}
 			api.On("HasPermissionTo", mock.Anything, mock.Anything).Return(!tc.noPermission)
-			api.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.ChannelTypeOpen}, (*model.AppError)(nil))
-
-			templates := []SubscriptionTemplate{}
-			if !tc.noStoredRecord {
-				templates = append(templates, SubscriptionTemplate{ID: templateID, ChannelID: mockChannelID, Filters: getMockSubscriptionFilter("jira:issue_created")})
+			api.On("HasPermissionToChannel", mock.Anything, mock.Anything, mock.Anything).Return(!tc.noPermission)
+			channelType := tc.channelType
+			if channelType == "" {
+				channelType = model.ChannelTypeOpen
 			}
-			existing := withExistingChannelSubscriptionTemplates(templates)
-			existingBytes, err := json.Marshal(&existing)
-			assert.Nil(t, err)
-			api.On("KVGet", testTemplateKey).Return(existingBytes, nil)
-			api.On("KVSetWithOptions", mock.Anything, mock.Anything, mock.Anything).Return(true, nil).Maybe()
+			api.On("GetChannel", mock.Anything).Return(&model.Channel{Type: channelType}, (*model.AppError)(nil))
 
-			p.updateConfig(func(conf *config) { conf.Secret = someSecret })
+			existing := NewTemplates()
+			if !tc.noStoredRecord {
+				tpl := storedTemplate
+				if tc.stored != nil {
+					tpl = *tc.stored
+				}
+				projectKey := ""
+				if tpl.Filters.Projects.Len() == 1 {
+					projectKey = tpl.Filters.Projects.Elems()[0]
+				}
+				existing.Templates.add(projectKey, &tpl)
+			}
+			existingBytes, err := json.Marshal(existing)
+			require.NoError(t, err)
+			api.On("KVGet", testTemplateKey).Return(existingBytes, nil)
+
+			var savedBytes []byte
+			api.On("KVSetWithOptions", testTemplateKey, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+				savedBytes = args.Get(1).([]byte)
+			}).Return(true, nil).Maybe()
+			api.On("KVCompareAndSet", testTemplateKey, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+				savedBytes = args.Get(2).([]byte)
+			}).Return(true, nil).Maybe()
+
+			p.updateConfig(func(conf *config) {
+				conf.Secret = someSecret
+				conf.RolesAllowedToEditJiraSubscriptions = tc.roles
+			})
 			p.initializeRouter()
 			p.SetAPI(api)
 			p.client = pluginapi.NewClient(api, p.Driver)
@@ -1681,6 +1758,17 @@ func TestSubscriptionTemplateAccessChecks(t *testing.T) {
 			p.ServeHTTP(&plugin.Context{}, w, request)
 
 			assert.Equal(t, tc.expectedStatus, w.Result().StatusCode)
+
+			if tc.checkSaved == nil {
+				if tc.expectedStatus != http.StatusOK {
+					assert.Nil(t, savedBytes, "templates must not be written when the request is rejected")
+				}
+				return
+			}
+			require.NotNil(t, savedBytes, "expected templates to be written")
+			saved, err := SubscriptionTemplatesFromJSON(savedBytes)
+			require.NoError(t, err)
+			tc.checkSaved(t, saved)
 		})
 	}
 }
