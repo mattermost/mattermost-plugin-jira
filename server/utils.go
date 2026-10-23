@@ -282,10 +282,47 @@ func getS256PKCEParams() (*PKCEParams, error) {
 	}, nil
 }
 
-func (p *Plugin) SetAdminAPITokenRequestHeader(req *http.Request) error {
+// doAdminAPITokenRequest sends req authenticated with the Admin API Token
+// configured in plugin settings. Jira Cloud expects HTTP Basic auth with the
+// account email and API token:
+// https://developer.atlassian.com/cloud/jira/platform/basic-auth-for-rest-apis/
+// Jira Server/Data Center personal access tokens must be sent as a Bearer
+// token instead; Basic auth would be interpreted as a username/password login
+// attempt, which fails (and can trigger account lockouts) with a PAT:
+// https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html
+// Server/DC installs configured with a username and password (e.g. Jira
+// Server before 8.14, which has no PATs) get a 401 for the Bearer request,
+// so it's retried with Basic auth when an admin username is set. If that retry
+// is also rejected, retries stop until the plugin configuration changes.
+func (p *Plugin) doAdminAPITokenRequest(client *http.Client, req *http.Request, instance Instance) (*http.Response, error) {
+	isCloud := instance.Common().IsCloudInstance()
+	if err := p.setAdminAPITokenRequestHeader(req, isCloud); err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil || isCloud || resp.StatusCode != http.StatusUnauthorized ||
+		p.getConfig().AdminEmail == "" || p.adminBasicFallbackFailed.Load() {
+		return resp, err
+	}
+	resp.Body.Close()
+
+	if err = p.setAdminAPITokenRequestHeader(req, true); err != nil {
+		return nil, err
+	}
+	resp, err = client.Do(req)
+	if err == nil && resp.StatusCode == http.StatusUnauthorized && p.adminBasicFallbackFailed.CompareAndSwap(false, true) {
+		p.client.Log.Warn("Admin API Token was rejected as both a Bearer token and a Basic auth password; "+
+			"Basic auth retries are disabled until the plugin configuration is saved again",
+			"seraphLoginReason", resp.Header.Get("X-Seraph-LoginReason"))
+	}
+	return resp, err
+}
+
+func (p *Plugin) setAdminAPITokenRequestHeader(req *http.Request, useBasicAuth bool) error {
 	cfg := p.getConfig()
-	if cfg.AdminEmail == "" {
-		return errors.New("admin email/username is empty in plugin config")
+	if useBasicAuth && cfg.AdminEmail == "" {
+		return errors.New("admin email is empty in plugin config (required for Jira Cloud)")
 	}
 	if cfg.AdminAPIToken == "" {
 		return errors.New("admin API token is empty in plugin config")
@@ -305,8 +342,12 @@ func (p *Plugin) SetAdminAPITokenRequestHeader(req *http.Request) error {
 		return errors.New("decrypted admin API token is empty; re-save the Admin API Token in System Console")
 	}
 
-	encodedAuth := base64.StdEncoding.EncodeToString([]byte(cfg.AdminEmail + ":" + adminAPIToken))
-	req.Header.Set("Authorization", "Basic "+encodedAuth)
+	if useBasicAuth {
+		encodedAuth := base64.StdEncoding.EncodeToString([]byte(cfg.AdminEmail + ":" + adminAPIToken))
+		req.Header.Set("Authorization", "Basic "+encodedAuth)
+	} else {
+		req.Header.Set("Authorization", "Bearer "+adminAPIToken)
+	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Mattermost-Plugin-Jira/"+manifest.Version)
 

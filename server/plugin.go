@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	textTemplate "text/template"
 
 	"github.com/andygrunwald/go-jira"
@@ -170,6 +171,10 @@ type Plugin struct {
 
 	teamFieldCache     map[types.ID]map[string]struct{}
 	teamFieldCacheLock sync.RWMutex
+
+	// Set when the Server/DC Basic auth retry of the Admin API Token is also
+	// rejected, so a bad credential doesn't add a failed login on every request.
+	adminBasicFallbackFailed atomic.Bool
 }
 
 func (p *Plugin) getConfig() config {
@@ -203,6 +208,7 @@ func (p *Plugin) OnConfigurationChange() error {
 	if err != nil {
 		return errors.WithMessage(err, "failed to load plugin configuration")
 	}
+	p.adminBasicFallbackFailed.Store(false)
 
 	ec.MaxAttachmentSize = strings.TrimSpace(ec.MaxAttachmentSize)
 	maxAttachmentSize := defaultMaxAttachmentSize
@@ -462,15 +468,16 @@ func (p *Plugin) SetupAutolink(instances *Instances) {
 			continue
 		}
 
-		if p.getConfig().AdminAPIToken == "" || p.getConfig().AdminEmail == "" {
-			p.client.Log.Info("unable to setup autolink due to missing API Token or Admin Email")
-			continue
-		}
-
 		switch instance.(type) {
 		case *cloudInstance, *cloudOAuthInstance:
 		default:
 			p.client.Log.Info("only cloud and cloud-oauth instances supported for autolink")
+			continue
+		}
+
+		// Cloud instances require both the token and admin email for Basic auth.
+		if p.getConfig().AdminAPIToken == "" || p.getConfig().AdminEmail == "" {
+			p.client.Log.Info("unable to setup autolink due to missing API Token or Admin Email")
 			continue
 		}
 
@@ -495,7 +502,7 @@ func (p *Plugin) SetupAutolink(instances *Instances) {
 }
 
 func (p *Plugin) AddAutolinksForCloudInstance(instance Instance) error {
-	plist, err := p.GetProjectListWithAPIToken(instance.GetID().String())
+	plist, err := p.GetProjectListWithAPIToken(instance)
 	if err != nil {
 		return fmt.Errorf("error getting project list: %w", err)
 	}

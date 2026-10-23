@@ -26,16 +26,26 @@ const missingAPITokenNotice = ":information_source: **Jira Cloud %s: set an Admi
 	"Atlassian API tokens expire after at most one year, so renew it before then."
 
 func (p *Plugin) notifyAdminsIfAPITokenMissing(instance Instance) {
-	if p.hasAdminAPIToken() {
+	if p.hasAdminAPIToken(instance) {
 		return
 	}
 	p.notifyAdminsOnce(adminNoticeMissingAPIToken, instance.GetID(),
 		fmt.Sprintf(missingAPITokenNotice, instance.GetJiraBaseURL()))
 }
 
-func (p *Plugin) hasAdminAPIToken() bool {
+// hasAdminAPIToken reports whether the plugin is configured with enough
+// Admin API Token settings to authenticate against instance. Jira Cloud
+// requires both the token and the admin email (used for Basic auth); Jira
+// Server/Data Center only requires the token, since it's sent as a Bearer PAT.
+func (p *Plugin) hasAdminAPIToken(instance Instance) bool {
 	conf := p.getConfig()
-	return conf.AdminAPIToken != "" && conf.AdminEmail != ""
+	if conf.AdminAPIToken == "" {
+		return false
+	}
+	if instance.Common().IsCloudInstance() {
+		return conf.AdminEmail != ""
+	}
+	return true
 }
 
 func (p *Plugin) notifyAdminsOnce(notice string, instanceID types.ID, message string) {
