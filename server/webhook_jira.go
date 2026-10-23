@@ -72,8 +72,8 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 				// User is not connected, so we try to fall back to JWT bot
 				if instance.JWTInstance == nil {
 					// Using API token to fetch the issue details as users were not getting notified for the events triggered by a non connected user i.e. oauth token is absent
-					if p.getConfig().AdminAPIToken != "" {
-						issue, apiTokenErr := p.GetIssueDataWithAPIToken(jwh.Issue.Key, instance.GetID().String())
+					if p.hasAdminAPIToken(instance) {
+						issue, apiTokenErr := p.GetIssueDataWithAPIToken(jwh.Issue.Key, instance)
 						if apiTokenErr != nil {
 							return apiTokenErr
 						}
