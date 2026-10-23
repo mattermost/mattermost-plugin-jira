@@ -1117,6 +1117,7 @@ func TestDeleteSubscriptionTemplate(t *testing.T) {
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 11)...).Return()
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 7)...).Return()
 			api.On("GetChannelMember", mockAnythingOfTypeBatch("string", 2)...).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.ChannelTypeOpen}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 			api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 
@@ -1298,6 +1299,7 @@ func TestEditSubscriptionTemplate(t *testing.T) {
 			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 7)...).Return()
 			api.On("GetChannelMember", mockAnythingOfTypeBatch("string", 2)...).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.ChannelTypeOpen}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 			api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 
@@ -1439,6 +1441,7 @@ func TestCreateSubscriptionTemplate(t *testing.T) {
 			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 			api.On("LogWarn", mockAnythingOfTypeBatch("string", 7)...).Return()
 			api.On("GetChannelMember", mockAnythingOfTypeBatch("string", 2)...).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.ChannelTypeOpen}, (*model.AppError)(nil))
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{}, nil)
 			api.On("SendEphemeralPost", mock.Anything, mock.Anything).Return(nil)
 
@@ -1474,6 +1477,8 @@ func TestGetSubscriptionTemplate(t *testing.T) {
 		skipAuthorize                 bool
 		apiCalls                      func(*plugintest.API)
 		returnedSubscriptionTemplates []SubscriptionTemplate
+		unreadableChannelID           string
+		missingChannelID              string
 	}{
 		"Not Authorized": {
 			expectedStatusCode: http.StatusUnauthorized,
@@ -1492,6 +1497,34 @@ func TestGetSubscriptionTemplate(t *testing.T) {
 					{
 						ID:      "mockTemplateID1___________",
 						Filters: getMockSubscriptionFilter("jira:issue_created"),
+					},
+				}, t),
+		},
+		"Templates in unreadable or missing channels are excluded": {
+			expectedStatusCode:  http.StatusOK,
+			unreadableChannelID: "privateChannelID__________",
+			missingChannelID:    "missingChannelID__________",
+			returnedSubscriptionTemplates: []SubscriptionTemplate{
+				{
+					ID:      "mockTemplateID1___________",
+					Filters: getMockSubscriptionFilter("jira:issue_created"),
+				},
+			},
+			apiCalls: hasSubscriptionTemplates(
+				[]SubscriptionTemplate{
+					{
+						ID:      "mockTemplateID1___________",
+						Filters: getMockSubscriptionFilter("jira:issue_created"),
+					},
+					{
+						ID:        "mockTemplateID2___________",
+						ChannelID: "privateChannelID__________",
+						Filters:   getMockSubscriptionFilter("jira:issue_created"),
+					},
+					{
+						ID:        "mockTemplateID3___________",
+						ChannelID: "missingChannelID__________",
+						Filters:   getMockSubscriptionFilter("jira:issue_created"),
 					},
 				}, t),
 		},
@@ -1527,6 +1560,17 @@ func TestGetSubscriptionTemplate(t *testing.T) {
 			api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
 			api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
 			api.On("GetChannelMember", mockAnythingOfTypeBatch("string", 2)...).Return(&model.ChannelMember{}, (*model.AppError)(nil))
+			api.On("GetChannel", mockChannelID).Return(&model.Channel{Type: model.ChannelTypeOpen}, (*model.AppError)(nil))
+
+			if tc.unreadableChannelID != "" {
+				api.On("GetChannel", tc.unreadableChannelID).Return(&model.Channel{Type: model.ChannelTypePrivate}, (*model.AppError)(nil))
+				api.On("HasPermissionToChannel", mock.Anything, tc.unreadableChannelID, mock.Anything).Return(false)
+			}
+			if tc.missingChannelID != "" {
+				api.On("GetChannel", tc.missingChannelID).Return(nil, &model.AppError{Message: "not found"})
+			}
+			api.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.ChannelTypeOpen}, (*model.AppError)(nil))
+			api.On("HasPermissionToChannel", mock.Anything, mock.Anything, mock.Anything).Return(true)
 
 			if tc.apiCalls != nil {
 				tc.apiCalls(api)
@@ -1608,94 +1652,43 @@ func TestShareIssuePubliclyAuthentication(t *testing.T) {
 	})
 }
 
-func TestSubscriptionTemplateAccessChecks(t *testing.T) {
-	const (
-		templateID     = "mockTemplateID1aaaaaaaaaaa"
-		otherChannelID = "otherChannelID____________"
-	)
-	templateBody := func(id, channelID string) string {
-		return fmt.Sprintf(`{"instance_id": "https://jiraurl1.com", "id": %q, "name": "mockName", "channel_id": %q, "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`, id, channelID)
-	}
-	body := templateBody(templateID, mockChannelID)
-	templatesURL := "/api/v2/subscription-templates?"
-	getURL := templatesURL + "channel_id=" + mockChannelID + "&"
-	deleteURL := "/api/v2/subscription-templates/" + templateID + "?"
+const (
+	accessTemplateID = "mockTemplateID1aaaaaaaaaaa"
+	otherChannelID   = "otherChannelID____________"
+)
 
-	storedTemplate := SubscriptionTemplate{ID: templateID, ChannelID: mockChannelID, Filters: getMockSubscriptionFilter("jira:issue_created")}
-	multiProjectTemplate := SubscriptionTemplate{
-		ID:        templateID,
-		ChannelID: mockChannelID,
-		Filters: &SubscriptionFilters{
-			Events:     NewStringSet("jira:issue_created"),
-			Projects:   NewStringSet("myproject", "otherproject"),
-			IssueTypes: NewStringSet("10001"),
-		},
-	}
+type templateAccessCase struct {
+	method          string
+	url             string
+	body            string
+	roles           string
+	channelType     model.ChannelType
+	dmChannels      []string
+	notMember       bool
+	noPermission    bool
+	blockedChannels []string
+	stored          *SubscriptionTemplate
+	noStoredRecord  bool
+	movedAfterCheck bool
+	expectedStatus  int
+	checkSaved      func(*testing.T, *Templates)
+}
 
-	assertTemplateRemoved := func(projectKey string) func(*testing.T, *Templates) {
-		return func(t *testing.T, saved *Templates) {
-			assert.NotContains(t, saved.Templates.ByID, templateID)
-			assert.NotContains(t, saved.Templates.ByProjectID[projectKey], templateID)
-		}
-	}
+func accessTemplateBody(id, channelID string) string {
+	return fmt.Sprintf(`{"instance_id": "https://jiraurl1.com", "id": %q, "name": "mockName", "channel_id": %q, "filters": {"events": ["jira:issue_created"], "projects": ["myproject"], "issue_types": ["10001"]}}`, id, channelID)
+}
 
-	for name, tc := range map[string]struct {
-		method          string
-		url             string
-		body            string
-		roles           string
-		channelType     model.ChannelType
-		notMember       bool
-		noPermission    bool
-		blockedChannels []string
-		stored          *SubscriptionTemplate
-		noStoredRecord  bool
-		movedAfterCheck bool
-		expectedStatus  int
-		checkSaved      func(*testing.T, *Templates)
-	}{
-		"Get, missing channel":            {method: http.MethodGet, url: templatesURL + "project_key=myproject&", expectedStatus: http.StatusBadRequest},
-		"Get, malformed channel":          {method: http.MethodGet, url: templatesURL + "channel_id=short&project_key=myproject&", expectedStatus: http.StatusBadRequest},
-		"Get, not a channel member":       {method: http.MethodGet, url: getURL, notMember: true, expectedStatus: http.StatusForbidden},
-		"Get, no permission":              {method: http.MethodGet, url: getURL, noPermission: true, expectedStatus: http.StatusForbidden},
-		"Get, project not visible":        {method: http.MethodGet, url: getURL + "project_key=" + nonExistantProjectKey + "&", expectedStatus: http.StatusInternalServerError},
-		"Create, missing channel":         {method: http.MethodPost, url: templatesURL, body: templateBody("", ""), expectedStatus: http.StatusBadRequest},
-		"Create, not a channel member":    {method: http.MethodPost, url: templatesURL, body: body, notMember: true, expectedStatus: http.StatusForbidden},
-		"Create, no permission":           {method: http.MethodPost, url: templatesURL, body: body, noPermission: true, expectedStatus: http.StatusForbidden},
-		"Create, channel admin policy DM": {method: http.MethodPost, url: templatesURL, body: body, roles: "channel_admin", channelType: model.ChannelTypeDirect, expectedStatus: http.StatusForbidden},
-		"Create, users policy": {
-			method: http.MethodPost, url: templatesURL, body: templateBody("", mockChannelID), roles: "users", noPermission: true, noStoredRecord: true, expectedStatus: http.StatusOK,
-			checkSaved: func(t *testing.T, saved *Templates) {
-				require.Len(t, saved.Templates.ByID, 1)
-				for _, tpl := range saved.Templates.ByID {
-					assert.Equal(t, mockChannelID, tpl.ChannelID)
-				}
-			},
-		},
-		"Edit, no permission":            {method: http.MethodPut, url: templatesURL, body: body, noPermission: true, expectedStatus: http.StatusForbidden},
-		"Edit, not a channel member":     {method: http.MethodPut, url: templatesURL, body: body, notMember: true, expectedStatus: http.StatusForbidden},
-		"Edit, unknown template":         {method: http.MethodPut, url: templatesURL, body: body, noStoredRecord: true, expectedStatus: http.StatusNotFound},
-		"Edit, missing template id":      {method: http.MethodPut, url: templatesURL, body: templateBody("", mockChannelID), expectedStatus: http.StatusNotFound},
-		"Edit, stored channel denied":    {method: http.MethodPut, url: templatesURL, body: templateBody(templateID, otherChannelID), blockedChannels: []string{mockChannelID}, expectedStatus: http.StatusForbidden},
-		"Edit, target channel denied":    {method: http.MethodPut, url: templatesURL, body: templateBody(templateID, otherChannelID), blockedChannels: []string{otherChannelID}, expectedStatus: http.StatusForbidden},
-		"Edit, malformed target channel": {method: http.MethodPut, url: templatesURL, body: templateBody(templateID, "short"), expectedStatus: http.StatusBadRequest},
-		"Edit, move to permitted channel": {
-			method: http.MethodPut, url: templatesURL, body: templateBody(templateID, otherChannelID), expectedStatus: http.StatusOK,
-			checkSaved: func(t *testing.T, saved *Templates) {
-				assert.Equal(t, otherChannelID, saved.Templates.ByID[templateID].ChannelID)
-				require.Contains(t, saved.Templates.ByProjectID[mockProjectKey], templateID)
-				assert.Equal(t, otherChannelID, saved.Templates.ByProjectID[mockProjectKey][templateID].ChannelID)
-			},
-		},
-		"Edit, channel changed after check":   {method: http.MethodPut, url: templatesURL, body: body, movedAfterCheck: true, expectedStatus: http.StatusConflict},
-		"Delete, channel changed after check": {method: http.MethodDelete, url: deleteURL, movedAfterCheck: true, expectedStatus: http.StatusConflict},
-		"Delete, no permission":               {method: http.MethodDelete, url: deleteURL, noPermission: true, expectedStatus: http.StatusForbidden},
-		"Delete, not a channel member":        {method: http.MethodDelete, url: deleteURL, notMember: true, expectedStatus: http.StatusForbidden},
-		"Delete, unknown template":            {method: http.MethodDelete, url: deleteURL, noStoredRecord: true, expectedStatus: http.StatusNotFound},
-		"Delete, without project key":         {method: http.MethodDelete, url: deleteURL, expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved(mockProjectKey)},
-		"Delete, query project key ignored":   {method: http.MethodDelete, url: deleteURL + "project_key=other&", expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved(mockProjectKey)},
-		"Delete, multi-project template":      {method: http.MethodDelete, url: deleteURL, stored: &multiProjectTemplate, expectedStatus: http.StatusOK, checkSaved: assertTemplateRemoved("")},
-	} {
+func assertAccessTemplateRemoved(projectKey string) func(*testing.T, *Templates) {
+	return func(t *testing.T, saved *Templates) {
+		assert.NotContains(t, saved.Templates.ByID, accessTemplateID)
+		assert.NotContains(t, saved.Templates.ByProjectID[projectKey], accessTemplateID)
+	}
+}
+
+func runTemplateAccessCases(t *testing.T, cases map[string]templateAccessCase) {
+	storedTemplate := SubscriptionTemplate{ID: accessTemplateID, ChannelID: mockChannelID, Filters: getMockSubscriptionFilter("jira:issue_created")}
+
+	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			api := &plugintest.API{}
 			p := Plugin{}
@@ -1715,6 +1708,9 @@ func TestSubscriptionTemplateAccessChecks(t *testing.T) {
 			}
 			api.On("HasPermissionTo", mock.Anything, mock.Anything).Return(!tc.noPermission)
 			api.On("HasPermissionToChannel", mock.Anything, mock.Anything, mock.Anything).Return(!tc.noPermission)
+			for _, dm := range tc.dmChannels {
+				api.On("GetChannel", dm).Return(&model.Channel{Type: model.ChannelTypeDirect}, (*model.AppError)(nil))
+			}
 			channelType := tc.channelType
 			if channelType == "" {
 				channelType = model.ChannelTypeOpen
@@ -1785,4 +1781,90 @@ func TestSubscriptionTemplateAccessChecks(t *testing.T) {
 			tc.checkSaved(t, saved)
 		})
 	}
+}
+
+func TestGetSubscriptionTemplateAccess(t *testing.T) {
+	getURL := "/api/v2/subscription-templates?channel_id=" + mockChannelID + "&"
+	runTemplateAccessCases(t, map[string]templateAccessCase{
+		"missing channel":           {method: http.MethodGet, url: "/api/v2/subscription-templates?project_key=myproject&", expectedStatus: http.StatusBadRequest},
+		"malformed channel":         {method: http.MethodGet, url: "/api/v2/subscription-templates?channel_id=short&project_key=myproject&", expectedStatus: http.StatusBadRequest},
+		"not a channel member":      {method: http.MethodGet, url: getURL, notMember: true, expectedStatus: http.StatusForbidden},
+		"no permission":             {method: http.MethodGet, url: getURL, noPermission: true, expectedStatus: http.StatusForbidden},
+		"project not visible":       {method: http.MethodGet, url: getURL + "project_key=" + nonExistantProjectKey + "&", expectedStatus: http.StatusInternalServerError},
+		"DM channel still readable": {method: http.MethodGet, url: getURL + "project_key=myproject&", dmChannels: []string{mockChannelID}, expectedStatus: http.StatusOK},
+	})
+}
+
+func TestCreateSubscriptionTemplateAccess(t *testing.T) {
+	templatesURL := "/api/v2/subscription-templates?"
+	body := accessTemplateBody(accessTemplateID, mockChannelID)
+	runTemplateAccessCases(t, map[string]templateAccessCase{
+		"missing channel":               {method: http.MethodPost, url: templatesURL, body: accessTemplateBody("", ""), expectedStatus: http.StatusBadRequest},
+		"not a channel member":          {method: http.MethodPost, url: templatesURL, body: body, notMember: true, expectedStatus: http.StatusForbidden},
+		"no permission":                 {method: http.MethodPost, url: templatesURL, body: body, noPermission: true, expectedStatus: http.StatusForbidden},
+		"channel admin policy, DM":      {method: http.MethodPost, url: templatesURL, body: body, roles: "channel_admin", channelType: model.ChannelTypeDirect, expectedStatus: http.StatusBadRequest},
+		"users policy, DM":              {method: http.MethodPost, url: templatesURL, body: body, roles: "users", channelType: model.ChannelTypeDirect, expectedStatus: http.StatusBadRequest},
+		"users policy, group message":   {method: http.MethodPost, url: templatesURL, body: body, roles: "users", channelType: model.ChannelTypeGroup, expectedStatus: http.StatusBadRequest},
+		"team admin policy, DM":         {method: http.MethodPost, url: templatesURL, body: body, roles: "team_admin", channelType: model.ChannelTypeDirect, expectedStatus: http.StatusBadRequest},
+		"default policy, DM":            {method: http.MethodPost, url: templatesURL, body: body, channelType: model.ChannelTypeDirect, expectedStatus: http.StatusBadRequest},
+		"default policy, group message": {method: http.MethodPost, url: templatesURL, body: body, channelType: model.ChannelTypeGroup, expectedStatus: http.StatusBadRequest},
+		"users policy": {
+			method: http.MethodPost, url: templatesURL, body: accessTemplateBody("", mockChannelID), roles: "users", noPermission: true, noStoredRecord: true, expectedStatus: http.StatusOK,
+			checkSaved: func(t *testing.T, saved *Templates) {
+				require.Len(t, saved.Templates.ByID, 1)
+				for _, tpl := range saved.Templates.ByID {
+					assert.Equal(t, mockChannelID, tpl.ChannelID)
+				}
+			},
+		},
+	})
+}
+
+func TestEditSubscriptionTemplateAccess(t *testing.T) {
+	templatesURL := "/api/v2/subscription-templates?"
+	body := accessTemplateBody(accessTemplateID, mockChannelID)
+	runTemplateAccessCases(t, map[string]templateAccessCase{
+		"no permission":            {method: http.MethodPut, url: templatesURL, body: body, noPermission: true, expectedStatus: http.StatusForbidden},
+		"not a channel member":     {method: http.MethodPut, url: templatesURL, body: body, notMember: true, expectedStatus: http.StatusForbidden},
+		"unknown template":         {method: http.MethodPut, url: templatesURL, body: body, noStoredRecord: true, expectedStatus: http.StatusNotFound},
+		"missing template id":      {method: http.MethodPut, url: templatesURL, body: accessTemplateBody("", mockChannelID), expectedStatus: http.StatusNotFound},
+		"stored channel denied":    {method: http.MethodPut, url: templatesURL, body: accessTemplateBody(accessTemplateID, otherChannelID), blockedChannels: []string{mockChannelID}, expectedStatus: http.StatusForbidden},
+		"target channel denied":    {method: http.MethodPut, url: templatesURL, body: accessTemplateBody(accessTemplateID, otherChannelID), blockedChannels: []string{otherChannelID}, expectedStatus: http.StatusForbidden},
+		"malformed target channel": {method: http.MethodPut, url: templatesURL, body: accessTemplateBody(accessTemplateID, "short"), expectedStatus: http.StatusBadRequest},
+		"move to DM":               {method: http.MethodPut, url: templatesURL, body: accessTemplateBody(accessTemplateID, otherChannelID), dmChannels: []string{otherChannelID}, expectedStatus: http.StatusBadRequest},
+		"stored in DM, unchanged":  {method: http.MethodPut, url: templatesURL, body: body, dmChannels: []string{mockChannelID}, expectedStatus: http.StatusBadRequest},
+		"users policy, move to DM": {method: http.MethodPut, url: templatesURL, body: accessTemplateBody(accessTemplateID, otherChannelID), roles: "users", dmChannels: []string{otherChannelID}, expectedStatus: http.StatusBadRequest},
+		"move to permitted channel": {
+			method: http.MethodPut, url: templatesURL, body: accessTemplateBody(accessTemplateID, otherChannelID), expectedStatus: http.StatusOK,
+			checkSaved: func(t *testing.T, saved *Templates) {
+				assert.Equal(t, otherChannelID, saved.Templates.ByID[accessTemplateID].ChannelID)
+				require.Contains(t, saved.Templates.ByProjectID[mockProjectKey], accessTemplateID)
+				assert.Equal(t, otherChannelID, saved.Templates.ByProjectID[mockProjectKey][accessTemplateID].ChannelID)
+			},
+		},
+		"channel changed after check": {method: http.MethodPut, url: templatesURL, body: body, movedAfterCheck: true, expectedStatus: http.StatusConflict},
+	})
+}
+
+func TestDeleteSubscriptionTemplateAccess(t *testing.T) {
+	deleteURL := "/api/v2/subscription-templates/" + accessTemplateID + "?"
+	multiProjectTemplate := SubscriptionTemplate{
+		ID:        accessTemplateID,
+		ChannelID: mockChannelID,
+		Filters: &SubscriptionFilters{
+			Events:     NewStringSet("jira:issue_created"),
+			Projects:   NewStringSet("myproject", "otherproject"),
+			IssueTypes: NewStringSet("10001"),
+		},
+	}
+	runTemplateAccessCases(t, map[string]templateAccessCase{
+		"channel changed after check": {method: http.MethodDelete, url: deleteURL, movedAfterCheck: true, expectedStatus: http.StatusConflict},
+		"no permission":               {method: http.MethodDelete, url: deleteURL, noPermission: true, expectedStatus: http.StatusForbidden},
+		"not a channel member":        {method: http.MethodDelete, url: deleteURL, notMember: true, expectedStatus: http.StatusForbidden},
+		"unknown template":            {method: http.MethodDelete, url: deleteURL, noStoredRecord: true, expectedStatus: http.StatusNotFound},
+		"without project key":         {method: http.MethodDelete, url: deleteURL, expectedStatus: http.StatusOK, checkSaved: assertAccessTemplateRemoved(mockProjectKey)},
+		"query project key ignored":   {method: http.MethodDelete, url: deleteURL + "project_key=other&", expectedStatus: http.StatusOK, checkSaved: assertAccessTemplateRemoved(mockProjectKey)},
+		"multi-project template":      {method: http.MethodDelete, url: deleteURL, stored: &multiProjectTemplate, expectedStatus: http.StatusOK, checkSaved: assertAccessTemplateRemoved("")},
+		"stored in DM":                {method: http.MethodDelete, url: deleteURL, dmChannels: []string{mockChannelID}, expectedStatus: http.StatusOK, checkSaved: assertAccessTemplateRemoved(mockProjectKey)},
+	})
 }

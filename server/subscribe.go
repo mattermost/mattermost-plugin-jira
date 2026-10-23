@@ -37,6 +37,7 @@ const (
 	MaxSubscriptionTemplateNameLength = 100
 
 	QueryParamProjectKey       = "project_key"
+	QueryParamChannelID        = "channel_id"
 	MaxSubscriptionNameLength  = 100
 	CommentVisibility          = "commentVisibility"
 	TeamFilter                 = "teamField"
@@ -431,12 +432,21 @@ var (
 	errTemplateChannelChanged = errors.New("subscription template channel changed, please retry")
 )
 
-func (p *Plugin) checkCanManageSubscriptionsInChannel(instanceID types.ID, userID, channelID string) (int, error) {
+func (p *Plugin) checkCanManageSubscriptionsInChannel(instanceID types.ID, userID, channelID string, rejectDMGM bool) (int, error) {
 	if len(channelID) != 26 {
 		return http.StatusBadRequest, errors.New("bad channel id")
 	}
 	if _, err := p.client.Channel.GetMember(channelID, userID); err != nil {
 		return http.StatusForbidden, errors.New("not a member of the channel specified")
+	}
+	if rejectDMGM {
+		channel, err := p.client.Channel.Get(channelID)
+		if err != nil {
+			return http.StatusInternalServerError, errors.Wrap(err, "failed to get channel")
+		}
+		if channel.Type == model.ChannelTypeDirect || channel.Type == model.ChannelTypeGroup {
+			return http.StatusBadRequest, errors.New("subscriptions are not allowed in direct message or group message channels")
+		}
 	}
 	if err := p.hasPermissionToManageSubscription(instanceID, userID, channelID); err != nil {
 		return http.StatusForbidden, errors.Wrap(err, "you don't have permission to manage subscriptions")
@@ -444,7 +454,7 @@ func (p *Plugin) checkCanManageSubscriptionsInChannel(instanceID types.ID, userI
 	return http.StatusOK, nil
 }
 
-func (p *Plugin) loadTemplateStatus(err error) int {
+func templateErrStatus(err error) int {
 	switch {
 	case errors.Is(err, errTemplateNotFound):
 		return http.StatusNotFound
@@ -1316,26 +1326,8 @@ func (p *Plugin) httpChannelCreateSubscription(w http.ResponseWriter, r *http.Re
 			fmt.Errorf("channel subscription invalid"))
 	}
 
-	_, err = p.client.Channel.GetMember(subscription.ChannelID, mattermostUserID)
-	if err != nil {
-		return respondErr(w, http.StatusForbidden,
-			errors.New("not a member of the channel specified"))
-	}
-
-	channel, appErr := p.client.Channel.Get(subscription.ChannelID)
-	if appErr != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.Wrap(appErr, "failed to get channel"))
-	}
-	if channel.Type == model.ChannelTypeDirect || channel.Type == model.ChannelTypeGroup {
-		return respondErr(w, http.StatusBadRequest,
-			errors.New("subscriptions are not allowed in direct message or group message channels"))
-	}
-
-	err = p.hasPermissionToManageSubscription(subscription.InstanceID, mattermostUserID, subscription.ChannelID)
-	if err != nil {
-		return respondErr(w, http.StatusForbidden,
-			errors.Wrap(err, "you don't have permission to manage subscriptions"))
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(subscription.InstanceID, mattermostUserID, subscription.ChannelID, true); permErr != nil {
+		return respondErr(w, status, permErr)
 	}
 
 	client, _, connection, err := p.getClient(subscription.InstanceID, types.ID(mattermostUserID))
@@ -1399,40 +1391,12 @@ func (p *Plugin) httpChannelEditSubscription(w http.ResponseWriter, r *http.Requ
 			errors.Wrap(err, "failed to find existing subscription"))
 	}
 
-	err = p.hasPermissionToManageSubscription(subscription.InstanceID, mattermostUserID, existingSub.ChannelID)
-	if err != nil {
-		return respondErr(w, http.StatusForbidden,
-			errors.Wrap(err, "you don't have permission to manage subscriptions in the original channel"))
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(subscription.InstanceID, mattermostUserID, existingSub.ChannelID, false); permErr != nil {
+		return respondErr(w, status, errors.WithMessage(permErr, "original channel"))
 	}
 
-	_, err = p.client.Channel.GetMember(existingSub.ChannelID, mattermostUserID)
-	if err != nil {
-		return respondErr(w, http.StatusForbidden,
-			errors.New("not a member of the channel that owns this subscription"))
-	}
-
-	if subscription.ChannelID != existingSub.ChannelID {
-		err = p.hasPermissionToManageSubscription(subscription.InstanceID, mattermostUserID, subscription.ChannelID)
-		if err != nil {
-			return respondErr(w, http.StatusForbidden,
-				errors.Wrap(err, "you don't have permission to manage subscriptions in the target channel"))
-		}
-
-		_, err = p.client.Channel.GetMember(subscription.ChannelID, mattermostUserID)
-		if err != nil {
-			return respondErr(w, http.StatusForbidden,
-				errors.New("not a member of the target channel"))
-		}
-	}
-
-	channel, appErr := p.client.Channel.Get(subscription.ChannelID)
-	if appErr != nil {
-		return respondErr(w, http.StatusInternalServerError,
-			errors.Wrap(appErr, "failed to get channel"))
-	}
-	if channel.Type == model.ChannelTypeDirect || channel.Type == model.ChannelTypeGroup {
-		return respondErr(w, http.StatusBadRequest,
-			errors.New("subscriptions are not allowed in direct message or group message channels"))
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(subscription.InstanceID, mattermostUserID, subscription.ChannelID, true); permErr != nil {
+		return respondErr(w, status, errors.WithMessage(permErr, "target channel"))
 	}
 
 	client, _, connection, err := p.getClient(subscription.InstanceID, types.ID(mattermostUserID))
@@ -1491,16 +1455,8 @@ func (p *Plugin) httpChannelDeleteSubscription(w http.ResponseWriter, r *http.Re
 			errors.Wrap(err, "bad subscription id"))
 	}
 
-	err = p.hasPermissionToManageSubscription(instanceID, mattermostUserID, subscription.ChannelID)
-	if err != nil {
-		return respondErr(w, http.StatusForbidden,
-			errors.Wrap(err, "you don't have permission to manage subscriptions"))
-	}
-
-	_, err = p.client.Channel.GetMember(subscription.ChannelID, mattermostUserID)
-	if err != nil {
-		return respondErr(w, http.StatusForbidden,
-			errors.New("not a member of the channel specified"))
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(instanceID, mattermostUserID, subscription.ChannelID, false); permErr != nil {
+		return respondErr(w, status, permErr)
 	}
 
 	err = p.removeChannelSubscription(instanceID, subscriptionID)
@@ -1540,14 +1496,8 @@ func (p *Plugin) httpChannelGetSubscriptions(w http.ResponseWriter, r *http.Requ
 	}
 	instanceID := types.ID(r.FormValue("instance_id"))
 
-	if _, err := p.client.Channel.GetMember(channelID, mattermostUserID); err != nil {
-		return respondErr(w, http.StatusForbidden,
-			errors.New("not a member of the channel specified"))
-	}
-
-	if err := p.hasPermissionToManageSubscription(instanceID, mattermostUserID, channelID); err != nil {
-		return respondErr(w, http.StatusForbidden,
-			errors.Wrap(err, "you don't have permission to manage subscriptions"))
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(instanceID, mattermostUserID, channelID, false); permErr != nil {
+		return respondErr(w, status, permErr)
 	}
 
 	subscriptions, err := p.getSubscriptionsForChannel(instanceID, channelID)
@@ -1566,7 +1516,7 @@ func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Req
 		return respondErr(w, http.StatusBadRequest, errors.New("bad or missing instance id"))
 	}
 
-	if status, permErr := p.checkCanManageSubscriptionsInChannel(instanceID, mattermostUserID, r.FormValue("channel_id")); permErr != nil {
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(instanceID, mattermostUserID, r.FormValue(QueryParamChannelID), false); permErr != nil {
 		return respondErr(w, status, permErr)
 	}
 
@@ -1575,41 +1525,61 @@ func (p *Plugin) httpGetSubscriptionTemplates(w http.ResponseWriter, r *http.Req
 		return respondErr(w, http.StatusInternalServerError, errors.Wrap(err, "unable to get subscription templates"))
 	}
 
-	subTemplates := make([]*SubscriptionTemplate, 0)
+	client, _, _, err := p.getClient(instanceID, types.ID(mattermostUserID))
+	if err != nil {
+		return respondErr(w, http.StatusInternalServerError, err)
+	}
 
+	var projectKeys []string
 	projectKey := r.FormValue(QueryParamProjectKey)
 	if len(projectKey) < 1 {
-		client, _, _, err := p.getClient(instanceID, types.ID(mattermostUserID))
-		if err != nil {
-			return respondErr(w, http.StatusInternalServerError, err)
+		pList, listErr := client.ListProjects("", -1, false)
+		if listErr != nil {
+			return respondErr(w, http.StatusInternalServerError, listErr)
 		}
-
-		pList, err := client.ListProjects("", -1, false)
-		if err != nil {
-			return respondErr(w, http.StatusInternalServerError, err)
-		}
-
 		for _, project := range pList {
-			listSubscriptionTemplate := subscriptionTemplates.Templates.ByProjectID[project.Key]
-			for _, subTemplate := range listSubscriptionTemplate {
-				subTemplates = append(subTemplates, subTemplate)
-			}
+			projectKeys = append(projectKeys, project.Key)
 		}
 	} else {
-		client, _, _, clientErr := p.getClient(instanceID, types.ID(mattermostUserID))
-		if clientErr != nil {
-			return respondErr(w, http.StatusInternalServerError, clientErr)
-		}
 		if _, projErr := client.GetProject(projectKey); projErr != nil {
 			return respondErr(w, http.StatusInternalServerError, errors.WithMessagef(projErr, "failed to get project %q", projectKey))
 		}
+		projectKeys = []string{projectKey}
+	}
 
-		for _, subTemplate := range subscriptionTemplates.Templates.ByProjectID[projectKey] {
-			subTemplates = append(subTemplates, subTemplate)
+	canView := p.channelViewChecker(mattermostUserID)
+	subTemplates := make([]*SubscriptionTemplate, 0)
+	for _, key := range projectKeys {
+		for _, subTemplate := range subscriptionTemplates.Templates.ByProjectID[key] {
+			if canView(subTemplate.ChannelID) {
+				subTemplates = append(subTemplates, subTemplate)
+			}
 		}
 	}
 
 	return respondJSON(w, subTemplates)
+}
+
+// channelViewChecker returns a function reporting whether the user can view a channel, caching results per channel.
+func (p *Plugin) channelViewChecker(userID string) func(channelID string) bool {
+	cache := map[string]bool{}
+	return func(channelID string) bool {
+		if allowed, ok := cache[channelID]; ok {
+			return allowed
+		}
+		allowed := false
+		if len(channelID) == 26 {
+			if channel, err := p.client.Channel.Get(channelID); err == nil {
+				permission := model.PermissionReadChannel
+				if channel.Type == model.ChannelTypeOpen {
+					permission = model.PermissionReadPublicChannel
+				}
+				allowed = p.client.User.HasPermissionToChannel(userID, channelID, permission)
+			}
+		}
+		cache[channelID] = allowed
+		return allowed
+	}
 }
 
 func (p *Plugin) httpEditSubscriptionTemplates(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -1621,16 +1591,14 @@ func (p *Plugin) httpEditSubscriptionTemplates(w http.ResponseWriter, r *http.Re
 
 	existing, err := p.getSubscriptionTemplatesByID(subscriptionTemplate.InstanceID, types.ID(subscriptionTemplate.ID))
 	if err != nil {
-		return respondErr(w, p.loadTemplateStatus(err), errors.Wrap(err, "unable to find the subscription template"))
+		return respondErr(w, templateErrStatus(err), errors.Wrap(err, "unable to find the subscription template"))
 	}
 
-	if status, permErr := p.checkCanManageSubscriptionsInChannel(subscriptionTemplate.InstanceID, mattermostUserID, existing.ChannelID); permErr != nil {
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(subscriptionTemplate.InstanceID, mattermostUserID, existing.ChannelID, false); permErr != nil {
 		return respondErr(w, status, permErr)
 	}
-	if subscriptionTemplate.ChannelID != existing.ChannelID {
-		if status, permErr := p.checkCanManageSubscriptionsInChannel(subscriptionTemplate.InstanceID, mattermostUserID, subscriptionTemplate.ChannelID); permErr != nil {
-			return respondErr(w, status, permErr)
-		}
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(subscriptionTemplate.InstanceID, mattermostUserID, subscriptionTemplate.ChannelID, true); permErr != nil {
+		return respondErr(w, status, permErr)
 	}
 
 	client, _, connection, err := p.getClient(subscriptionTemplate.InstanceID, types.ID(mattermostUserID))
@@ -1639,7 +1607,7 @@ func (p *Plugin) httpEditSubscriptionTemplates(w http.ResponseWriter, r *http.Re
 	}
 
 	if err = p.editSubscriptionTemplate(subscriptionTemplate.InstanceID, &subscriptionTemplate, client, existing.ChannelID); err != nil {
-		return respondErr(w, p.loadTemplateStatus(err), err)
+		return respondErr(w, templateErrStatus(err), err)
 	}
 
 	_ = p.API.SendEphemeralPost(mattermostUserID, &model.Post{
@@ -1663,7 +1631,7 @@ func (p *Plugin) httpCreateSubscriptionTemplate(w http.ResponseWriter, r *http.R
 		return respondErr(w, http.StatusBadRequest, errors.WithMessage(err, "failed to decode incoming request"))
 	}
 
-	if status, permErr := p.checkCanManageSubscriptionsInChannel(subscriptionTemplate.InstanceID, mattermostUserID, subscriptionTemplate.ChannelID); permErr != nil {
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(subscriptionTemplate.InstanceID, mattermostUserID, subscriptionTemplate.ChannelID, true); permErr != nil {
 		return respondErr(w, status, permErr)
 	}
 
@@ -1706,10 +1674,10 @@ func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.R
 
 	subscriptionTemplate, err := p.getSubscriptionTemplatesByID(instanceID, types.ID(subscriptionTemplateID))
 	if err != nil {
-		return respondErr(w, p.loadTemplateStatus(err), errors.Wrap(err, "unable to find the subscription template"))
+		return respondErr(w, templateErrStatus(err), errors.Wrap(err, "unable to find the subscription template"))
 	}
 
-	if status, permErr := p.checkCanManageSubscriptionsInChannel(instanceID, mattermostUserID, subscriptionTemplate.ChannelID); permErr != nil {
+	if status, permErr := p.checkCanManageSubscriptionsInChannel(instanceID, mattermostUserID, subscriptionTemplate.ChannelID, false); permErr != nil {
 		return respondErr(w, status, permErr)
 	}
 
@@ -1719,7 +1687,7 @@ func (p *Plugin) httpDeleteSubscriptionTemplate(w http.ResponseWriter, r *http.R
 	}
 
 	if rErr := p.removeSubscriptionTemplate(instanceID, subscriptionTemplateID, subscriptionTemplate.ChannelID); rErr != nil {
-		return respondErr(w, p.loadTemplateStatus(rErr), errors.Wrap(rErr, "unable to remove channel subscription template"))
+		return respondErr(w, templateErrStatus(rErr), errors.Wrap(rErr, "unable to remove channel subscription template"))
 	}
 
 	_ = p.API.SendEphemeralPost(mattermostUserID, &model.Post{
