@@ -20,6 +20,9 @@ async function jiraRequest<T>(account: JiraAccount, method: string, path: string
             'Content-Type': 'application/json',
         },
         body: body === undefined ? undefined : JSON.stringify(body),
+
+        // Global setup calls this outside any test timeout, so a stalled request would hang the whole job.
+        signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) {
         throw new Error(`Jira ${method} ${path} failed: ${res.status} ${await res.text()}`);

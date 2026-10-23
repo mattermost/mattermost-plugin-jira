@@ -146,7 +146,7 @@ export function startFakeJira({port, baseURL, cloud}: {port: number; baseURL: st
     const gatewayPrefix = `/ex/jira/${cloud.cloudId}`;
     const contract = new ContractValidator();
 
-    const server = createServer(async (req, res) => {
+    const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const url = new URL(req.url ?? '/', 'http://fake-jira');
         const body = await readBody(req);
         const isCloud = url.pathname.startsWith(gatewayPrefix);
@@ -183,6 +183,18 @@ export function startFakeJira({port, baseURL, cloud}: {port: number; baseURL: st
             return;
         }
         handler(ctx);
+    };
+
+    // A throw in a handler would otherwise be an unhandled rejection, which kills the fake for the rest of the run.
+    const server = createServer((req, res) => {
+        handleRequest(req, res).catch((err) => {
+            console.error(`[fake-jira] ${req.method} ${req.url} failed:`, err);
+            if (res.headersSent) {
+                res.end();
+                return;
+            }
+            sendJSON(res, 500, {errorMessages: [`fake-jira error: ${err instanceof Error ? err.message : String(err)}`]});
+        });
     });
 
     return new Promise((resolve) => {
