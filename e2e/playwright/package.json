@@ -1,0 +1,29 @@
+{
+  "name": "mattermost-plugin-jira-e2e",
+  "private": true,
+  "scripts": {
+    "env:up": "docker compose up -d --wait",
+    "env:down": "docker compose down -v",
+    "test": "playwright test",
+    "test:ci": "cross-env CI=true playwright test",
+    "test:headed": "cross-env PW_HEADLESS=false playwright test",
+    "show-report": "playwright show-report",
+    "tsc": "tsc --noEmit",
+    "contract:update": "node fake-jira/contract/update_specs.mjs",
+    "contract:check": "node fake-jira/contract/update_specs.mjs --check",
+    "test:real-cloud": "playwright test -c playwright.real-cloud.config.ts --project=parity",
+    "real:login": "playwright test -c playwright.real-cloud.config.ts --project=atlassian-login",
+    "test:real-jira": "playwright test -c playwright.real-jira.config.ts"
+  },
+  "devDependencies": {
+    "@mattermost/client": "11.3.0",
+    "@mattermost/playwright-lib": "11.4.0",
+    "@mattermost/types": "11.3.0",
+    "@playwright/test": "1.64.0",
+    "@types/node": "22.20.5",
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1",
+    "cross-env": "7.0.3",
+    "typescript": "5.9.3"
+  }
+}

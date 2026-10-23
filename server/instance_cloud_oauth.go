@@ -52,7 +52,23 @@ type PKCEParams struct {
 }
 
 var _ Instance = (*cloudOAuthInstance)(nil)
-var jiraOAuthAccessibleResourcesURL = "https://api.atlassian.com/oauth/token/accessible-resources"
+
+const (
+	defaultAtlassianAuthBaseURL = "https://auth.atlassian.com"
+	defaultAtlassianAPIBaseURL  = "https://api.atlassian.com"
+)
+
+// Only E2E builds override these (via -ldflags -X) to point at a fake Atlassian; -X requires constant initializers.
+var (
+	atlassianAuthBaseURL = defaultAtlassianAuthBaseURL
+	atlassianAPIBaseURL  = defaultAtlassianAPIBaseURL
+)
+
+var jiraOAuthAccessibleResourcesURL = atlassianAPIBaseURL + "/oauth/token/accessible-resources"
+
+func atlassianURLsOverridden() bool {
+	return atlassianAuthBaseURL != defaultAtlassianAuthBaseURL || atlassianAPIBaseURL != defaultAtlassianAPIBaseURL
+}
 
 const (
 	JiraScopes          = "read:jira-user,read:jira-work,write:jira-work,read:board-scope:jira-software,read:project:jira,read:sprint:jira-software"
@@ -190,14 +206,14 @@ func (ci *cloudOAuthInstance) GetOAuthConfig() *oauth2.Config {
 		Scopes:       strings.Split(JiraScopesOffline, ","),
 		RedirectURL:  fmt.Sprintf("%s%s", ci.Plugin.GetPluginURL(), instancePath(routeOAuth2Complete, ci.InstanceID)),
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://auth.atlassian.com/authorize",
-			TokenURL: "https://auth.atlassian.com/oauth/token",
+			AuthURL:  atlassianAuthBaseURL + "/authorize",
+			TokenURL: atlassianAuthBaseURL + "/oauth/token",
 		},
 	}
 }
 
 func (ci *cloudOAuthInstance) GetURL() string {
-	return "https://api.atlassian.com/ex/jira/" + ci.JiraResourceID
+	return atlassianAPIBaseURL + "/ex/jira/" + ci.JiraResourceID
 }
 
 func (ci *cloudOAuthInstance) GetJiraBaseURL() string {
