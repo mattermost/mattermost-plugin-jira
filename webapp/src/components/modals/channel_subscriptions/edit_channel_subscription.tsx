@@ -302,7 +302,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
     fetchSubscriptionTemplateForProjectKey = (instanceId: string, projectId: string) => {
         this.setState({selectedTemplateID: null, fetchingIssueMetadata: true});
-        this.props.fetchSubscriptionTemplatesForProjectKey(instanceId, projectId).then((subs) => {
+        this.props.fetchSubscriptionTemplatesForProjectKey(instanceId, projectId, this.props.channel.id).then((subs) => {
             if (subs.error) {
                 this.setState({error: subs.error.message});
                 return;
