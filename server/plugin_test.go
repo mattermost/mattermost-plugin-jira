@@ -166,14 +166,14 @@ func TestSetupAutolink(t *testing.T) {
 			name: "Missing API token or Admin email",
 			setup: func(p *Plugin, mockAPI *plugintest.API, dummyInstanceStore *mockInstanceStore) {
 				mockAPI.On("LogInfo", "unable to setup autolink due to missing API Token or Admin Email").Return(nil).Times(1)
-				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(&serverInstance{}, nil).Times(1)
+				dummyInstanceStore.On("LoadInstance", mock.Anything).Return(&cloudInstance{}, nil).Times(1)
 
 				p.updateConfig(func(c *config) {
 					c.AdminAPIToken = ""
 					c.AdminEmail = ""
 				})
 			},
-			InstanceType: ServerInstanceType,
+			InstanceType: CloudInstanceType,
 		},
 		{
 			name: "Unsupported instance type",
