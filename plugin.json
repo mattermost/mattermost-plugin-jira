@@ -128,7 +128,7 @@
                 "key": "AdminAPIToken",
                 "display_name": "Admin API Token",
                 "type": "text",
-                "help_text": "Set this [API token](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to get notified for comment and issue created events when the user triggering the event is not connected to Jira. This is also used for setting up autolink in the plugin.\n **Note:** API token should be created using an admin Jira account. Otherwise, the notification will not be delivered for projects that the user cannot access and autolink will not work.",
+                "help_text": "Set this to get notified for comment and issue created events when the user triggering the event is not connected to Jira. This is also used for setting up autolink in the plugin.\n **Note:** This token should belong to an admin Jira account. Otherwise, the notification will not be delivered for projects that the user cannot access and autolink will not work.\n - **Jira Cloud:** use an [API token](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) together with Admin Email below.\n - **Jira Server/Data Center:** use a [Personal Access Token](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html). Admin Email is not required.",
                 "placeholder": "",
                 "secret": true,
                 "default": ""
@@ -137,7 +137,7 @@
                 "key": "AdminEmail",
                 "display_name": "Admin Email",
                 "type": "text",
-                "help_text": "**Note:** Admin email is necessary to setup autolink for the Jira plugin and to to get notified for comment and issue created events when the user triggering the event is not connected to Jira",
+                "help_text": "**Note:** Required for Jira Cloud to set up autolink and to get notified for comment and issue created events when the user triggering the event is not connected to Jira. Not used for Jira Server/Data Center, which authenticates with the Admin API Token alone.",
                 "placeholder": "",
                 "default": ""
             },

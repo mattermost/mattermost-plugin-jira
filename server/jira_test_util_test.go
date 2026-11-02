@@ -12,6 +12,7 @@ import (
 const (
 	someSecret     = "somesecret"
 	mockProjectKey = "myproject"
+	mockChannelID  = "mockChannelID_____________"
 )
 
 func getJiraTestData(filename string) ([]byte, error) {
@@ -37,6 +38,9 @@ func withExistingChannelSubscriptions(subscriptions []ChannelSubscription) *Subs
 func withExistingChannelSubscriptionTemplates(templates []SubscriptionTemplate) *Templates {
 	ret := NewTemplates()
 	for i := range templates {
+		if templates[i].ChannelID == "" {
+			templates[i].ChannelID = mockChannelID
+		}
 		ret.Templates.add(mockProjectKey, &templates[i])
 	}
 	return ret

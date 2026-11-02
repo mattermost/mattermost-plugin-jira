@@ -68,7 +68,7 @@ describe('components/ChannelSettingsModal', () => {
             await propsWithChannel.fetchChannelSubscriptions(testChannel.id);
         });
         await act(async () => {
-            await propsWithChannel.fetchAllSubscriptionTemplates();
+            await propsWithChannel.fetchAllSubscriptionTemplates(testChannel.id);
         });
         await act(async () => {
             await propsWithChannel.fetchJiraProjectMetadataForAllInstances();
