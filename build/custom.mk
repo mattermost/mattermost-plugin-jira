@@ -25,7 +25,7 @@ e2e-dist: ## Builds dist/e2e/ with Jira Cloud OAuth endpoints pointed at the E2E
 	rm -rf dist/$(PLUGIN_ID)
 
 .PHONY: e2e-real
-e2e-real: dist $(E2E_DIR)/node_modules ## Runs the real Jira Cloud journeys (needs e2e/playwright/.env).
+e2e-real: dist $(E2E_DIR)/node_modules ## Runs the real Jira Cloud journeys against the stack from e2e-env-up (needs e2e/playwright/.env).
 	cd $(E2E_DIR) && npm run test:real-jira
 
 $(E2E_DIR)/node_modules: $(E2E_DIR)/package-lock.json

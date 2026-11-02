@@ -91,15 +91,23 @@ export const createFields = {
     },
 };
 
-export function projectSearch(site: CloudSite, expandIssueTypes: boolean) {
-    const project = {
-        self: `${site.siteURL}/rest/api/3/project/${fakeProject.id}`,
+function project(site: CloudSite, apiVersion: 2 | 3, expandIssueTypes: boolean) {
+    const api = `${site.siteURL}/rest/api/${apiVersion}`;
+    return {
+        self: `${api}/project/${fakeProject.id}`,
         ...fakeProject,
         projectTypeKey: 'software',
         simplified: false,
-        ...(expandIssueTypes ? {issueTypes: issueTypes.map((t) => ({self: `${site.siteURL}/rest/api/3/issuetype/${t.id}`, ...t, subtask: false}))} : {}),
+        ...(expandIssueTypes ? {issueTypes: issueTypes.map((t) => ({self: `${api}/issuetype/${t.id}`, ...t, subtask: false}))} : {}),
     };
-    return {self: `${site.siteURL}/rest/api/3/project/search`, startAt: 0, maxResults: 50, total: 1, isLast: true, values: [project]};
+}
+
+export function projectSearch(site: CloudSite, expandIssueTypes: boolean) {
+    return {self: `${site.siteURL}/rest/api/3/project/search`, startAt: 0, maxResults: 50, total: 1, isLast: true, values: [project(site, 3, expandIssueTypes)]};
+}
+
+export function projectByKey(site: CloudSite, idOrKey: string) {
+    return idOrKey === fakeProject.key || idOrKey === fakeProject.id ? project(site, 2, true) : undefined;
 }
 
 export function projectStatuses(site: CloudSite) {

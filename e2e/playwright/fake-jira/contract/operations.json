@@ -4,6 +4,7 @@
     "operations": [
       "GET /rest/api/2/myself",
       "GET /rest/api/2/issue/createmeta",
+      "GET /rest/api/2/project/{projectIdOrKey}",
       "GET /rest/api/2/search/jql"
     ]
   },

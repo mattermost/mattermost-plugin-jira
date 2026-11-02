@@ -14,6 +14,7 @@ import {
     defaultState,
     FakeJiraState,
     JournalEntry,
+    projectByKey,
     projectSearch,
     projectStatuses,
     searchIssues,
@@ -127,6 +128,15 @@ const routes: Record<string, Handler> = {
     // Jira Cloud project data behind the create-issue, attach-comment and subscription modals
     'GET /rest/api/3/project/search': authorized(({res, url, state}) => {
         sendJSON(res, 200, projectSearch(state.cloud, url.searchParams.get('expand')?.includes('issueTypes') ?? false));
+    }),
+    'GET /rest/api/2/project/{projectIdOrKey}': authorized(({res, url, state}) => {
+        const key = decodeURIComponent(url.pathname.split('/').pop() ?? '');
+        const project = projectByKey(state.cloud, key);
+        if (!project) {
+            sendJSON(res, 404, {errorMessages: [`No project could be found with key '${key}'.`], errors: {}});
+            return;
+        }
+        sendJSON(res, 200, project);
     }),
     'GET /rest/api/3/project/{projectIdOrKey}/statuses': authorized(({res, state}) => sendJSON(res, 200, projectStatuses(state.cloud))),
     'GET /rest/api/2/issue/createmeta': authorized(({res, state}) => sendJSON(res, 200, createMeta(state.cloud))),
