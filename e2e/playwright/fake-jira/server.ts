@@ -7,7 +7,19 @@ import {createHash, randomBytes} from 'node:crypto';
 import {createServer, IncomingMessage, Server, ServerResponse} from 'node:http';
 
 import {ContractValidator} from './contract/validator';
-import {cloudUser, CloudSite, defaultState, FakeJiraState, JournalEntry, serverInfo, serverUser} from './state';
+import {
+    cloudUser,
+    CloudSite,
+    createMeta,
+    defaultState,
+    FakeJiraState,
+    JournalEntry,
+    projectSearch,
+    projectStatuses,
+    searchIssues,
+    serverInfo,
+    serverUser,
+} from './state';
 
 type RequestContext = {
     req: IncomingMessage;
@@ -111,7 +123,33 @@ const routes: Record<string, Handler> = {
     'GET /rest/api/2/myself': myself,
     'GET /rest/api/3/myself': myself,
     'GET /rest/api/2/serverInfo': ({res, state}) => sendJSON(res, 200, serverInfo(state.baseURL)),
+
+    // Jira Cloud project data behind the create-issue, attach-comment and subscription modals
+    'GET /rest/api/3/project/search': authorized(({res, url, state}) => {
+        sendJSON(res, 200, projectSearch(state.cloud, url.searchParams.get('expand')?.includes('issueTypes') ?? false));
+    }),
+    'GET /rest/api/3/project/{projectIdOrKey}/statuses': authorized(({res, state}) => sendJSON(res, 200, projectStatuses(state.cloud))),
+    'GET /rest/api/2/issue/createmeta': authorized(({res, state}) => sendJSON(res, 200, createMeta(state.cloud))),
+    'GET /rest/api/2/search/jql': authorized(({res, state}) => sendJSON(res, 200, searchIssues(state.cloud))),
 };
+
+const templateRoutes = Object.entries(routes).
+    filter(([key]) => key.includes('{')).
+    map(([key, handler]) => ({pattern: new RegExp(`^${key.replace(/\{[^}]+\}/g, '[^/]+')}$`), handler}));
+
+function findRoute(key: string): Handler | undefined {
+    return routes[key] ?? templateRoutes.find(({pattern}) => pattern.test(key))?.handler;
+}
+
+function authorized(handler: Handler): Handler {
+    return (ctx) => {
+        if (!isAuthorized(ctx.req, ctx.state)) {
+            sendJSON(ctx.res, 401, {errorMessages: ['not authenticated']});
+            return;
+        }
+        handler(ctx);
+    };
+}
 
 function myself({req, res, state, cloud}: RequestContext) {
     if (!isAuthorized(req, state)) {
@@ -176,7 +214,7 @@ export function startFakeJira({port, baseURL, cloud}: {port: number; baseURL: st
             });
         }
 
-        const handler = routes[key];
+        const handler = findRoute(key);
         if (!handler) {
             console.warn(`[fake-jira] unhandled ${req.method} ${url.pathname}`);
             sendJSON(res, 404, {errorMessages: [`fake-jira has no route for ${key}`]});

@@ -16,12 +16,16 @@ E2E_DIR = e2e/playwright
 E2E_FAKE_ATLASSIAN_URL ?= http://fake-jira:8090
 
 # Command-line GO_BUILD_LDFLAGS is required: the Makefile assigns it after this file is included.
+# The bundle leaves dist/ under an -e2e name so it can't be mistaken for, or deployed as, a release bundle.
 .PHONY: e2e-dist
-e2e-dist: ## Builds dist/ with Jira Cloud OAuth endpoints pointed at the E2E fake. Never ship this bundle.
+e2e-dist: ## Builds dist/e2e/ with Jira Cloud OAuth endpoints pointed at the E2E fake. Never ship this bundle.
 	$(MAKE) dist GO_BUILD_LDFLAGS='-ldflags="-s -w -X main.atlassianAuthBaseURL=$(E2E_FAKE_ATLASSIAN_URL) -X main.atlassianAPIBaseURL=$(E2E_FAKE_ATLASSIAN_URL)"'
+	mkdir -p dist/e2e
+	mv dist/$(BUNDLE_NAME) dist/e2e/$(PLUGIN_ID)-$(PLUGIN_VERSION)-e2e.tar.gz
+	rm -rf dist/$(PLUGIN_ID)
 
 .PHONY: e2e-real
-e2e-real: dist $(E2E_DIR)/node_modules ## Runs the real Jira Cloud journeys (needs e2e/playwright/.env and `npm run real:login`).
+e2e-real: dist $(E2E_DIR)/node_modules ## Runs the real Jira Cloud journeys (needs e2e/playwright/.env).
 	cd $(E2E_DIR) && npm run test:real-jira
 
 $(E2E_DIR)/node_modules: $(E2E_DIR)/package-lock.json

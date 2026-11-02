@@ -37,7 +37,7 @@ export const realJira = {
     } as JiraAccount,
     oauth: {clientId: env('JIRA_CLOUD_OAUTH_CLIENT_ID'), clientSecret: env('JIRA_CLOUD_OAUTH_CLIENT_SECRET')},
 
-    // Atlassian browser session of the regular user, saved by `npm run real:login`.
+    // Atlassian browser session of the regular user, refreshed by the suite or `npm run real:login`.
     userSessionPath: path.join(__dirname, '../.auth/atlassian-user.json'),
 
     // Every issue the suite creates carries this marker so cleanup can find leftovers.

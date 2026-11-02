@@ -17,6 +17,6 @@ export default defineConfig({
     reporter: process.env.CI ? [['github'], ['list']] : [['list']],
     projects: [
         {name: 'parity', testIgnore: /\.setup\.ts$/},
-        {name: 'atlassian-login', testMatch: /atlassian_login\.setup\.ts$/, use: {headless: false}},
+        {name: 'atlassian-login', testMatch: /atlassian_login\.setup\.ts$/},
     ],
 });

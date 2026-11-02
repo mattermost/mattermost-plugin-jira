@@ -22,7 +22,7 @@ export default async function globalSetup() {
 
     await baseGlobalSetup();
     const adminClient = await loginAdmin();
-    await installPlugin(adminClient, {
+    await installPlugin(adminClient, 'release', {
         adminapitoken: realJira.admin.apiToken,
         adminemail: realJira.admin.email,
         rolesallowedtoeditjirasubscriptions: 'users',

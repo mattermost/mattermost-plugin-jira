@@ -8,24 +8,29 @@ import type {Client4} from '@mattermost/client';
 
 import {encryptionKey, pluginDistDir, pluginId, webhookSecret} from './constants';
 
-export async function findPluginBundle(): Promise<string> {
-    const files = await fs.readdir(pluginDistDir).catch(() => [] as string[]);
+// The fake suite needs the bundle from `make e2e-dist`; the real-Jira lane needs a release build from `make dist`.
+export type BundleKind = 'e2e' | 'release';
+
+export async function findPluginBundle(kind: BundleKind): Promise<string> {
+    const dir = kind === 'e2e' ? path.join(pluginDistDir, 'e2e') : pluginDistDir;
+    const suffix = kind === 'e2e' ? '-e2e.tar.gz' : '.tar.gz';
+    const files = await fs.readdir(dir).catch(() => [] as string[]);
     const bundles = await Promise.all(
         files.
-            filter((name) => name.startsWith(`${pluginId}-`) && name.endsWith('.tar.gz')).
+            filter((name) => name.startsWith(`${pluginId}-`) && name.endsWith(suffix)).
             map(async (name) => {
-                const fullPath = path.join(pluginDistDir, name);
+                const fullPath = path.join(dir, name);
                 return {fullPath, mtime: (await fs.stat(fullPath)).mtimeMs};
             }),
     );
     if (!bundles.length) {
-        throw new Error(`No ${pluginId} bundle found in ${pluginDistDir}; run \`make dist\` first`);
+        throw new Error(`No ${pluginId} bundle found in ${dir}; run \`make ${kind === 'e2e' ? 'e2e-dist' : 'dist'}\` first`);
     }
     return bundles.sort((a, b) => b.mtime - a.mtime)[0].fullPath;
 }
 
-export async function installPlugin(adminClient: Client4, pluginSettings: Record<string, unknown> = {}) {
-    const bundlePath = await findPluginBundle();
+export async function installPlugin(adminClient: Client4, kind: BundleKind, pluginSettings: Record<string, unknown> = {}) {
+    const bundlePath = await findPluginBundle(kind);
     const data = await fs.readFile(bundlePath);
     const file = new File([data], path.basename(bundlePath), {type: 'application/gzip'});
 

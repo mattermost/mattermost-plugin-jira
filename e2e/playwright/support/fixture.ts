@@ -11,7 +11,7 @@ import {fakeJira} from './fake_jira';
 
 export {expect};
 
-type JiraFixture = {
+export type JiraFixture = {
     adminClient: Client4;
     user: UserProfile;
     userClient: Client4;
@@ -21,7 +21,8 @@ type JiraFixture = {
 
 export type FailureScreenshotOptions = {failureScreenshots: boolean};
 
-// pw.initSetup() is deliberately avoided: it resets server config, which drops the plugin's settings and PluginStates.
+// pw.initSetup() is deliberately avoided: in playwright-lib 11.x it resets server config, which drops the plugin's
+// settings and PluginStates.
 export const test = base.extend<{jira: JiraFixture; failureScreenshot: void}, FailureScreenshotOptions>({
     failureScreenshots: [false, {option: true, scope: 'worker'}],
 

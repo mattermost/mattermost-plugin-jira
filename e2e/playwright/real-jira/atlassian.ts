@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import type {BrowserContext, Page} from '@playwright/test';
 import {expect} from '@playwright/test';
 
-import {canSignInAutomatically, completeSignIn} from './atlassian_session';
+import {completeSignIn} from './atlassian_session';
 import {realJira, type JiraAccount} from './env';
 
 type IssueType = {id: string; name: string; subtask: boolean};
@@ -81,10 +81,8 @@ export async function addAtlassianSession(context: BrowserContext) {
 // Atlassian's 3LO screen: sign in if Atlassian asks, pick the site when asked, then Accept.
 export async function approveAtlassianConsent(page: Page) {
     const accept = page.getByRole('button', {name: /^accept$/i});
-    if (canSignInAutomatically()) {
-        await completeSignIn(page, 2 * 60_000, () => accept.isVisible());
-    }
-    await expect(accept, 'Atlassian consent screen (if it asked to sign in, run `npm run real:login`)').toBeVisible({timeout: 30_000});
+    await completeSignIn(page, 2 * 60_000, () => accept.isVisible());
+    await expect(accept, 'Atlassian consent screen').toBeVisible({timeout: 30_000});
 
     const siteHost = new URL(realJira.siteURL).hostname;
     const sitePicker = page.getByRole('combobox');

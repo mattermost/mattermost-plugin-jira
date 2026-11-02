@@ -9,17 +9,21 @@ import {fakeCloudSiteHost, fakeJiraHost, mattermostURL} from './support/constant
 import type {FailureScreenshotOptions} from './support/fixture';
 
 const isCI = Boolean(process.env.CI);
+const visualBrowser = process.env.PW_VISUAL_BROWSER_WS;
 
 export default defineConfig<FailureScreenshotOptions>({
     testDir: './tests',
     outputDir: './test-results',
+
+    // No platform suffix: baselines always come from the dockerized browser.
+    snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
     globalSetup: require.resolve('./global_setup'),
     fullyParallel: false,
     workers: 1,
     forbidOnly: isCI,
     retries: isCI ? 1 : 0,
     timeout: 60_000,
-    expect: {timeout: 15_000},
+    expect: {timeout: 15_000, toHaveScreenshot: {stylePath: './support/visual.css'}},
     reporter: isCI ? [['github'], ['html', {open: 'never', outputFolder: 'playwright-report'}]] : [['list'], ['html', {open: 'never'}]],
     use: {
         baseURL: mattermostURL,
@@ -32,6 +36,7 @@ export default defineConfig<FailureScreenshotOptions>({
         launchOptions: {
             args: [`--host-resolver-rules=MAP ${fakeJiraHost} 127.0.0.1, MAP ${fakeCloudSiteHost} 127.0.0.1`],
         },
+        connectOptions: visualBrowser ? {wsEndpoint: visualBrowser} : undefined,
     },
     projects: [
         {

@@ -23,6 +23,49 @@
           }
         }
       }
+    },
+    "/rest/api/2/issue/createmeta": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "{\"projects\":[{\"avatarUrls\":{\"16x16\":\"https://your-domain.atlassian.net/secure/projectavatar?size=xsmall&pid=10000&avatarId=10011\",\"24x24\":\"https://your-domain.atlassian.net/secure/projectavatar?size=small&pid=10000&avatarId=10011\",\"32x32\":\"https://your-domain.atlassian.net/secure/projectavatar?size=medium&pid=10000&avatarId=10011\",\"48x48\":\"https://your-domain.atlassian.net/secure/projectavatar?pid=10000&avatarId=10011\"},\"id\":\"10000\",\"issuetypes\":[{\"description\":\"An error in the code\",\"fields\":{\"issuetype\":{\"allowedValues\":[\"set\"],\"autoCompleteUrl\":\"issuetype\",\"hasDefaultValue\":false,\"key\":\"issuetype\",\"name\":\"Issue Type\",\"required\":true}},\"iconUrl\":\"https://your-domain.atlassian.net/images/icons/issuetypes/bug.png\",\"id\":\"1\",\"name\":\"Bug\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issueType/1\",\"subtask\":false}],\"key\":\"ED\",\"name\":\"Edison Project\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/project/ED\"}]}",
+                "schema": {
+                  "$ref": "#/components/schemas/IssueCreateMetadata"
+                }
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "401": {
+            "description": "Returned if the authentication credentials are incorrect or missing."
+          }
+        }
+      }
+    },
+    "/rest/api/2/search/jql": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "{\"isLast\":false,\"issues\":[{\"expand\":\"\",\"fields\":{\"watcher\":{\"isWatching\":false,\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/EX-1/watchers\",\"watchCount\":1},\"attachment\":[{\"author\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"accountType\":\"atlassian\",\"active\":false,\"avatarUrls\":{\"16x16\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=16&s=16\",\"24x24\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=24&s=24\",\"32x32\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=32&s=32\",\"48x48\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=48&s=48\"},\"displayName\":\"Mia Krystof\",\"key\":\"\",\"name\":\"\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"content\":\"https://your-domain.atlassian.net/jira/rest/api/3/attachment/content/10000\",\"created\":\"2022-10-06T07:32:47.000+0000\",\"filename\":\"picture.jpg\",\"id\":10000,\"mimeType\":\"image/jpeg\",\"self\":\"https://your-domain.atlassian.net/rest/api/3/attachments/10000\",\"size\":23123,\"thumbnail\":\"https://your-domain.atlassian.net/jira/rest/api/3/attachment/thumbnail/10000\"}],\"sub-tasks\":[{\"id\":\"10000\",\"outwardIssue\":{\"fields\":{\"status\":{\"iconUrl\":\"https://your-domain.atlassian.net/images/icons/statuses/open.png\",\"name\":\"Open\"}},\"id\":\"10003\",\"key\":\"ED-2\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/ED-2\"},\"type\":{\"id\":\"10000\",\"inward\":\"Parent\",\"name\":\"\",\"outward\":\"Sub-task\"}}],\"description\":{\"type\":\"doc\",\"version\":1,\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Main order flow broken\"}]}]},\"project\":{\"avatarUrls\":{\"16x16\":\"https://your-domain.atlassian.net/secure/projectavatar?size=xsmall&pid=10000\",\"24x24\":\"https://your-domain.atlassian.net/secure/projectavatar?size=small&pid=10000\",\"32x32\":\"https://your-domain.atlassian.net/secure/projectavatar?size=medium&pid=10000\",\"48x48\":\"https://your-domain.atlassian.net/secure/projectavatar?size=large&pid=10000\"},\"id\":\"10000\",\"insight\":{\"lastIssueUpdateTime\":\"2021-04-22T05:37:05.000+0000\",\"totalIssueCount\":100},\"key\":\"EX\",\"name\":\"Example\",\"projectCategory\":{\"description\":\"First Project Category\",\"id\":\"10000\",\"name\":\"FIRST\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/projectCategory/10000\"},\"self\":\"https://your-domain.atlassian.net/rest/api/2/project/EX\",\"simplified\":false,\"style\":\"classic\"},\"comment\":[{\"author\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"active\":false,\"displayName\":\"Mia Krystof\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"body\":{\"type\":\"doc\",\"version\":1,\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eget venenatis elit. Duis eu justo eget augue iaculis fermentum. Sed semper quam laoreet nisi egestas at posuere augue semper.\"}]}]},\"created\":\"2021-01-17T12:34:00.000+0000\",\"id\":\"10000\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/10010/comment/10000\",\"updateAuthor\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"active\":false,\"displayName\":\"Mia Krystof\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"updated\":\"2021-01-18T23:45:00.000+0000\",\"visibility\":{\"identifier\":\"Administrators\",\"type\":\"role\",\"value\":\"Administrators\"}}],\"issuelinks\":[{\"id\":\"10001\",\"outwardIssue\":{\"fields\":{\"status\":{\"iconUrl\":\"https://your-domain.atlassian.net/images/icons/statuses/open.png\",\"name\":\"Open\"}},\"id\":\"10004L\",\"key\":\"PR-2\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/PR-2\"},\"type\":{\"id\":\"10000\",\"inward\":\"depends on\",\"name\":\"Dependent\",\"outward\":\"is depended by\"}},{\"id\":\"10002\",\"inwardIssue\":{\"fields\":{\"status\":{\"iconUrl\":\"https://your-domain.atlassian.net/images/icons/statuses/open.png\",\"name\":\"Open\"}},\"id\":\"10004\",\"key\":\"PR-3\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/PR-3\"},\"type\":{\"id\":\"10000\",\"inward\":\"depends on\",\"name\":\"Dependent\",\"outward\":\"is depended by\"}}],\"worklog\":[{\"author\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"active\":false,\"displayName\":\"Mia Krystof\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"comment\":{\"type\":\"doc\",\"version\":1,\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"I did some work here.\"}]}]},\"id\":\"100028\",\"issueId\":\"10002\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/10010/worklog/10000\",\"started\":\"2021-01-17T12:34:00.000+0000\",\"timeSpent\":\"3h 20m\",\"timeSpentSeconds\":12000,\"updateAuthor\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"active\":false,\"displayName\":\"Mia Krystof\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"updated\":\"2021-01-18T23:45:00.000+0000\",\"visibility\":{\"identifier\":\"276f955c-63d7-42c8-9520-92d01dca0625\",\"type\":\"group\",\"value\":\"jira-developers\"}}],\"updated\":1,\"timetracking\":{\"originalEstimate\":\"10m\",\"originalEstimateSeconds\":600,\"remainingEstimate\":\"3m\",\"remainingEstimateSeconds\":200,\"timeSpent\":\"6m\",\"timeSpentSeconds\":400}},\"id\":\"10002\",\"key\":\"ED-1\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/10002\"}],\"nextPageToken\":\"EgQIlMIC\"}",
+                "schema": {
+                  "$ref": "#/components/schemas/SearchAndReconcileResults"
+                }
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "400": {
+            "description": "Returned if the search request is invalid"
+          },
+          "401": {
+            "description": "Returned if the authentication credentials are incorrect or missing."
+          }
+        }
+      }
     }
   },
   "components": {
@@ -132,6 +175,172 @@
         },
         "type": "object"
       },
+      "ChangeDetails": {
+        "additionalProperties": false,
+        "description": "A change item.",
+        "properties": {
+          "field": {
+            "description": "The name of the field changed.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "fieldId": {
+            "description": "The ID of the field changed.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "fieldtype": {
+            "description": "The type of the field changed.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "from": {
+            "description": "The details of the original value.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "fromString": {
+            "description": "The details of the original value as a string.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "to": {
+            "description": "The details of the new value.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "toString": {
+            "description": "The details of the new value as a string.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Changelog": {
+        "additionalProperties": false,
+        "description": "A log of changes made to issue fields. Changelogs related to workflow associations are currently being deprecated.",
+        "properties": {
+          "author": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserDetails"
+              }
+            ],
+            "description": "The user who made the change.",
+            "readOnly": true
+          },
+          "created": {
+            "description": "The date on which the change took place.",
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "historyMetadata": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HistoryMetadata"
+              }
+            ],
+            "description": "The history metadata associated with the changed.",
+            "readOnly": true
+          },
+          "id": {
+            "description": "The ID of the changelog.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "items": {
+            "description": "The list of items changed.",
+            "items": {
+              "$ref": "#/components/schemas/ChangeDetails"
+            },
+            "readOnly": true,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "FieldMetadata": {
+        "additionalProperties": false,
+        "description": "The metadata describing an issue field.",
+        "properties": {
+          "allowedValues": {
+            "description": "The list of values allowed in the field.",
+            "items": {
+              "readOnly": true
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "autoCompleteUrl": {
+            "description": "The URL that can be used to automatically complete the field.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "configuration": {
+            "additionalProperties": {
+              "readOnly": true
+            },
+            "description": "The configuration properties.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "defaultValue": {
+            "description": "The default value of the field.",
+            "readOnly": true
+          },
+          "hasDefaultValue": {
+            "description": "Whether the field has a default value.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "key": {
+            "description": "The key of the field.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the field.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "operations": {
+            "description": "The list of operations that can be performed on the field.",
+            "items": {
+              "readOnly": true,
+              "type": "string"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "required": {
+            "description": "Whether the field is required.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "schema": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonTypeBean"
+              }
+            ],
+            "description": "The data type of the field.",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "operations",
+          "required",
+          "schema"
+        ],
+        "type": "object",
+        "xml": {
+          "name": "availableField"
+        }
+      },
       "GroupName": {
         "additionalProperties": false,
         "description": "Details about a group.",
@@ -154,6 +363,509 @@
         },
         "type": "object"
       },
+      "HistoryMetadata": {
+        "additionalProperties": true,
+        "description": "Details of issue history metadata.",
+        "properties": {
+          "activityDescription": {
+            "description": "The activity described in the history record.",
+            "type": "string"
+          },
+          "activityDescriptionKey": {
+            "description": "The key of the activity described in the history record.",
+            "type": "string"
+          },
+          "actor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HistoryMetadataParticipant"
+              }
+            ],
+            "description": "Details of the user whose action created the history record."
+          },
+          "cause": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HistoryMetadataParticipant"
+              }
+            ],
+            "description": "Details of the cause that triggered the creation the history record."
+          },
+          "description": {
+            "description": "The description of the history record.",
+            "type": "string"
+          },
+          "descriptionKey": {
+            "description": "The description key of the history record.",
+            "type": "string"
+          },
+          "emailDescription": {
+            "description": "The description of the email address associated the history record.",
+            "type": "string"
+          },
+          "emailDescriptionKey": {
+            "description": "The description key of the email address associated the history record.",
+            "type": "string"
+          },
+          "extraData": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Additional arbitrary information about the history record.",
+            "type": "object"
+          },
+          "generator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HistoryMetadataParticipant"
+              }
+            ],
+            "description": "Details of the system that generated the history record."
+          },
+          "type": {
+            "description": "The type of the history record.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "HistoryMetadataParticipant": {
+        "additionalProperties": true,
+        "description": "Details of user or system associated with a issue history metadata item.",
+        "properties": {
+          "avatarUrl": {
+            "description": "The URL to an avatar for the user or system associated with a history record.",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "The display name of the user or system associated with a history record.",
+            "type": "string"
+          },
+          "displayNameKey": {
+            "description": "The key of the display name of the user or system associated with a history record.",
+            "type": "string"
+          },
+          "id": {
+            "description": "The ID of the user or system associated with a history record.",
+            "type": "string"
+          },
+          "type": {
+            "description": "The type of the user or system associated with a history record.",
+            "type": "string"
+          },
+          "url": {
+            "description": "The URL of the user or system associated with a history record.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "IncludedFields": {
+        "additionalProperties": false,
+        "properties": {
+          "actuallyIncluded": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "excluded": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "included": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "type": "object"
+      },
+      "IssueBean": {
+        "additionalProperties": false,
+        "description": "Details about an issue.",
+        "properties": {
+          "changelog": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageOfChangelogs"
+              }
+            ],
+            "description": "Details of changelogs associated with the issue.",
+            "readOnly": true
+          },
+          "editmeta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssueUpdateMetadata"
+              }
+            ],
+            "description": "The metadata for the fields on the issue that can be amended.",
+            "readOnly": true
+          },
+          "expand": {
+            "description": "Expand options that include additional issue details in the response.",
+            "readOnly": true,
+            "type": "string",
+            "xml": {
+              "attribute": true
+            }
+          },
+          "fields": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "fieldsToInclude": {
+            "$ref": "#/components/schemas/IncludedFields"
+          },
+          "id": {
+            "description": "The ID of the issue.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "key": {
+            "description": "The key of the issue.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "names": {
+            "additionalProperties": {
+              "readOnly": true,
+              "type": "string"
+            },
+            "description": "The ID and name of each field present on the issue.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "operations": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Operations"
+              }
+            ],
+            "description": "The operations that can be performed on the issue.",
+            "readOnly": true
+          },
+          "properties": {
+            "additionalProperties": {
+              "readOnly": true
+            },
+            "description": "Details of the issue properties identified in the request.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "renderedFields": {
+            "additionalProperties": {
+              "readOnly": true
+            },
+            "description": "The rendered value of each field present on the issue.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "schema": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonTypeBean"
+            },
+            "description": "The schema describing each field present on the issue.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "self": {
+            "description": "The URL of the issue details.",
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          },
+          "transitions": {
+            "description": "The transitions that can be performed on the issue.",
+            "items": {
+              "$ref": "#/components/schemas/IssueTransition"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "versionedRepresentations": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "readOnly": true
+              },
+              "readOnly": true,
+              "type": "object"
+            },
+            "description": "The versions of each field on the issue.",
+            "readOnly": true,
+            "type": "object"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "issue"
+        }
+      },
+      "IssueCreateMetadata": {
+        "additionalProperties": false,
+        "description": "The wrapper for the issue creation metadata for a list of projects.",
+        "properties": {
+          "expand": {
+            "description": "Expand options that include additional project details in the response.",
+            "readOnly": true,
+            "type": "string",
+            "xml": {
+              "attribute": true
+            }
+          },
+          "projects": {
+            "description": "List of projects and their issue creation metadata.",
+            "items": {
+              "$ref": "#/components/schemas/ProjectIssueCreateMetadata"
+            },
+            "readOnly": true,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "IssueTransition": {
+        "additionalProperties": true,
+        "description": "Details of an issue transition.",
+        "properties": {
+          "expand": {
+            "description": "Expand options that include additional transition details in the response.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "fields": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FieldMetadata"
+            },
+            "description": "Details of the fields associated with the issue transition screen. Use this information to populate `fields` and `update` in a transition request.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "hasScreen": {
+            "description": "Whether there is a screen associated with the issue transition.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "id": {
+            "description": "The ID of the issue transition. Required when specifying a transition to undertake.",
+            "type": "string"
+          },
+          "isAvailable": {
+            "description": "Whether the transition is available to be performed.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "isConditional": {
+            "description": "Whether the issue has to meet criteria before the issue transition is applied.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "isGlobal": {
+            "description": "Whether the issue transition is global, that is, the transition is applied to issues regardless of their status.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "isInitial": {
+            "description": "Whether this is the initial issue transition for the workflow.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "looped": {
+            "type": "boolean"
+          },
+          "name": {
+            "description": "The name of the issue transition.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "to": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatusDetails"
+              }
+            ],
+            "description": "Details of the issue status after the transition.",
+            "readOnly": true
+          }
+        },
+        "type": "object"
+      },
+      "IssueTypeIssueCreateMetadata": {
+        "additionalProperties": false,
+        "description": "Details of the issue creation metadata for an issue type.",
+        "properties": {
+          "avatarId": {
+            "description": "The ID of the issue type's avatar.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "description": {
+            "description": "The description of the issue type.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "entityId": {
+            "description": "Unique ID for next-gen projects.",
+            "format": "uuid",
+            "readOnly": true,
+            "type": "string"
+          },
+          "expand": {
+            "description": "Expand options that include additional issue type metadata details in the response.",
+            "readOnly": true,
+            "type": "string",
+            "xml": {
+              "attribute": true
+            }
+          },
+          "fields": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FieldMetadata"
+            },
+            "description": "List of the fields available when creating an issue for the issue type.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "hierarchyLevel": {
+            "description": "Hierarchy level of the issue type.",
+            "format": "int32",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "iconUrl": {
+            "description": "The URL of the issue type's avatar.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "The ID of the issue type.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the issue type.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "scope": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Scope"
+              }
+            ],
+            "description": "Details of the next-gen projects the issue type is available in.",
+            "readOnly": true
+          },
+          "self": {
+            "description": "The URL of these issue type details.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "subtask": {
+            "description": "Whether this issue type is used to create subtasks.",
+            "readOnly": true,
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "IssueUpdateMetadata": {
+        "description": "A list of editable field details.",
+        "properties": {
+          "fields": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FieldMetadata"
+            },
+            "readOnly": true,
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "JsonTypeBean": {
+        "additionalProperties": false,
+        "description": "The schema of a field.",
+        "properties": {
+          "configuration": {
+            "additionalProperties": {
+              "readOnly": true
+            },
+            "description": "If the field is a custom field, the configuration of the field.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "custom": {
+            "description": "If the field is a custom field, the URI of the field.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "customId": {
+            "description": "If the field is a custom field, the custom ID of the field.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "items": {
+            "description": "When the data type is an array, the name of the field items within the array.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "system": {
+            "description": "If the field is a system field, the name of the field.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "type": {
+            "description": "The data type of the field.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "LinkGroup": {
+        "additionalProperties": false,
+        "description": "Details a link group, which defines issue operations.",
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/LinkGroup"
+            },
+            "type": "array"
+          },
+          "header": {
+            "$ref": "#/components/schemas/SimpleLink"
+          },
+          "id": {
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/SimpleLink"
+            },
+            "type": "array"
+          },
+          "styleClass": {
+            "type": "string"
+          },
+          "weight": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "ListWrapperCallbackApplicationRole": {
         "additionalProperties": false,
         "type": "object"
@@ -161,6 +873,327 @@
       "ListWrapperCallbackGroupName": {
         "additionalProperties": false,
         "type": "object"
+      },
+      "Operations": {
+        "additionalProperties": true,
+        "description": "Details of the operations that can be performed on the issue.",
+        "properties": {
+          "linkGroups": {
+            "description": "Details of the link groups defining issue operations.",
+            "items": {
+              "$ref": "#/components/schemas/LinkGroup"
+            },
+            "readOnly": true,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "PageOfChangelogs": {
+        "additionalProperties": false,
+        "description": "A page of changelogs.",
+        "properties": {
+          "histories": {
+            "description": "The list of changelogs.",
+            "items": {
+              "$ref": "#/components/schemas/Changelog"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "maxResults": {
+            "description": "The maximum number of results that could be on the page.",
+            "format": "int32",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "startAt": {
+            "description": "The index of the first item returned on the page.",
+            "format": "int32",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "total": {
+            "description": "The number of results on the page.",
+            "format": "int32",
+            "readOnly": true,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ProjectDetails": {
+        "additionalProperties": false,
+        "description": "Details about a project.",
+        "properties": {
+          "avatarUrls": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarUrlsBean"
+              }
+            ],
+            "description": "The URLs of the project's avatars.",
+            "readOnly": true
+          },
+          "id": {
+            "description": "The ID of the project.",
+            "type": "string"
+          },
+          "key": {
+            "description": "The key of the project.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the project.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "projectCategory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdatedProjectCategory"
+              }
+            ],
+            "description": "The category the project belongs to.",
+            "readOnly": true
+          },
+          "projectTypeKey": {
+            "description": "The [project type](https://confluence.atlassian.com/x/GwiiLQ#Jiraapplicationsoverview-Productfeaturesandprojecttypes) of the project.",
+            "enum": [
+              "software",
+              "service_desk",
+              "business",
+              "product_discovery"
+            ],
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the project details.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "simplified": {
+            "description": "Whether or not the project is simplified.",
+            "readOnly": true,
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "ProjectIssueCreateMetadata": {
+        "additionalProperties": false,
+        "description": "Details of the issue creation metadata for a project.",
+        "properties": {
+          "avatarUrls": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarUrlsBean"
+              }
+            ],
+            "description": "List of the project's avatars, returning the avatar size and associated URL.",
+            "readOnly": true
+          },
+          "expand": {
+            "description": "Expand options that include additional project issue create metadata details in the response.",
+            "readOnly": true,
+            "type": "string",
+            "xml": {
+              "attribute": true
+            }
+          },
+          "id": {
+            "description": "The ID of the project.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "issuetypes": {
+            "description": "List of the issue types supported by the project.",
+            "items": {
+              "$ref": "#/components/schemas/IssueTypeIssueCreateMetadata"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "key": {
+            "description": "The key of the project.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the project.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the project.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Scope": {
+        "additionalProperties": true,
+        "description": "The projects the item is associated with. Indicated for items associated with [next-gen projects](https://confluence.atlassian.com/x/loMyO).",
+        "properties": {
+          "project": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectDetails"
+              }
+            ],
+            "description": "The project the item has scope in.",
+            "readOnly": true
+          },
+          "type": {
+            "description": "The type of scope.",
+            "enum": [
+              "PROJECT",
+              "TEMPLATE"
+            ],
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SearchAndReconcileResults": {
+        "additionalProperties": false,
+        "description": "The result of a JQL search with issues reconsilation.",
+        "properties": {
+          "isLast": {
+            "description": "Indicates whether this is the last page of the paginated response.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "issues": {
+            "description": "The list of issues found by the search or reconsiliation.",
+            "items": {
+              "$ref": "#/components/schemas/IssueBean"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "names": {
+            "additionalProperties": {
+              "readOnly": true,
+              "type": "string"
+            },
+            "description": "The ID and name of each field in the search results.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "nextPageToken": {
+            "description": "Continuation token to fetch the next page. If this result represents the last or the only page this token will be null. This token will expire in 7 days.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "schema": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonTypeBean"
+            },
+            "description": "The schema describing the field types in the search results.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "warnings": {
+            "description": "Experimental. Warnings generated during the search, e.g. when a JQL clause exceeded its argument limit or when the result set was truncated due to an ingestion limit. This field is currently rolling out behind a feature flag and may be absent, empty, or change shape without notice until generally available.",
+            "items": {
+              "$ref": "#/components/schemas/SearchWarning"
+            },
+            "readOnly": true,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "SearchWarning": {
+        "additionalProperties": false,
+        "description": "Experimental. A warning returned alongside successful search results.",
+        "properties": {
+          "details": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchWarningLimitDetails"
+              }
+            ],
+            "description": "Structured details about the warning, if available."
+          },
+          "message": {
+            "description": "A human-readable explanation of the warning suitable for surfacing to end users.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "type": {
+            "description": "The type of warning, e.g. CLAUSE\\_LIMIT\\_EXCEEDED.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SearchWarningLimitDetails": {
+        "additionalProperties": false,
+        "description": "Experimental. Structured details about a JQL clause exceeding its argument limit.",
+        "properties": {
+          "actual": {
+            "description": "The actual number of arguments supplied that exceeded the limit.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "arguments": {
+            "description": "The arguments passed to the JQL clause.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "clause": {
+            "description": "The JQL clause that triggered the limit, e.g. issueHistory().",
+            "readOnly": true,
+            "type": "string"
+          },
+          "limit": {
+            "description": "The maximum number of arguments allowed for the clause.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "SimpleLink": {
+        "additionalProperties": false,
+        "description": "Details about the operations available in this version.",
+        "properties": {
+          "href": {
+            "type": "string"
+          },
+          "iconClass": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "styleClass": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "weight": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "link"
+        }
       },
       "SimpleListWrapperApplicationRole": {
         "additionalProperties": false,
@@ -233,6 +1266,116 @@
         "xml": {
           "name": "list"
         }
+      },
+      "StatusCategory": {
+        "additionalProperties": true,
+        "description": "A status category.",
+        "properties": {
+          "colorName": {
+            "description": "The name of the color used to represent the status category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "The ID of the status category.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "key": {
+            "description": "The key of the status category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the status category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the status category.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "StatusDetails": {
+        "additionalProperties": true,
+        "description": "A status.",
+        "properties": {
+          "description": {
+            "description": "The description of the status.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "iconUrl": {
+            "description": "The URL of the icon used to represent the status.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "The ID of the status.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the status.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "scope": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Scope"
+              }
+            ],
+            "description": "The scope of the field.",
+            "readOnly": true
+          },
+          "self": {
+            "description": "The URL of the status.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "statusCategory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatusCategory"
+              }
+            ],
+            "description": "The category assigned to the status.",
+            "readOnly": true
+          }
+        },
+        "type": "object"
+      },
+      "UpdatedProjectCategory": {
+        "additionalProperties": false,
+        "description": "A project category.",
+        "properties": {
+          "description": {
+            "description": "The name of the project category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "The ID of the project category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The description of the project category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the project category.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
       },
       "User": {
         "additionalProperties": false,
@@ -343,6 +1486,67 @@
         "xml": {
           "name": "user"
         }
+      },
+      "UserDetails": {
+        "additionalProperties": false,
+        "description": "User details permitted by the user's Atlassian Account privacy settings. However, be aware of these exceptions:\n\n *  User record deleted from Atlassian: This occurs as the result of a right to be forgotten request. In this case, `displayName` provides an indication and other parameters have default values or are blank (for example, email is blank).\n *  User record corrupted: This occurs as a results of events such as a server import and can only happen to deleted users. In this case, `accountId` returns *unknown* and all other parameters have fallback values.\n *  User record unavailable: This usually occurs due to an internal service outage. In this case, all parameters have fallback values.",
+        "properties": {
+          "accountId": {
+            "description": "The account ID of the user, which uniquely identifies the user across all Atlassian products. For example, *5b10ac8d82e05b22cc7d4ef5*.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "accountType": {
+            "description": "The type of account represented by this user. This will be one of 'atlassian' (normal users), 'app' (application user) or 'customer' (Jira Service Desk customer user)",
+            "readOnly": true,
+            "type": "string"
+          },
+          "active": {
+            "description": "Whether the user is active.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "avatarUrls": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarUrlsBean"
+              }
+            ],
+            "description": "The avatars of the user.",
+            "readOnly": true
+          },
+          "displayName": {
+            "description": "The display name of the user. Depending on the user’s privacy settings, this may return an alternative value.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "emailAddress": {
+            "description": "The email address of the user. Depending on the user’s privacy settings, this may be returned as null.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "key": {
+            "description": "This property is no longer available and will be removed from the documentation soon. See the [deprecation notice](https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-user-privacy-api-migration-guide/) for details.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "This property is no longer available and will be removed from the documentation soon. See the [deprecation notice](https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-user-privacy-api-migration-guide/) for details.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the user.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "timeZone": {
+            "description": "The time zone specified in the user's profile. Depending on the user’s privacy settings, this may be returned as null.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
       }
     }
   }

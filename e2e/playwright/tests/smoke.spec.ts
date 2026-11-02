@@ -4,16 +4,24 @@
 import {pluginId} from '../support/constants';
 import {expect, test} from '../support/fixture';
 
-test('plugin server reports Running', async ({jira}) => {
+/**
+ * @objective Verify the plugin server starts after install.
+ */
+test('reports plugin status as running after install', {tag: '@jira_plugin'}, async ({jira}) => {
+    // # Fetch plugin statuses as admin
     const statuses = await jira.adminClient.getPluginStatuses();
     const status = statuses.find((s) => s.plugin_id === pluginId);
 
+    // * Verify the plugin is running
     expect(status?.state).toBe(2);
 });
 
-test('webapp bundle loads without errors', async ({pw, jira}) => {
-    const {page} = await pw.testBrowser.login(jira.user);
-
+/**
+ * @objective Verify the plugin webapp bundle registers without errors.
+ */
+test('loads the plugin webapp bundle without errors', {tag: '@jira_plugin'}, async ({pw, jira}) => {
+    // # Log in and collect plugin errors while opening a channel
+    const {page, channelsPage} = await pw.testBrowser.login(jira.user);
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
     page.on('console', (msg) => {
@@ -21,18 +29,23 @@ test('webapp bundle loads without errors', async ({pw, jira}) => {
             errors.push(`console: ${msg.text()}`);
         }
     });
-
-    await page.goto(`/${jira.team.name}/channels/town-square`);
+    await channelsPage.goto(jira.team.name, 'town-square');
     await page.waitForFunction((id) => Boolean((window as any).plugins?.[id]), pluginId);
 
+    // * Verify the plugin logged no errors
     expect(errors).toEqual([]);
 });
 
-test('/jira slash command autocompletes', async ({pw, jira}) => {
-    const {page} = await pw.testBrowser.login(jira.user);
-    await page.goto(`/${jira.team.name}/channels/town-square`);
+/**
+ * @objective Verify the /jira slash command offers its subcommands in autocomplete.
+ */
+test('suggests /jira subcommands in message box autocomplete', {tag: '@jira_plugin'}, async ({pw, jira}) => {
+    // # Open a channel and type the command
+    const {channelsPage} = await pw.testBrowser.login(jira.user);
+    await channelsPage.goto(jira.team.name, 'town-square');
+    const {postCreate} = channelsPage.centerView;
+    await postCreate.writeMessage('/jira ');
 
-    await page.getByTestId('post_textbox').fill('/jira ');
-
-    await expect(page.locator('#suggestionList')).toContainText('connect');
+    // * Verify the suggestions include connect
+    await expect(postCreate.suggestionList).toContainText('connect');
 });

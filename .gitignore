@@ -26,3 +26,7 @@ server/manifest.go
 
 # Aider
 .aider.*
+
+# Playwright output when run from the repo root
+/test-results/
+/playwright-report/

@@ -14,7 +14,7 @@ export default async function globalSetup() {
     const fake = await startFakeJira({port: fakeJiraPort, baseURL: fakeJiraURL, cloud: fakeCloudSite});
 
     const adminClient = await loginAdmin();
-    await installPlugin(adminClient);
+    await installPlugin(adminClient, 'e2e');
 
     return fake.close;
 }

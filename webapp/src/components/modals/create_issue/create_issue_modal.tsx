@@ -24,9 +24,10 @@ export default function CreateIssueModal(props: Props) {
             onExited={props.close}
             bsSize='large'
             backdrop='static'
+            aria-labelledby='jira-create-issue-modal-title'
         >
             <Modal.Header closeButton={true}>
-                <Modal.Title>{'Create Jira Issue'}</Modal.Title>
+                <Modal.Title id='jira-create-issue-modal-title'>{'Create Jira Issue'}</Modal.Title>
             </Modal.Header>
             <CreateIssueForm {...props}/>
         </Modal>
