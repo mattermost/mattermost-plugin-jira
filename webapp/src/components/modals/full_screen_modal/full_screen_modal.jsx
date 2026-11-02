@@ -53,7 +53,6 @@ export default class FullScreenModal extends React.Component {
                     ref={this.modalRef}
                     className='FullScreenModal FullScreenModal--compact'
                     role='dialog'
-                    aria-modal='true'
                     aria-label={this.props.ariaLabel}
                 >
                     <CloseIcon
