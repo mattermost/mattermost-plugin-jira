@@ -56,6 +56,8 @@ services:
     network_mode: service:mattermost
     # Chromium rasterizes text differently per CPU architecture; CI runners are amd64.
     platform: linux/amd64
+    # Chromium crashes tabs ("Target crashed") when it outgrows Docker's default 64 MB /dev/shm.
+    shm_size: 1gb
     init: true
     command: npx -y playwright@${PW_VERSION:-1.64.0} run-server --port 3333 --host 0.0.0.0
     healthcheck:

@@ -24,6 +24,152 @@
         }
       }
     },
+    "/rest/api/2/issue": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "fields": {
+                  "assignee": {
+                    "id": "5b109f2e9729b51b54dc274d"
+                  },
+                  "components": [
+                    {
+                      "id": "10000"
+                    }
+                  ],
+                  "customfield_10000": "09/Jun/19",
+                  "customfield_20000": "06/Jul/19 3:25 PM",
+                  "customfield_30000": [
+                    "10000",
+                    "10002"
+                  ],
+                  "customfield_40000": "Occurs on all orders",
+                  "customfield_50000": "Could impact day-to-day work.",
+                  "customfield_60000": "jira-software-users",
+                  "customfield_70000": [
+                    "jira-administrators",
+                    "jira-software-users"
+                  ],
+                  "customfield_80000": {
+                    "value": "red"
+                  },
+                  "description": "Order entry fails when selecting supplier.",
+                  "duedate": "2019-03-11",
+                  "environment": "UAT",
+                  "fixVersions": [
+                    {
+                      "id": "10001"
+                    }
+                  ],
+                  "issuetype": {
+                    "id": "10000"
+                  },
+                  "labels": [
+                    "bugfix",
+                    "blitz_test"
+                  ],
+                  "parent": {
+                    "key": "PROJ-123"
+                  },
+                  "priority": {
+                    "id": "20000"
+                  },
+                  "project": {
+                    "id": "10000"
+                  },
+                  "reporter": {
+                    "id": "5b10a2844c20165700ede21g"
+                  },
+                  "security": {
+                    "id": "10000"
+                  },
+                  "summary": "Main order flow broken",
+                  "timetracking": {
+                    "originalEstimate": "10",
+                    "remainingEstimate": "5"
+                  },
+                  "versions": [
+                    {
+                      "id": "10000"
+                    }
+                  ]
+                },
+                "update": {
+                  "worklog": [
+                    {
+                      "add": {
+                        "started": "2019-07-05T11:05:00.000+0000",
+                        "timeSpent": "60m"
+                      }
+                    }
+                  ]
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/IssueUpdateDetails"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "example": "{\"id\":\"10000\",\"key\":\"ED-24\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/10000\",\"transition\":{\"status\":200,\"errorCollection\":{\"errorMessages\":[],\"errors\":{}}}}",
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedIssue"
+                }
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": "{\"errorMessages\":[\"Field 'priority' is required\"],\"errors\":{}}",
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCollection"
+                }
+              }
+            },
+            "description": "Returned if the request:\n\n *  is missing required fields.\n *  contains invalid field values.\n *  contains fields that cannot be set for the issue type.\n *  is by a user who does not have the necessary permission.\n *  is to create a subtype in a project different that of the parent issue.\n *  is for a subtask when the option to create subtasks is disabled.\n *  is invalid for any other reason."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCollection"
+                }
+              }
+            },
+            "description": "Returned if the authentication credentials are incorrect or missing."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCollection"
+                }
+              }
+            },
+            "description": "Returned if the user does not have the necessary permission."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCollection"
+                }
+              }
+            },
+            "description": "Returned if a configuration problem prevents the creation of the issue."
+          }
+        }
+      }
+    },
     "/rest/api/2/issue/createmeta": {
       "get": {
         "responses": {
@@ -40,6 +186,222 @@
           },
           "401": {
             "description": "Returned if the authentication credentials are incorrect or missing."
+          }
+        }
+      }
+    },
+    "/rest/api/2/issue/{issueIdOrKey}": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "{\"fields\":{\"watcher\":{\"isWatching\":false,\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/EX-1/watchers\",\"watchCount\":1},\"attachment\":[{\"author\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"accountType\":\"atlassian\",\"active\":false,\"avatarUrls\":{\"16x16\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=16&s=16\",\"24x24\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=24&s=24\",\"32x32\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=32&s=32\",\"48x48\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=48&s=48\"},\"displayName\":\"Mia Krystof\",\"key\":\"\",\"name\":\"\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"content\":\"https://your-domain.atlassian.net/jira/rest/api/3/attachment/content/10001\",\"created\":\"2023-06-24T19:24:50.000+0000\",\"filename\":\"debuglog.txt\",\"id\":10001,\"mimeType\":\"text/plain\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/attachments/10001\",\"size\":2460}],\"sub-tasks\":[{\"id\":\"10000\",\"outwardIssue\":{\"fields\":{\"status\":{\"iconUrl\":\"https://your-domain.atlassian.net/images/icons/statuses/open.png\",\"name\":\"Open\"}},\"id\":\"10003\",\"key\":\"ED-2\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/ED-2\"},\"type\":{\"id\":\"10000\",\"inward\":\"Parent\",\"name\":\"\",\"outward\":\"Sub-task\"}}],\"description\":\"Main order flow broken\",\"project\":{\"avatarUrls\":{\"16x16\":\"https://your-domain.atlassian.net/secure/projectavatar?size=xsmall&pid=10000\",\"24x24\":\"https://your-domain.atlassian.net/secure/projectavatar?size=small&pid=10000\",\"32x32\":\"https://your-domain.atlassian.net/secure/projectavatar?size=medium&pid=10000\",\"48x48\":\"https://your-domain.atlassian.net/secure/projectavatar?size=large&pid=10000\"},\"id\":\"10000\",\"insight\":{\"lastIssueUpdateTime\":\"2021-04-22T05:37:05.000+0000\",\"totalIssueCount\":100},\"key\":\"EX\",\"name\":\"Example\",\"projectCategory\":{\"description\":\"First Project Category\",\"id\":\"10000\",\"name\":\"FIRST\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/projectCategory/10000\"},\"self\":\"https://your-domain.atlassian.net/rest/api/2/project/EX\",\"simplified\":false,\"style\":\"classic\"},\"comment\":[{\"author\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"active\":false,\"displayName\":\"Mia Krystof\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"body\":\"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eget venenatis elit. Duis eu justo eget augue iaculis fermentum. Sed semper quam laoreet nisi egestas at posuere augue semper.\",\"created\":\"2021-01-17T12:34:00.000+0000\",\"id\":\"10000\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/10010/comment/10000\",\"updateAuthor\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"active\":false,\"displayName\":\"Mia Krystof\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"updated\":\"2021-01-18T23:45:00.000+0000\",\"visibility\":{\"identifier\":\"Administrators\",\"type\":\"role\",\"value\":\"Administrators\"}}],\"issuelinks\":[{\"id\":\"10001\",\"outwardIssue\":{\"fields\":{\"status\":{\"iconUrl\":\"https://your-domain.atlassian.net/images/icons/statuses/open.png\",\"name\":\"Open\"}},\"id\":\"10004L\",\"key\":\"PR-2\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/PR-2\"},\"type\":{\"id\":\"10000\",\"inward\":\"depends on\",\"name\":\"Dependent\",\"outward\":\"is depended by\"}},{\"id\":\"10002\",\"inwardIssue\":{\"fields\":{\"status\":{\"iconUrl\":\"https://your-domain.atlassian.net/images/icons/statuses/open.png\",\"name\":\"Open\"}},\"id\":\"10004\",\"key\":\"PR-3\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/PR-3\"},\"type\":{\"id\":\"10000\",\"inward\":\"depends on\",\"name\":\"Dependent\",\"outward\":\"is depended by\"}}],\"worklog\":[{\"author\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"active\":false,\"displayName\":\"Mia Krystof\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"comment\":\"I did some work here.\",\"id\":\"100028\",\"issueId\":\"10002\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/10010/worklog/10000\",\"started\":\"2021-01-17T12:34:00.000+0000\",\"timeSpent\":\"3h 20m\",\"timeSpentSeconds\":12000,\"updateAuthor\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"active\":false,\"displayName\":\"Mia Krystof\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"updated\":\"2021-01-18T23:45:00.000+0000\",\"visibility\":{\"identifier\":\"276f955c-63d7-42c8-9520-92d01dca0625\",\"type\":\"group\",\"value\":\"jira-developers\"}}],\"updated\":1,\"timetracking\":{\"originalEstimate\":\"10m\",\"originalEstimateSeconds\":600,\"remainingEstimate\":\"3m\",\"remainingEstimateSeconds\":200,\"timeSpent\":\"6m\",\"timeSpentSeconds\":400}},\"id\":\"10002\",\"key\":\"ED-1\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/10002\"}",
+                "schema": {
+                  "$ref": "#/components/schemas/IssueBean"
+                }
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "401": {
+            "description": "Returned if the authentication credentials are incorrect or missing."
+          },
+          "404": {
+            "description": "Returned if the issue is not found or the user does not have permission to view it."
+          }
+        }
+      }
+    },
+    "/rest/api/2/issue/{issueIdOrKey}/assignee": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "accountId": "5b10ac8d82e05b22cc7d4ef5"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          },
+          "description": "The request object with the user that the issue is assigned to.",
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "400": {
+            "description": "Returned if:\n\n *  the user is not found.\n *  `name`, `key`, or `accountId` is missing.\n *  more than one of `name`, `key`, and `accountId` are provided."
+          },
+          "403": {
+            "description": "Returned if the user does not have the necessary permission."
+          },
+          "404": {
+            "description": "Returned if the issue is not found."
+          }
+        }
+      }
+    },
+    "/rest/api/2/issue/{issueIdOrKey}/comment": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eget venenatis elit. Duis eu justo eget augue iaculis fermentum. Sed semper quam laoreet nisi egestas at posuere augue semper.",
+                "visibility": {
+                  "identifier": "Administrators",
+                  "type": "role",
+                  "value": "Administrators"
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/Comment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "example": "{\"author\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"active\":false,\"displayName\":\"Mia Krystof\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"body\":\"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eget venenatis elit. Duis eu justo eget augue iaculis fermentum. Sed semper quam laoreet nisi egestas at posuere augue semper.\",\"created\":\"2021-01-17T12:34:00.000+0000\",\"id\":\"10000\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/issue/10010/comment/10000\",\"updateAuthor\":{\"accountId\":\"5b10a2844c20165700ede21g\",\"active\":false,\"displayName\":\"Mia Krystof\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\"},\"updated\":\"2021-01-18T23:45:00.000+0000\",\"visibility\":{\"identifier\":\"Administrators\",\"type\":\"role\",\"value\":\"Administrators\"}}",
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "400": {
+            "description": "Returned if the request is invalid."
+          },
+          "401": {
+            "description": "Returned if the authentication credentials are incorrect."
+          },
+          "404": {
+            "description": "Returned if the issue is not found or the user does not have permission to view it."
+          },
+          "413": {
+            "description": "Returned if the per-issue limit has been breached for one of the following fields:\n\n *  comments\n *  attachments"
+          }
+        }
+      }
+    },
+    "/rest/api/2/issue/{issueIdOrKey}/transitions": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "{\"transitions\":[{\"fields\":{\"summary\":{\"allowedValues\":[\"red\",\"blue\"],\"defaultValue\":\"red\",\"hasDefaultValue\":false,\"key\":\"field_key\",\"name\":\"My Multi Select\",\"operations\":[\"set\",\"add\"],\"required\":false,\"schema\":{\"custom\":\"com.atlassian.jira.plugin.system.customfieldtypes:multiselect\",\"customId\":10001,\"items\":\"option\",\"type\":\"array\"}}},\"hasScreen\":false,\"id\":\"2\",\"isAvailable\":true,\"isConditional\":false,\"isGlobal\":false,\"isInitial\":false,\"name\":\"Close Issue\",\"to\":{\"description\":\"The issue is currently being worked on.\",\"iconUrl\":\"https://your-domain.atlassian.net/images/icons/progress.gif\",\"id\":\"10000\",\"name\":\"In Progress\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/status/10000\",\"statusCategory\":{\"colorName\":\"yellow\",\"id\":1,\"key\":\"in-flight\",\"name\":\"In Progress\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/statuscategory/1\"}}},{\"fields\":{\"summary\":{\"allowedValues\":[\"red\",\"blue\"],\"defaultValue\":\"red\",\"hasDefaultValue\":false,\"key\":\"field_key\",\"name\":\"My Multi Select\",\"operations\":[\"set\",\"add\"],\"required\":false,\"schema\":{\"custom\":\"com.atlassian.jira.plugin.system.customfieldtypes:multiselect\",\"customId\":10001,\"items\":\"option\",\"type\":\"array\"}},\"colour\":{\"allowedValues\":[\"red\",\"blue\"],\"defaultValue\":\"red\",\"hasDefaultValue\":false,\"key\":\"field_key\",\"name\":\"My Multi Select\",\"operations\":[\"set\",\"add\"],\"required\":false,\"schema\":{\"custom\":\"com.atlassian.jira.plugin.system.customfieldtypes:multiselect\",\"customId\":10001,\"items\":\"option\",\"type\":\"array\"}}},\"hasScreen\":true,\"id\":\"711\",\"name\":\"QA Review\",\"to\":{\"description\":\"The issue is closed.\",\"iconUrl\":\"https://your-domain.atlassian.net/images/icons/closed.gif\",\"id\":\"5\",\"name\":\"Closed\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/status/5\",\"statusCategory\":{\"colorName\":\"green\",\"id\":9,\"key\":\"completed\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/statuscategory/9\"}}}]}",
+                "schema": {
+                  "$ref": "#/components/schemas/Transitions"
+                }
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "401": {
+            "description": "Returned if the authentication credentials are incorrect or missing."
+          },
+          "404": {
+            "description": "Returned if the issue is not found or the user does not have permission to view it."
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "fields": {
+                  "assignee": {
+                    "name": "Will"
+                  },
+                  "resolution": {
+                    "name": "Fixed"
+                  }
+                },
+                "historyMetadata": {
+                  "activityDescription": "Complete order processing",
+                  "actor": {
+                    "avatarUrl": "http://mysystem/avatar/tony.jpg",
+                    "displayName": "Tony",
+                    "id": "tony",
+                    "type": "mysystem-user",
+                    "url": "http://mysystem/users/tony"
+                  },
+                  "cause": {
+                    "id": "myevent",
+                    "type": "mysystem-event"
+                  },
+                  "description": "From the order testing process",
+                  "extraData": {
+                    "Iteration": "10a",
+                    "Step": "4"
+                  },
+                  "generator": {
+                    "id": "mysystem-1",
+                    "type": "mysystem-application"
+                  },
+                  "type": "myplugin:type"
+                },
+                "transition": {
+                  "id": "5"
+                },
+                "update": {
+                  "comment": [
+                    {
+                      "add": {
+                        "body": "Bug has been fixed."
+                      }
+                    }
+                  ]
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/IssueUpdateDetails"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "400": {
+            "description": "Returned if:\n\n *  no transition is specified.\n *  the user does not have permission to transition the issue.\n *  a field that isn't included on the transition screen is defined in `fields` or `update`.\n *  a field is specified in both `fields` and `update`.\n *  the request is invalid for any other reason."
+          },
+          "401": {
+            "description": "Returned if the authentication credentials are incorrect or missing."
+          },
+          "404": {
+            "description": "Returned if the issue is not found or the user does not have permission to view it."
+          },
+          "409": {
+            "description": "Returned if the issue could not be updated due to a conflicting update."
+          },
+          "413": {
+            "description": "Returned if a per-issue limit has been breached for one of the following fields:\n\n *  comments\n *  worklogs\n *  attachments\n *  issue links\n *  remote issue links"
+          },
+          "422": {
+            "description": "Returned if a configuration problem prevents the creation of the issue."
           }
         }
       }
@@ -86,6 +448,38 @@
           },
           "401": {
             "description": "Returned if the authentication credentials are incorrect or missing."
+          }
+        }
+      }
+    },
+    "/rest/api/2/user/assignable/search": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "{\"accountId\":\"5b10a2844c20165700ede21g\",\"accountType\":\"atlassian\",\"active\":true,\"applicationRoles\":{\"items\":[],\"size\":1},\"avatarUrls\":{\"16x16\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=16&s=16\",\"24x24\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=24&s=24\",\"32x32\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=32&s=32\",\"48x48\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=48&s=48\"},\"displayName\":\"Mia Krystof\",\"emailAddress\":\"mia@example.com\",\"groups\":{\"items\":[],\"size\":3},\"key\":\"\",\"name\":\"\",\"self\":\"https://your-domain.atlassian.net/rest/api/2/user?accountId=5b10a2844c20165700ede21g\",\"timeZone\":\"Australia/Sydney\"}",
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "400": {
+            "description": "Returned if:\n\n *  None of `issueKey`, `issueId` or `project` is present.\n *  `issueId` parameter is not valid.\n *  `query` or `accountId` is missing.\n *  `query` and `accountId` are provided."
+          },
+          "401": {
+            "description": "Returned if the authentication credentials are incorrect or missing."
+          },
+          "404": {
+            "description": "Returned if the project, issue, or transition is not found."
+          },
+          "429": {
+            "description": "Returned if the rate limit is exceeded. User search endpoints share a collective rate limit for the tenant, in addition to Jira's normal rate limiting you may receive a rate limit for user search. Please respect the Retry-After header."
           }
         }
       }
@@ -284,6 +678,166 @@
         },
         "type": "object"
       },
+      "Comment": {
+        "additionalProperties": true,
+        "description": "A comment.",
+        "properties": {
+          "author": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserDetails"
+              }
+            ],
+            "description": "The ID of the user who created the comment.",
+            "readOnly": true
+          },
+          "body": {
+            "description": "The comment text.",
+            "type": "string"
+          },
+          "created": {
+            "description": "The date and time at which the comment was created.",
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "The ID of the comment.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "jsdAuthorCanSeeRequest": {
+            "description": "Whether the comment was added from an email sent by a person who is not part of the issue. See [Allow external emails to be added as comments on issues](https://support.atlassian.com/jira-service-management-cloud/docs/allow-external-emails-to-be-added-as-comments-on-issues/)for information on setting up this feature.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "jsdPublic": {
+            "description": "Whether the comment is visible in Jira Service Desk. Defaults to true when comments are created in the Jira Cloud Platform. This includes when the site doesn't use Jira Service Desk or the project isn't a Jira Service Desk project and, therefore, there is no Jira Service Desk for the issue to be visible on. To create a comment with its visibility in Jira Service Desk set to false, use the Jira Service Desk REST API [Create request comment](https://developer.atlassian.com/cloud/jira/service-desk/rest/#api-rest-servicedeskapi-request-issueIdOrKey-comment-post) operation.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "properties": {
+            "description": "A list of comment properties. Optional on create and update.",
+            "items": {
+              "$ref": "#/components/schemas/EntityProperty"
+            },
+            "type": "array"
+          },
+          "renderedBody": {
+            "description": "The rendered version of the comment.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the comment.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "updateAuthor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserDetails"
+              }
+            ],
+            "description": "The ID of the user who updated the comment last.",
+            "readOnly": true
+          },
+          "updated": {
+            "description": "The date and time at which the comment was updated last.",
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "visibility": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Visibility"
+              }
+            ],
+            "description": "The group or role to which this comment is visible. Optional on create and update."
+          }
+        },
+        "type": "object"
+      },
+      "CreatedIssue": {
+        "additionalProperties": false,
+        "description": "Details about a created issue or subtask.",
+        "properties": {
+          "id": {
+            "description": "The ID of the created issue or subtask.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "key": {
+            "description": "The key of the created issue or subtask.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the created issue or subtask.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "transition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NestedResponse"
+              }
+            ],
+            "description": "The response code and messages related to any requested transition.",
+            "readOnly": true
+          },
+          "watchers": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NestedResponse"
+              }
+            ],
+            "description": "The response code and messages related to any requested watchers.",
+            "readOnly": true
+          }
+        },
+        "type": "object"
+      },
+      "EntityProperty": {
+        "additionalProperties": false,
+        "description": "An entity property, for more information see [Entity properties](https://developer.atlassian.com/cloud/jira/platform/jira-entity-properties/).",
+        "properties": {
+          "key": {
+            "description": "The key of the property. Required on create and update.",
+            "type": "string"
+          },
+          "value": {
+            "description": "The value of the property. Required on create and update."
+          }
+        },
+        "type": "object"
+      },
+      "ErrorCollection": {
+        "additionalProperties": false,
+        "description": "Error messages from an operation.",
+        "properties": {
+          "errorMessages": {
+            "description": "The list of error messages produced by this operation. For example, \"input parameter 'key' must be provided\"",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "errors": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The list of errors by parameter returned by the operation. For example,\"projectKey\": \"Project keys must start with an uppercase letter, followed by one or more uppercase alphanumeric characters.\"",
+            "type": "object"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "FieldMetadata": {
         "additionalProperties": false,
         "description": "The metadata describing an issue field.",
@@ -363,6 +917,44 @@
         "xml": {
           "name": "availableField"
         }
+      },
+      "FieldUpdateOperation": {
+        "additionalProperties": false,
+        "description": "Details of an operation to perform on a field.",
+        "properties": {
+          "add": {
+            "description": "The value to add to the field.",
+            "example": "triaged"
+          },
+          "copy": {
+            "description": "The field value to copy from another issue.",
+            "example": {
+              "issuelinks": {
+                "sourceIssues": [
+                  {
+                    "key": "FP-5"
+                  }
+                ]
+              }
+            }
+          },
+          "edit": {
+            "description": "The value to edit in the field.",
+            "example": {
+              "originalEstimate": "1w 1d",
+              "remainingEstimate": "4d"
+            }
+          },
+          "remove": {
+            "description": "The value to removed from the field.",
+            "example": "blocker"
+          },
+          "set": {
+            "description": "The value to set in the field.",
+            "example": "A new summary"
+          }
+        },
+        "type": "object"
       },
       "GroupName": {
         "additionalProperties": false,
@@ -887,6 +1479,51 @@
         },
         "type": "object"
       },
+      "IssueUpdateDetails": {
+        "additionalProperties": true,
+        "description": "Details of an issue update request.",
+        "properties": {
+          "fields": {
+            "additionalProperties": {},
+            "description": "List of issue screen fields to update, specifying the sub-field to update and its value for each field. This field provides a straightforward option when setting a sub-field. When multiple sub-fields or other operations are required, use `update`. Fields included in here cannot be included in `update`.",
+            "type": "object"
+          },
+          "historyMetadata": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HistoryMetadata"
+              }
+            ],
+            "description": "Additional issue history details."
+          },
+          "properties": {
+            "description": "Details of issue properties to be add or update.",
+            "items": {
+              "$ref": "#/components/schemas/EntityProperty"
+            },
+            "type": "array"
+          },
+          "transition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssueTransition"
+              }
+            ],
+            "description": "Details of a transition. Required when performing a transition, optional when creating or editing an issue."
+          },
+          "update": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/FieldUpdateOperation"
+              },
+              "type": "array"
+            },
+            "description": "A Map containing the field field name and a list of operations to perform on the issue screen field. Note that fields included in here cannot be included in `fields`.",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
       "IssueUpdateMetadata": {
         "description": "A list of editable field details.",
         "properties": {
@@ -982,6 +1619,22 @@
       },
       "ListWrapperCallbackGroupName": {
         "additionalProperties": false,
+        "type": "object"
+      },
+      "NestedResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "errorCollection": {
+            "$ref": "#/components/schemas/ErrorCollection"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "warningCollection": {
+            "$ref": "#/components/schemas/WarningCollection"
+          }
+        },
         "type": "object"
       },
       "Operations": {
@@ -1981,6 +2634,29 @@
         },
         "type": "object"
       },
+      "Transitions": {
+        "additionalProperties": false,
+        "description": "List of issue transitions.",
+        "properties": {
+          "expand": {
+            "description": "Expand options that include additional transitions details in the response.",
+            "readOnly": true,
+            "type": "string",
+            "xml": {
+              "attribute": true
+            }
+          },
+          "transitions": {
+            "description": "List of issue transitions.",
+            "items": {
+              "$ref": "#/components/schemas/IssueTransition"
+            },
+            "readOnly": true,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "UpdatedProjectCategory": {
         "additionalProperties": false,
         "description": "A project category.",
@@ -2345,6 +3021,42 @@
             "format": "int64",
             "readOnly": true,
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "Visibility": {
+        "additionalProperties": true,
+        "description": "The group or role to which this item is visible.",
+        "properties": {
+          "identifier": {
+            "description": "The ID of the group or the name of the role that visibility of this item is restricted to.",
+            "nullable": true,
+            "type": "string"
+          },
+          "type": {
+            "description": "Whether visibility of this item is restricted to a group or role.",
+            "enum": [
+              "group",
+              "role"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "description": "The name of the group or role that visibility of this item is restricted to. Please note that the name of a group is mutable, to reliably identify a group use `identifier`.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WarningCollection": {
+        "additionalProperties": false,
+        "properties": {
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "type": "object"

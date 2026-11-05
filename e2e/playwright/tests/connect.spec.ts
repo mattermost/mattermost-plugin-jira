@@ -1,11 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {fakeCloudSite, jiraFlavor, mattermostURL, pluginId} from '../support/constants';
-import {fakeCloudUser, fakeJiraUser} from '../fake-jira/state';
+import {fakeCloudSite, jiraFlavor, jiraInstanceURL, mattermostURL, pluginId} from '../support/constants';
+import {fakeCloudUser, fakeIssues, fakeJiraUser} from '../fake-jira/state';
 import {fakeJira} from '../support/fake_jira';
 import {expect, test} from '../support/fixture';
 import {connectUserViaBrowser, connectUserViaKV} from '../support/jira';
+import {readConnection, seedConnection} from '../support/kv';
+import {runSlashCommand} from '../support/ui';
 
 const expectedHandshake = {
     server: [
@@ -63,6 +65,39 @@ test('recognizes a KV-seeded connection without an OAuth round-trip', {tag: '@ji
 
     // * Verify Jira was not called
     expect(await fakeJira.requests()).toEqual([]);
+});
+
+/**
+ * @objective Verify an expired Cloud access token is refreshed and the new token is stored before calling Jira.
+ */
+test('refreshes expired access token before calling Jira', {tag: '@jira_plugin'}, async ({pw, jira}) => {
+    test.skip(jiraFlavor === 'server', 'OAuth 1.0a tokens do not expire');
+
+    // # Seed a connection whose access token expired and that Jira no longer accepts
+    const {refresh_token: refreshToken} = await fakeJira.issueTokens();
+    seedConnection({
+        mattermostUserId: jira.user.id,
+        instanceId: jiraInstanceURL,
+        instanceType: 'cloud-oauth',
+        jiraAccount: fakeCloudUser,
+        credentials: {oauth2: {access_token: 'expired-access-token', refresh_token: refreshToken, expires_in: -3600}},
+    });
+
+    // # View an issue, which needs a working token
+    const {reply} = await runSlashCommand(pw, jira, `/jira view ${fakeIssues[0].key}`);
+
+    // * Verify the issue is shown
+    await expect(reply.getByRole('link', {name: `${fakeIssues[0].key}: ${fakeIssues[0].summary}`})).toBeVisible();
+
+    // * Verify the plugin used the refresh token
+    const [refresh] = await fakeJira.requestsTo('POST', '/oauth/token');
+    expect(new URLSearchParams(refresh.body as string).get('grant_type')).toBe('refresh_token');
+
+    // * Verify the refreshed tokens replaced the expired ones
+    const token = readConnection(jiraInstanceURL, jira.user.id)?.OAuth2Token;
+    expect(token?.access_token).not.toBe('expired-access-token');
+    expect(token?.refresh_token).not.toBe(refreshToken);
+    expect(Date.parse(token?.expiry ?? '')).toBeGreaterThan(Date.now());
 });
 
 /**

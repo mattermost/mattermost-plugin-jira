@@ -6,7 +6,7 @@
 import {expect, test} from '@playwright/test';
 
 import {ContractValidator} from '../fake-jira/contract/validator';
-import {cloudUser, createFields, createMeta, projectSearch, projectStatuses, searchIssues} from '../fake-jira/state';
+import {assignableUsers, cloudUser, createFields, createMeta, projectSearch, projectStatuses, searchIssues} from '../fake-jira/state';
 import {fakeCloudSite} from '../support/constants';
 
 const siteURL = process.env.JIRA_CLOUD_URL?.replace(/\/$/, '');
@@ -34,6 +34,7 @@ const cases: Array<{path: string; query?: Record<string, string>; specGap?: RegE
         fake: () => createMeta(fakeCloudSite, {summary: createFields.summary}),
     },
     {path: '/rest/api/2/search/jql', query: {jql: `project = ${projectKey}`, maxResults: '1', fields: 'summary'}, fake: () => searchIssues(fakeCloudSite)},
+    {path: '/rest/api/2/user/assignable/search', query: {project: projectKey, maxResults: '1'}, fake: () => assignableUsers(fakeCloudSite, '')},
 ];
 
 const requiredVars = 'JIRA_CLOUD_URL, JIRA_CLOUD_{ADMIN,USER}_EMAIL and JIRA_CLOUD_{ADMIN,USER}_API_TOKEN';

@@ -108,6 +108,16 @@ type LegacyWebhookOptions = {
     params?: Record<string, string>;
 };
 
+// Subscription webhooks are queued and processed asynchronously, unlike legacy ones.
+export async function sendSubscriptionWebhook(payload: string, secret = webhookSecret) {
+    const query = new URLSearchParams({secret});
+    return fetch(`${mattermostURL}/plugins/${pluginId}/instance/${instancePathSegment(jiraInstanceURL)}/api/v2/webhook?${query}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: payload,
+    });
+}
+
 export async function sendLegacyWebhook(payload: string, {team, channel, secret = webhookSecret, params = {}}: LegacyWebhookOptions) {
     const query = new URLSearchParams({secret, team, channel, ...params});
     return fetch(`${mattermostURL}/plugins/${pluginId}/webhook?${query}`, {

@@ -30,7 +30,12 @@ export type FakeJiraState = {
     journal: JournalEntry[];
     faults: Map<string, number>;
     contractViolations: string[];
+    createdIssues: CreatedIssue[];
 };
+
+export type CreatedIssue = {id: string; key: string; summary: string; description: string; labels: string[]; issueTypeId: string};
+
+export type CreateIssueFields = {summary?: string; description?: string; labels?: string[]; issuetype?: {id?: string}};
 
 export const fakeJiraUser = {
     key: 'e2e-jira-user',
@@ -72,9 +77,24 @@ const statuses = [
 ];
 
 export const fakeIssues = [
-    {id: '10100', key: 'E2E-1', summary: 'Checkout button overlaps the cart total on narrow screens'},
-    {id: '10101', key: 'E2E-2', summary: 'Nightly export fails for workspaces with archived channels'},
+    {
+        id: '10100',
+        key: 'E2E-1',
+        summary: 'Checkout button overlaps the cart total on narrow screens',
+        description: 'On a 375px viewport the *Checkout* button covers the cart total, so shoppers cannot see what they pay.',
+        labels: ['checkout', 'mobile'],
+    },
+    {
+        id: '10101',
+        key: 'E2E-2',
+        summary: 'Nightly export fails for workspaces with archived channels',
+        description: 'The export job stops at the first archived channel and never uploads the archive.',
+        labels: ['export'],
+    },
 ];
+
+// Inline, so the dockerized browser renders it without reaching fake-jira.
+const issueTypeIcon = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" rx="3" fill="#e5493a"/></svg>')}`;
 
 export const createFields = {
     summary: {required: true, schema: {type: 'string', system: 'summary'}, name: 'Summary', key: 'summary', hasDefaultValue: false, operations: ['set']},
@@ -137,6 +157,63 @@ export function searchIssues(site: CloudSite) {
     };
 }
 
+export function issueByKey(site: CloudSite, idOrKey: string, created: CreatedIssue[] = []) {
+    const issues: Array<(typeof fakeIssues)[number] & {issueTypeId?: string}> = [...fakeIssues, ...created];
+    const issue = issues.find((i) => i.key === idOrKey || i.id === idOrKey);
+    if (!issue) {
+        return undefined;
+    }
+    const api = `${site.siteURL}/rest/api/2`;
+    const bug = issueTypes.find((t) => t.id === issue.issueTypeId) ?? issueTypes[1];
+    return {
+        id: issue.id,
+        key: issue.key,
+        self: `${api}/issue/${issue.id}`,
+        fields: {
+            summary: issue.summary,
+            description: issue.description,
+            labels: issue.labels,
+            issuetype: {self: `${api}/issuetype/${bug.id}`, ...bug, iconUrl: issueTypeIcon, subtask: false},
+            project: {self: `${api}/project/${fakeProject.id}`, ...fakeProject},
+            status: {self: `${api}/status/${statuses[0].id}`, ...statuses[0]},
+            priority: {self: `${api}/priority/2`, id: '2', name: 'High'},
+            assignee: cloudUser(site),
+        },
+    };
+}
+
+export function issueTransitions(site: CloudSite) {
+    return {
+        transitions: statuses.map((s) => ({id: s.id, name: s.name, to: {self: `${site.siteURL}/rest/api/2/status/${s.id}`, ...s}})),
+    };
+}
+
+export function createIssue(state: FakeJiraState, fields: CreateIssueFields) {
+    const id = String(10200 + state.createdIssues.length);
+    const key = `${fakeProject.key}-${fakeIssues.length + state.createdIssues.length + 1}`;
+    state.createdIssues.push({
+        id,
+        key,
+        summary: fields.summary ?? '',
+        description: fields.description ?? '',
+        labels: fields.labels ?? [],
+        issueTypeId: fields.issuetype?.id ?? issueTypes[0].id,
+    });
+    return {id, key, self: `${state.cloud.siteURL}/rest/api/2/issue/${id}`};
+}
+
+export function issueComment(site: CloudSite, issueId: string, body: string) {
+    const now = new Date().toISOString();
+    const author = cloudUser(site);
+    return {self: `${site.siteURL}/rest/api/2/issue/${issueId}/comment/20000`, id: '20000', author, updateAuthor: author, body, created: now, updated: now};
+}
+
+// Cloud only shows other users' email addresses when their profile visibility allows it, so it's left out.
+export function assignableUsers(site: CloudSite, query: string) {
+    const {emailAddress, ...user} = cloudUser(site);
+    return [user].filter((u) => u.displayName.toLowerCase().includes(query.toLowerCase()) || emailAddress.startsWith(query.toLowerCase()));
+}
+
 export function serverInfo(baseURL: string) {
     return {baseUrl: baseURL, version: '9.12.0', versionNumbers: [9, 12, 0], deploymentType: 'Server', serverTitle: 'Fake Jira'};
 }
@@ -152,5 +229,6 @@ export function defaultState(baseURL: string, cloud: CloudSite): FakeJiraState {
         journal: [],
         faults: new Map(),
         contractViolations: [],
+        createdIssues: [],
     };
 }

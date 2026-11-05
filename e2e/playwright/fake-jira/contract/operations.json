@@ -3,9 +3,16 @@
     "url": "https://developer.atlassian.com/cloud/jira/platform/swagger.v3.json",
     "operations": [
       "GET /rest/api/2/myself",
+      "POST /rest/api/2/issue",
       "GET /rest/api/2/issue/createmeta",
+      "GET /rest/api/2/issue/{issueIdOrKey}",
+      "PUT /rest/api/2/issue/{issueIdOrKey}/assignee",
+      "POST /rest/api/2/issue/{issueIdOrKey}/comment",
+      "GET /rest/api/2/issue/{issueIdOrKey}/transitions",
+      "POST /rest/api/2/issue/{issueIdOrKey}/transitions",
       "GET /rest/api/2/project/{projectIdOrKey}",
-      "GET /rest/api/2/search/jql"
+      "GET /rest/api/2/search/jql",
+      "GET /rest/api/2/user/assignable/search"
     ]
   },
   "platform-v3": {

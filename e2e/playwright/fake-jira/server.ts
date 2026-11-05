@@ -8,11 +8,17 @@ import {createServer, IncomingMessage, Server, ServerResponse} from 'node:http';
 
 import {ContractValidator} from './contract/validator';
 import {
+    assignableUsers,
     cloudUser,
     CloudSite,
+    createIssue,
+    CreateIssueFields,
     createMeta,
     defaultState,
     FakeJiraState,
+    issueByKey,
+    issueComment,
+    issueTransitions,
     JournalEntry,
     projectByKey,
     projectSearch,
@@ -141,6 +147,39 @@ const routes: Record<string, Handler> = {
     'GET /rest/api/3/project/{projectIdOrKey}/statuses': authorized(({res, state}) => sendJSON(res, 200, projectStatuses(state.cloud))),
     'GET /rest/api/2/issue/createmeta': authorized(({res, state}) => sendJSON(res, 200, createMeta(state.cloud))),
     'GET /rest/api/2/search/jql': authorized(({res, state}) => sendJSON(res, 200, searchIssues(state.cloud))),
+    'GET /rest/api/2/issue/{issueIdOrKey}': authorized(({res, url, state}) => {
+        const key = decodeURIComponent(url.pathname.split('/').pop() ?? '');
+        const issue = issueByKey(state.cloud, key, state.createdIssues);
+        if (!issue) {
+            sendJSON(res, 404, {errorMessages: ['Issue does not exist or you do not have permission to see it.'], errors: {}});
+            return;
+        }
+        sendJSON(res, 200, issue);
+    }),
+    'GET /rest/api/2/issue/{issueIdOrKey}/transitions': authorized(({res, state}) => sendJSON(res, 200, issueTransitions(state.cloud))),
+    'POST /rest/api/2/issue': authorized(({res, body, state}) => {
+        const {fields = {}} = JSON.parse(body) as {fields?: CreateIssueFields};
+        if (!fields.summary) {
+            sendJSON(res, 400, {errorMessages: [], errors: {summary: 'You must specify a summary of the issue.'}});
+            return;
+        }
+        sendJSON(res, 201, createIssue(state, fields));
+    }),
+    'POST /rest/api/2/issue/{issueIdOrKey}/comment': authorized(withIssue(({res, body, state}, issue) => {
+        sendJSON(res, 201, issueComment(state.cloud, issue.id, (JSON.parse(body) as {body?: string}).body ?? ''));
+    })),
+    'POST /rest/api/2/issue/{issueIdOrKey}/transitions': authorized(withIssue(({res, body, state}) => {
+        const id = (JSON.parse(body) as {transition?: {id?: string}}).transition?.id;
+        if (!issueTransitions(state.cloud).transitions.some((t) => t.id === id)) {
+            sendJSON(res, 400, {errorMessages: [`Transition id '${id}' is not valid for this issue.`], errors: {}});
+            return;
+        }
+        res.writeHead(204).end();
+    })),
+    'PUT /rest/api/2/issue/{issueIdOrKey}/assignee': authorized(withIssue(({res}) => res.writeHead(204).end())),
+    'GET /rest/api/2/user/assignable/search': authorized(({res, url, state}) => {
+        sendJSON(res, 200, assignableUsers(state.cloud, url.searchParams.get('query') ?? ''));
+    }),
 };
 
 const templateRoutes = Object.entries(routes).
@@ -158,6 +197,18 @@ function authorized(handler: Handler): Handler {
             return;
         }
         handler(ctx);
+    };
+}
+
+function withIssue(handler: (ctx: RequestContext, issue: NonNullable<ReturnType<typeof issueByKey>>) => void): Handler {
+    return (ctx) => {
+        const key = decodeURIComponent(ctx.url.pathname.match(/\/issue\/([^/]+)\//)?.[1] ?? '');
+        const issue = issueByKey(ctx.state.cloud, key, ctx.state.createdIssues);
+        if (!issue) {
+            sendJSON(ctx.res, 404, {errorMessages: ['Issue does not exist or you do not have permission to see it.'], errors: {}});
+            return;
+        }
+        handler(ctx, issue);
     };
 }
 
