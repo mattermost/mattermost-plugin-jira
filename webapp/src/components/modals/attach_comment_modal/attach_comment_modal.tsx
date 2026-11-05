@@ -28,9 +28,10 @@ export default function AttachCommentToIssueModal(props: Props) {
             onExited={props.close}
             bsSize='large'
             backdrop='static'
+            aria-labelledby='jira-attach-comment-modal-title'
         >
             <Modal.Header closeButton={true}>
-                <Modal.Title>
+                <Modal.Title id='jira-attach-comment-modal-title'>
                     {'Attach Message to Jira Issue'}
                 </Modal.Title>
             </Modal.Header>

@@ -17,6 +17,7 @@ export default class FullScreenModal extends React.Component {
         show: PropTypes.bool.isRequired,
         children: PropTypes.node.isRequired,
         onClose: PropTypes.func.isRequired,
+        ariaLabel: PropTypes.string,
     };
 
     componentDidMount() {
@@ -51,6 +52,8 @@ export default class FullScreenModal extends React.Component {
                 <div
                     ref={this.modalRef}
                     className='FullScreenModal FullScreenModal--compact'
+                    role='dialog'
+                    aria-label={this.props.ariaLabel}
                 >
                     <CloseIcon
                         className='close-x'

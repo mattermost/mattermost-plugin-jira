@@ -74,12 +74,12 @@ export default class Hooks {
         return Promise.resolve({message, args: contextArgs});
     };
 
-    handleCreateSlashCommand = (message: string, contextArgs: ContextArgs) => {
-        if (!this.checkInstanceIsInstalled()) {
-            return Promise.resolve({});
+    handleCreateSlashCommand = async (message: string, contextArgs: ContextArgs) => {
+        if (!(await this.checkInstanceIsInstalled())) {
+            return {};
         }
-        if (!this.checkUserIsConnected()) {
-            return Promise.resolve({});
+        if (!(await this.checkUserIsConnected())) {
+            return {};
         }
 
         let description = '';
@@ -89,25 +89,25 @@ export default class Hooks {
             description = message.slice(issueCreateCommand.length).trim();
         }
         this.store.dispatch(openCreateModalWithoutPost(description, contextArgs.channel_id));
-        return Promise.resolve({});
+        return {};
     };
 
-    handleSubscribeSlashCommand = (message: string, contextArgs: ContextArgs) => {
-        if (!this.checkInstanceIsInstalled()) {
-            return Promise.resolve({});
+    handleSubscribeSlashCommand = async (message: string, contextArgs: ContextArgs) => {
+        if (!(await this.checkInstanceIsInstalled())) {
+            return {};
         }
-        if (!this.checkUserIsConnected()) {
-            return Promise.resolve({});
+        if (!(await this.checkUserIsConnected())) {
+            return {};
         }
 
         this.store.dispatch(getConnected());
         this.store.dispatch(openChannelSettings(contextArgs.channel_id));
-        return Promise.resolve({});
+        return {};
     };
 
-    handleDisconnectSlashCommand = (message: string, contextArgs: ContextArgs) => {
-        if (!this.checkInstanceIsInstalled()) {
-            return Promise.resolve({});
+    handleDisconnectSlashCommand = async (message: string, contextArgs: ContextArgs) => {
+        if (!(await this.checkInstanceIsInstalled())) {
+            return {};
         }
 
         const connectedInstances = getUserConnectedInstances(this.store.getState());
@@ -119,11 +119,11 @@ export default class Hooks {
         }
         if (connectedInstances.length < 2 || args) {
             // Let the server take care of the command
-            return Promise.resolve({message, args: contextArgs});
+            return {message, args: contextArgs};
         }
 
         this.store.dispatch(openDisconnectModal());
-        return Promise.resolve({});
+        return {};
     };
 
     checkInstanceIsInstalled = async (): Promise<boolean> => {

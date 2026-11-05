@@ -1,0 +1,1498 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "The Jira Cloud platform REST API"
+  },
+  "paths": {
+    "/rest/api/3/myself": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "{\"accountId\":\"5b10a2844c20165700ede21g\",\"accountType\":\"atlassian\",\"active\":true,\"applicationRoles\":{\"items\":[],\"size\":1},\"avatarUrls\":{\"16x16\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=16&s=16\",\"24x24\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=24&s=24\",\"32x32\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=32&s=32\",\"48x48\":\"https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=48&s=48\"},\"displayName\":\"Mia Krystof\",\"emailAddress\":\"mia@example.com\",\"groups\":{\"items\":[],\"size\":3},\"key\":\"\",\"name\":\"\",\"self\":\"https://your-domain.atlassian.net/rest/api/3/user?accountId=5b10a2844c20165700ede21g\",\"timeZone\":\"Australia/Sydney\"}",
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "401": {
+            "description": "Returned if the authentication credentials are incorrect or missing."
+          }
+        }
+      }
+    },
+    "/rest/api/3/project/search": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "{\"isLast\":false,\"maxResults\":2,\"nextPage\":\"https://your-domain.atlassian.net/rest/api/3/project/search?startAt=2&maxResults=2\",\"self\":\"https://your-domain.atlassian.net/rest/api/3/project/search?startAt=0&maxResults=2\",\"startAt\":0,\"total\":7,\"values\":[{\"avatarUrls\":{\"16x16\":\"https://your-domain.atlassian.net/secure/projectavatar?size=xsmall&pid=10000\",\"24x24\":\"https://your-domain.atlassian.net/secure/projectavatar?size=small&pid=10000\",\"32x32\":\"https://your-domain.atlassian.net/secure/projectavatar?size=medium&pid=10000\",\"48x48\":\"https://your-domain.atlassian.net/secure/projectavatar?size=large&pid=10000\"},\"id\":\"10000\",\"insight\":{\"lastIssueUpdateTime\":\"2021-04-22T05:37:05.000+0000\",\"totalIssueCount\":100},\"key\":\"EX\",\"name\":\"Example\",\"projectCategory\":{\"description\":\"First Project Category\",\"id\":\"10000\",\"name\":\"FIRST\",\"self\":\"https://your-domain.atlassian.net/rest/api/3/projectCategory/10000\"},\"self\":\"https://your-domain.atlassian.net/rest/api/3/project/EX\",\"simplified\":false,\"style\":\"classic\"},{\"avatarUrls\":{\"16x16\":\"https://your-domain.atlassian.net/secure/projectavatar?size=xsmall&pid=10001\",\"24x24\":\"https://your-domain.atlassian.net/secure/projectavatar?size=small&pid=10001\",\"32x32\":\"https://your-domain.atlassian.net/secure/projectavatar?size=medium&pid=10001\",\"48x48\":\"https://your-domain.atlassian.net/secure/projectavatar?size=large&pid=10001\"},\"id\":\"10001\",\"insight\":{\"lastIssueUpdateTime\":\"2021-04-22T05:37:05.000+0000\",\"totalIssueCount\":100},\"key\":\"ABC\",\"name\":\"Alphabetical\",\"projectCategory\":{\"description\":\"First Project Category\",\"id\":\"10000\",\"name\":\"FIRST\",\"self\":\"https://your-domain.atlassian.net/rest/api/3/projectCategory/10000\"},\"self\":\"https://your-domain.atlassian.net/rest/api/3/project/ABC\",\"simplified\":false,\"style\":\"classic\"}]}",
+                "schema": {
+                  "$ref": "#/components/schemas/PageBeanProject"
+                }
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "400": {
+            "description": "Returned if the request is not valid."
+          },
+          "401": {
+            "description": "Returned if the authentication credentials are incorrect or missing."
+          },
+          "404": {
+            "description": "Returned if no projects matching the search criteria are found."
+          }
+        }
+      }
+    },
+    "/rest/api/3/project/{projectIdOrKey}/statuses": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "[{\"id\":\"3\",\"name\":\"Task\",\"self\":\"https://your-domain.atlassian.net/rest/api/3/issueType/3\",\"statuses\":[{\"description\":\"The issue is currently being worked on.\",\"iconUrl\":\"https://your-domain.atlassian.net/images/icons/progress.gif\",\"id\":\"10000\",\"name\":\"In Progress\",\"self\":\"https://your-domain.atlassian.net/rest/api/3/status/10000\"},{\"description\":\"The issue is closed.\",\"iconUrl\":\"https://your-domain.atlassian.net/images/icons/closed.gif\",\"id\":\"5\",\"name\":\"Closed\",\"self\":\"https://your-domain.atlassian.net/rest/api/3/status/5\"}],\"subtask\":false}]",
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IssueTypeWithStatus"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Returned if the request is successful."
+          },
+          "401": {
+            "description": "Returned if the authentication credentials are incorrect or missing."
+          },
+          "404": {
+            "description": "Returned if the project is not found or the user does not have permission to view it."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApplicationRole": {
+        "additionalProperties": false,
+        "description": "Details of an application role.",
+        "properties": {
+          "defaultGroups": {
+            "description": "The groups that are granted default access for this application role. As a group's name can change, use of `defaultGroupsDetails` is recommended to identify a groups.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "defaultGroupsDetails": {
+            "description": "The groups that are granted default access for this application role.",
+            "items": {
+              "$ref": "#/components/schemas/GroupName"
+            },
+            "type": "array"
+          },
+          "defined": {
+            "description": "Deprecated.",
+            "type": "boolean"
+          },
+          "groupDetails": {
+            "description": "The groups associated with the application role.",
+            "items": {
+              "$ref": "#/components/schemas/GroupName"
+            },
+            "type": "array"
+          },
+          "groups": {
+            "description": "The groups associated with the application role. As a group's name can change, use of `groupDetails` is recommended to identify a groups.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "hasUnlimitedSeats": {
+            "type": "boolean"
+          },
+          "key": {
+            "description": "The key of the application role.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The display name of the application role.",
+            "type": "string"
+          },
+          "numberOfSeats": {
+            "description": "The maximum count of users on your license.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "platform": {
+            "description": "Indicates if the application role belongs to Jira platform (`jira-core`).",
+            "type": "boolean"
+          },
+          "remainingSeats": {
+            "description": "The count of users remaining on your license.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "selectedByDefault": {
+            "description": "Determines whether this application role should be selected by default on user creation.",
+            "type": "boolean"
+          },
+          "userCount": {
+            "description": "The number of users counting against your license.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "userCountDescription": {
+            "description": "The [type of users](https://confluence.atlassian.com/x/lRW3Ng) being counted against your license.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AvatarUrlsBean": {
+        "additionalProperties": false,
+        "properties": {
+          "16x16": {
+            "description": "The URL of the item's 16x16 pixel avatar.",
+            "format": "uri",
+            "type": "string"
+          },
+          "24x24": {
+            "description": "The URL of the item's 24x24 pixel avatar.",
+            "format": "uri",
+            "type": "string"
+          },
+          "32x32": {
+            "description": "The URL of the item's 32x32 pixel avatar.",
+            "format": "uri",
+            "type": "string"
+          },
+          "48x48": {
+            "description": "The URL of the item's 48x48 pixel avatar.",
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "GroupName": {
+        "additionalProperties": false,
+        "description": "Details about a group.",
+        "properties": {
+          "groupId": {
+            "description": "The ID of the group, which uniquely identifies the group across all Atlassian products. For example, *952d12c3-5b5b-4d04-bb32-44d383afc4b2*.",
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of group.",
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL for these group details.",
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Hierarchy": {
+        "additionalProperties": false,
+        "description": "The project issue type hierarchy.",
+        "properties": {
+          "baseLevelId": {
+            "description": "The ID of the base level. This property is deprecated, see [Change notice: Removing hierarchy level IDs from next-gen APIs](https://developer.atlassian.com/cloud/jira/platform/change-notice-removing-hierarchy-level-ids-from-next-gen-apis/).",
+            "format": "int64",
+            "type": "integer"
+          },
+          "levels": {
+            "description": "Details about the hierarchy level.",
+            "items": {
+              "$ref": "#/components/schemas/SimplifiedHierarchyLevel"
+            },
+            "readOnly": true,
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "hierarchy"
+        }
+      },
+      "IssueTypeDetails": {
+        "additionalProperties": false,
+        "description": "Details about an issue type.",
+        "properties": {
+          "avatarId": {
+            "description": "The ID of the issue type's avatar.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "description": {
+            "description": "The description of the issue type.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "entityId": {
+            "description": "Unique ID for next-gen projects.",
+            "format": "uuid",
+            "readOnly": true,
+            "type": "string"
+          },
+          "hierarchyLevel": {
+            "description": "Hierarchy level of the issue type.",
+            "format": "int32",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "iconUrl": {
+            "description": "The URL of the issue type's avatar.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "The ID of the issue type.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the issue type.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "scope": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Scope"
+              }
+            ],
+            "description": "Details of the next-gen projects the issue type is available in.",
+            "readOnly": true
+          },
+          "self": {
+            "description": "The URL of these issue type details.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "subtask": {
+            "description": "Whether this issue type is used to create subtasks.",
+            "readOnly": true,
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "IssueTypeWithStatus": {
+        "additionalProperties": false,
+        "description": "Status details for an issue type.",
+        "properties": {
+          "id": {
+            "description": "The ID of the issue type.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the issue type.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the issue type's status details.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "statuses": {
+            "description": "List of status details for the issue type.",
+            "items": {
+              "$ref": "#/components/schemas/StatusDetails"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "subtask": {
+            "description": "Whether this issue type represents subtasks.",
+            "readOnly": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "self",
+          "statuses",
+          "subtask"
+        ],
+        "type": "object"
+      },
+      "ListWrapperCallbackApplicationRole": {
+        "additionalProperties": false,
+        "type": "object"
+      },
+      "ListWrapperCallbackGroupName": {
+        "additionalProperties": false,
+        "type": "object"
+      },
+      "PageBeanProject": {
+        "additionalProperties": false,
+        "description": "A page of items.",
+        "properties": {
+          "isLast": {
+            "description": "Whether this is the last page.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "maxResults": {
+            "description": "The maximum number of items that could be returned.",
+            "format": "int32",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "nextPage": {
+            "description": "If there is another page of results, the URL of the next page.",
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the page.",
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          },
+          "startAt": {
+            "description": "The index of the first item returned.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "total": {
+            "description": "The number of items returned.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "values": {
+            "description": "The list of items.",
+            "items": {
+              "$ref": "#/components/schemas/Project"
+            },
+            "readOnly": true,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "Project": {
+        "additionalProperties": false,
+        "description": "Details about a project.",
+        "properties": {
+          "archived": {
+            "description": "Whether the project is archived.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "archivedBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ],
+            "description": "The user who archived the project.",
+            "readOnly": true
+          },
+          "archivedDate": {
+            "description": "The date when the project was archived.",
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "assigneeType": {
+            "description": "The default assignee when creating issues for this project.",
+            "enum": [
+              "PROJECT_LEAD",
+              "UNASSIGNED"
+            ],
+            "readOnly": true,
+            "type": "string"
+          },
+          "avatarUrls": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarUrlsBean"
+              }
+            ],
+            "description": "The URLs of the project's avatars.",
+            "readOnly": true
+          },
+          "components": {
+            "description": "List of the components contained in the project.",
+            "items": {
+              "$ref": "#/components/schemas/ProjectComponent"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "deleted": {
+            "description": "Whether the project is marked as deleted.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "deletedBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ],
+            "description": "The user who marked the project as deleted.",
+            "readOnly": true
+          },
+          "deletedDate": {
+            "description": "The date when the project was marked as deleted.",
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "description": {
+            "description": "A brief description of the project.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "email": {
+            "description": "An email address associated with the project.",
+            "type": "string"
+          },
+          "expand": {
+            "description": "Expand options that include additional project details in the response.",
+            "readOnly": true,
+            "type": "string",
+            "xml": {
+              "attribute": true
+            }
+          },
+          "favourite": {
+            "description": "Whether the project is selected as a favorite.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "The ID of the project.",
+            "type": "string"
+          },
+          "insight": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectInsight"
+              }
+            ],
+            "description": "Insights about the project.",
+            "readOnly": true
+          },
+          "isPrivate": {
+            "description": "Whether the project is private from the user's perspective. This means the user can't see the project or any associated issues.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "issueTypeHierarchy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Hierarchy"
+              }
+            ],
+            "description": "The issue type hierarchy for the project.",
+            "readOnly": true
+          },
+          "issueTypes": {
+            "description": "List of the issue types available in the project.",
+            "items": {
+              "$ref": "#/components/schemas/IssueTypeDetails"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "key": {
+            "description": "The key of the project.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "landingPageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectLandingPageInfo"
+              }
+            ],
+            "description": "The project landing page info.",
+            "readOnly": true
+          },
+          "lead": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ],
+            "description": "The username of the project lead.",
+            "readOnly": true
+          },
+          "name": {
+            "description": "The name of the project.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "permissions": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectPermissions"
+              }
+            ],
+            "description": "User permissions on the project",
+            "readOnly": true
+          },
+          "projectCategory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectCategory"
+              }
+            ],
+            "description": "The category the project belongs to.",
+            "readOnly": true
+          },
+          "projectTypeKey": {
+            "description": "The [project type](https://confluence.atlassian.com/x/GwiiLQ#Jiraapplicationsoverview-Productfeaturesandprojecttypes) of the project.",
+            "enum": [
+              "software",
+              "service_desk",
+              "business",
+              "product_discovery"
+            ],
+            "readOnly": true,
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": {
+              "readOnly": true
+            },
+            "description": "Map of project properties. Only the properties named in the request's properties query parameter are returned, so this is an empty object when that parameter is omitted.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "retentionTillDate": {
+            "description": "The date when the project is deleted permanently.",
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "roles": {
+            "additionalProperties": {
+              "format": "uri",
+              "readOnly": true,
+              "type": "string"
+            },
+            "description": "The name and self URL for each role defined in the project. For more information, see [Create project role](#api-rest-api-3-role-post).",
+            "readOnly": true,
+            "type": "object"
+          },
+          "self": {
+            "description": "The URL of the project details.",
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          },
+          "simplified": {
+            "description": "Whether the project is simplified.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "style": {
+            "description": "The type of the project.",
+            "enum": [
+              "classic",
+              "next-gen"
+            ],
+            "readOnly": true,
+            "type": "string"
+          },
+          "url": {
+            "description": "A link to information about this project, such as project documentation.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "uuid": {
+            "description": "Unique ID for next-gen projects.",
+            "format": "uuid",
+            "readOnly": true,
+            "type": "string"
+          },
+          "versions": {
+            "description": "The versions defined in the project. For more information, see [Create version](#api-rest-api-3-version-post).",
+            "items": {
+              "$ref": "#/components/schemas/Version"
+            },
+            "readOnly": true,
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "project"
+        }
+      },
+      "ProjectCategory": {
+        "additionalProperties": false,
+        "description": "A project category.",
+        "properties": {
+          "description": {
+            "description": "The description of the project category.",
+            "type": "string"
+          },
+          "id": {
+            "description": "The ID of the project category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the project category. Required on create, optional on update.",
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the project category.",
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ProjectComponent": {
+        "additionalProperties": false,
+        "description": "Details about a project component.",
+        "properties": {
+          "ari": {
+            "description": "Compass component's ID. Can't be updated. Not required for creating a Project Component.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "assignee": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ],
+            "description": "The details of the user associated with `assigneeType`, if any. See `realAssignee` for details of the user assigned to issues created with this component.",
+            "readOnly": true
+          },
+          "assigneeType": {
+            "description": "The nominal user type used to determine the assignee for issues created with this component. See `realAssigneeType` for details on how the type of the user, and hence the user, assigned to issues is determined. Can take the following values:\n\n *  `PROJECT_LEAD` the assignee to any issues created with this component is nominally the lead for the project the component is in.\n *  `COMPONENT_LEAD` the assignee to any issues created with this component is nominally the lead for the component.\n *  `UNASSIGNED` an assignee is not set for issues created with this component.\n *  `PROJECT_DEFAULT` the assignee to any issues created with this component is nominally the default assignee for the project that the component is in.\n\nDefault value: `PROJECT_DEFAULT`.  \nOptional when creating or updating a component.",
+            "enum": [
+              "PROJECT_DEFAULT",
+              "COMPONENT_LEAD",
+              "PROJECT_LEAD",
+              "UNASSIGNED"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "description": "The description for the component. Optional when creating or updating a component.",
+            "type": "string"
+          },
+          "id": {
+            "description": "The unique identifier for the component.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "isAssigneeTypeValid": {
+            "description": "Whether a user is associated with `assigneeType`. For example, if the `assigneeType` is set to `COMPONENT_LEAD` but the component lead is not set, then `false` is returned.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "lead": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ],
+            "description": "The user details for the component's lead user.",
+            "readOnly": true
+          },
+          "leadAccountId": {
+            "description": "The accountId of the component's lead user. The accountId uniquely identifies the user across all Atlassian products. For example, *5b10ac8d82e05b22cc7d4ef5*.",
+            "maxLength": 128,
+            "type": "string",
+            "writeOnly": true
+          },
+          "leadUserName": {
+            "description": "This property is no longer available and will be removed from the documentation soon. See the [deprecation notice](https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-user-privacy-api-migration-guide/) for details.",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "readOnly": true,
+              "type": "string"
+            },
+            "description": "Compass component's metadata. Can't be updated. Not required for creating a Project Component.",
+            "readOnly": true,
+            "type": "object"
+          },
+          "name": {
+            "description": "The unique name for the component in the project. Required when creating a component. Optional when updating a component. The maximum length is 255 characters.",
+            "type": "string"
+          },
+          "project": {
+            "description": "The key of the project the component is assigned to. Required when creating a component. Can't be updated.",
+            "type": "string"
+          },
+          "projectId": {
+            "description": "The ID of the project the component is assigned to.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "realAssignee": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ],
+            "description": "The user assigned to issues created with this component, when `assigneeType` does not identify a valid assignee.",
+            "readOnly": true
+          },
+          "realAssigneeType": {
+            "description": "The type of the assignee that is assigned to issues created with this component, when an assignee cannot be set from the `assigneeType`. For example, `assigneeType` is set to `COMPONENT_LEAD` but no component lead is set. This property is set to one of the following values:\n\n *  `PROJECT_LEAD` when `assigneeType` is `PROJECT_LEAD` and the project lead has permission to be assigned issues in the project that the component is in.\n *  `COMPONENT_LEAD` when `assignee`Type is `COMPONENT_LEAD` and the component lead has permission to be assigned issues in the project that the component is in.\n *  `UNASSIGNED` when `assigneeType` is `UNASSIGNED` and Jira is configured to allow unassigned issues.\n *  `PROJECT_DEFAULT` when none of the preceding cases are true.",
+            "enum": [
+              "PROJECT_DEFAULT",
+              "COMPONENT_LEAD",
+              "PROJECT_LEAD",
+              "UNASSIGNED"
+            ],
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the component.",
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "component"
+        }
+      },
+      "ProjectDetails": {
+        "additionalProperties": false,
+        "description": "Details about a project.",
+        "properties": {
+          "avatarUrls": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarUrlsBean"
+              }
+            ],
+            "description": "The URLs of the project's avatars.",
+            "readOnly": true
+          },
+          "id": {
+            "description": "The ID of the project.",
+            "type": "string"
+          },
+          "key": {
+            "description": "The key of the project.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the project.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "projectCategory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdatedProjectCategory"
+              }
+            ],
+            "description": "The category the project belongs to.",
+            "readOnly": true
+          },
+          "projectTypeKey": {
+            "description": "The [project type](https://confluence.atlassian.com/x/GwiiLQ#Jiraapplicationsoverview-Productfeaturesandprojecttypes) of the project.",
+            "enum": [
+              "software",
+              "service_desk",
+              "business",
+              "product_discovery"
+            ],
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the project details.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "simplified": {
+            "description": "Whether or not the project is simplified.",
+            "readOnly": true,
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "ProjectInsight": {
+        "additionalProperties": false,
+        "description": "Additional details about a project.",
+        "properties": {
+          "lastIssueUpdateTime": {
+            "description": "The last issue update time.",
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "totalIssueCount": {
+            "description": "Total issue count.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ProjectLandingPageInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "attributes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "boardId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "boardName": {
+            "type": "string"
+          },
+          "projectKey": {
+            "type": "string"
+          },
+          "projectType": {
+            "type": "string"
+          },
+          "queueCategory": {
+            "type": "string"
+          },
+          "queueId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "queueName": {
+            "type": "string"
+          },
+          "simpleBoard": {
+            "type": "boolean"
+          },
+          "simplified": {
+            "type": "boolean"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ProjectPermissions": {
+        "additionalProperties": false,
+        "description": "Permissions which a user has on a project.",
+        "properties": {
+          "canEdit": {
+            "description": "Whether the logged user can edit the project.",
+            "readOnly": true,
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "Scope": {
+        "additionalProperties": true,
+        "description": "The projects the item is associated with. Indicated for items associated with [next-gen projects](https://confluence.atlassian.com/x/loMyO).",
+        "properties": {
+          "project": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProjectDetails"
+              }
+            ],
+            "description": "The project the item has scope in.",
+            "readOnly": true
+          },
+          "type": {
+            "description": "The type of scope.",
+            "enum": [
+              "PROJECT",
+              "TEMPLATE"
+            ],
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SimpleLink": {
+        "additionalProperties": false,
+        "description": "Details about the operations available in this version.",
+        "properties": {
+          "href": {
+            "type": "string"
+          },
+          "iconClass": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "styleClass": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "weight": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "link"
+        }
+      },
+      "SimpleListWrapperApplicationRole": {
+        "additionalProperties": false,
+        "properties": {
+          "callback": {
+            "$ref": "#/components/schemas/ListWrapperCallbackApplicationRole"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationRole"
+            },
+            "type": "array"
+          },
+          "max-results": {
+            "format": "int32",
+            "type": "integer",
+            "xml": {
+              "attribute": true,
+              "name": "max-results"
+            }
+          },
+          "pagingCallback": {
+            "$ref": "#/components/schemas/ListWrapperCallbackApplicationRole"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer",
+            "xml": {
+              "attribute": true
+            }
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "list"
+        }
+      },
+      "SimpleListWrapperGroupName": {
+        "additionalProperties": false,
+        "properties": {
+          "callback": {
+            "$ref": "#/components/schemas/ListWrapperCallbackGroupName"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GroupName"
+            },
+            "type": "array"
+          },
+          "max-results": {
+            "format": "int32",
+            "type": "integer",
+            "xml": {
+              "attribute": true,
+              "name": "max-results"
+            }
+          },
+          "pagingCallback": {
+            "$ref": "#/components/schemas/ListWrapperCallbackGroupName"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer",
+            "xml": {
+              "attribute": true
+            }
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "list"
+        }
+      },
+      "SimplifiedHierarchyLevel": {
+        "additionalProperties": false,
+        "properties": {
+          "aboveLevelId": {
+            "description": "The ID of the level above this one in the hierarchy. This property is deprecated, see [Change notice: Removing hierarchy level IDs from next-gen APIs](https://developer.atlassian.com/cloud/jira/platform/change-notice-removing-hierarchy-level-ids-from-next-gen-apis/).",
+            "format": "int64",
+            "type": "integer"
+          },
+          "belowLevelId": {
+            "description": "The ID of the level below this one in the hierarchy. This property is deprecated, see [Change notice: Removing hierarchy level IDs from next-gen APIs](https://developer.atlassian.com/cloud/jira/platform/change-notice-removing-hierarchy-level-ids-from-next-gen-apis/).",
+            "format": "int64",
+            "type": "integer"
+          },
+          "externalUuid": {
+            "description": "The external UUID of the hierarchy level. This property is deprecated, see [Change notice: Removing hierarchy level IDs from next-gen APIs](https://developer.atlassian.com/cloud/jira/platform/change-notice-removing-hierarchy-level-ids-from-next-gen-apis/).",
+            "format": "uuid",
+            "type": "string"
+          },
+          "hierarchyLevelNumber": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "id": {
+            "description": "The ID of the hierarchy level. This property is deprecated, see [Change notice: Removing hierarchy level IDs from next-gen APIs](https://developer.atlassian.com/cloud/jira/platform/change-notice-removing-hierarchy-level-ids-from-next-gen-apis/).",
+            "format": "int64",
+            "type": "integer"
+          },
+          "issueTypeIds": {
+            "description": "The issue types available in this hierarchy level.",
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "level": {
+            "description": "The level of this item in the hierarchy.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "name": {
+            "description": "The name of this hierarchy level.",
+            "type": "string"
+          },
+          "projectConfigurationId": {
+            "description": "The ID of the project configuration. This property is deprecated, see [Change oticen: Removing hierarchy level IDs from next-gen APIs](https://developer.atlassian.com/cloud/jira/platform/change-notice-removing-hierarchy-level-ids-from-next-gen-apis/).",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "StatusCategory": {
+        "additionalProperties": true,
+        "description": "A status category.",
+        "properties": {
+          "colorName": {
+            "description": "The name of the color used to represent the status category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "The ID of the status category.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "key": {
+            "description": "The key of the status category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the status category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the status category.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "StatusDetails": {
+        "additionalProperties": true,
+        "description": "A status.",
+        "properties": {
+          "description": {
+            "description": "The description of the status.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "iconUrl": {
+            "description": "The URL of the icon used to represent the status.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "The ID of the status.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the status.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "scope": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Scope"
+              }
+            ],
+            "description": "The scope of the field.",
+            "readOnly": true
+          },
+          "self": {
+            "description": "The URL of the status.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "statusCategory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatusCategory"
+              }
+            ],
+            "description": "The category assigned to the status.",
+            "readOnly": true
+          }
+        },
+        "type": "object"
+      },
+      "UpdatedProjectCategory": {
+        "additionalProperties": false,
+        "description": "A project category.",
+        "properties": {
+          "description": {
+            "description": "The name of the project category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "The ID of the project category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "The description of the project category.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the project category.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "User": {
+        "additionalProperties": false,
+        "description": "A user with details as permitted by the user's Atlassian Account privacy settings. However, be aware of these exceptions:\n\n *  User record deleted from Atlassian: This occurs as the result of a right to be forgotten request. In this case, `displayName` provides an indication and other parameters have default values or are blank (for example, email is blank).\n *  User record corrupted: This occurs as a results of events such as a server import and can only happen to deleted users. In this case, `accountId` returns *unknown* and all other parameters have fallback values.\n *  User record unavailable: This usually occurs due to an internal service outage. In this case, all parameters have fallback values.",
+        "properties": {
+          "accountId": {
+            "description": "The account ID of the user, which uniquely identifies the user across all Atlassian products. For example, *5b10ac8d82e05b22cc7d4ef5*. Required in requests.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "accountType": {
+            "description": "The user account type. Can take the following values:\n\n *  `atlassian` regular Atlassian user account\n *  `app` system account used for Connect applications and OAuth to represent external systems\n *  `customer` Jira Service Desk account representing an external service desk",
+            "enum": [
+              "atlassian",
+              "app",
+              "customer",
+              "unknown"
+            ],
+            "readOnly": true,
+            "type": "string"
+          },
+          "active": {
+            "description": "Whether the user is active.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "appType": {
+            "description": "The app type of the user account when accountType is 'app'. Can take the following values:\n\n *  `service` Service Account\n *  `agent` Rovo Agent Account\n *  `unknown` Unknown app type",
+            "readOnly": true,
+            "type": "string"
+          },
+          "applicationRoles": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SimpleListWrapperApplicationRole"
+              }
+            ],
+            "description": "The application roles the user is assigned to.",
+            "readOnly": true
+          },
+          "avatarUrls": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarUrlsBean"
+              }
+            ],
+            "description": "The avatars of the user.",
+            "readOnly": true
+          },
+          "displayName": {
+            "description": "The display name of the user. Depending on the user’s privacy setting, this may return an alternative value.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "emailAddress": {
+            "description": "The email address of the user. Depending on the user’s privacy setting, this may be returned as null.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "expand": {
+            "description": "Expand options that include additional user details in the response.",
+            "readOnly": true,
+            "type": "string",
+            "xml": {
+              "attribute": true
+            }
+          },
+          "groups": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SimpleListWrapperGroupName"
+              }
+            ],
+            "description": "The groups that the user belongs to.",
+            "readOnly": true
+          },
+          "guest": {
+            "description": "Whether the user is a guest.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "key": {
+            "description": "This property is no longer available and will be removed from the documentation soon. See the [deprecation notice](https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-user-privacy-api-migration-guide/) for details.",
+            "type": "string"
+          },
+          "locale": {
+            "description": "The locale of the user. Depending on the user’s privacy setting, this may be returned as null.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "This property is no longer available and will be removed from the documentation soon. See the [deprecation notice](https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-user-privacy-api-migration-guide/) for details.",
+            "type": "string"
+          },
+          "self": {
+            "description": "The URL of the user.",
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          },
+          "timeZone": {
+            "description": "The time zone specified in the user's profile. If the user's time zone is not visible to the current user (due to user's profile setting), or if a time zone has not been set, the instance's default time zone will be returned.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "user"
+        }
+      },
+      "Version": {
+        "additionalProperties": false,
+        "description": "Details about a project version.",
+        "properties": {
+          "approvers": {
+            "description": "If the expand option `approvers` is used, returns a list containing the approvers for this version.",
+            "items": {
+              "$ref": "#/components/schemas/VersionApprover"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "archived": {
+            "description": "Indicates that the version is archived. Optional when creating or updating a version.",
+            "type": "boolean"
+          },
+          "description": {
+            "description": "The description of the version. Optional when creating or updating a version. The maximum size is 16,384 bytes.",
+            "type": "string"
+          },
+          "driver": {
+            "description": "The Atlassian account ID of the version driver. Optional when creating or updating a version. If the expand option `driver` is used, returns the Atlassian account ID of the driver.",
+            "type": "string"
+          },
+          "expand": {
+            "description": "Use [expand](em>#expansion) to include additional information about version in the response. This parameter accepts a comma-separated list. Expand options include:\n\n *  `operations` Returns the list of operations available for this version.\n *  `issuesstatus` Returns the count of issues in this version for each of the status categories *to do*, *in progress*, *done*, and *unmapped*. The *unmapped* property contains a count of issues with a status other than *to do*, *in progress*, and *done*.\n *  `driver` Returns the Atlassian account ID of the version driver.\n *  `approvers` Returns a list containing approvers for this version.\n\nOptional for create and update.",
+            "type": "string",
+            "xml": {
+              "attribute": true
+            }
+          },
+          "id": {
+            "description": "The ID of the version.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "issuesStatusForFixVersion": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VersionIssuesStatus"
+              }
+            ],
+            "description": "If the expand option `issuesstatus` is used, returns the count of issues in this version for each of the status categories *to do*, *in progress*, *done*, and *unmapped*. The *unmapped* property contains a count of issues with a status other than *to do*, *in progress*, and *done*.",
+            "readOnly": true
+          },
+          "moveUnfixedIssuesTo": {
+            "description": "The URL of the self link to the version to which all unfixed issues are moved when a version is released. Not applicable when creating a version. Optional when updating a version.",
+            "format": "uri",
+            "type": "string"
+          },
+          "name": {
+            "description": "The unique name of the version. Required when creating a version. Optional when updating a version. The maximum length is 255 characters.",
+            "type": "string"
+          },
+          "operations": {
+            "description": "If the expand option `operations` is used, returns the list of operations available for this version.",
+            "items": {
+              "$ref": "#/components/schemas/SimpleLink"
+            },
+            "readOnly": true,
+            "type": "array"
+          },
+          "overdue": {
+            "description": "Indicates that the version is overdue.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "project": {
+            "description": "Deprecated. Use `projectId`.",
+            "type": "string"
+          },
+          "projectId": {
+            "description": "The ID of the project to which this version is attached. Required when creating a version. Not applicable when updating a version.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "releaseDate": {
+            "description": "The release date of the version. Expressed in ISO 8601 format (yyyy-mm-dd). Optional when creating or updating a version.",
+            "format": "date",
+            "type": "string"
+          },
+          "released": {
+            "description": "Indicates that the version is released. If the version is released a request to release again is ignored. Not applicable when creating a version. Optional when updating a version.",
+            "type": "boolean"
+          },
+          "self": {
+            "description": "The URL of the version.",
+            "format": "uri",
+            "readOnly": true,
+            "type": "string"
+          },
+          "startDate": {
+            "description": "The start date of the version. Expressed in ISO 8601 format (yyyy-mm-dd). Optional when creating or updating a version.",
+            "format": "date",
+            "type": "string"
+          },
+          "userReleaseDate": {
+            "description": "The date on which work on this version is expected to finish, expressed in the instance's *Day/Month/Year Format* date format.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "userStartDate": {
+            "description": "The date on which work on this version is expected to start, expressed in the instance's *Day/Month/Year Format* date format.",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "version"
+        }
+      },
+      "VersionApprover": {
+        "additionalProperties": true,
+        "description": "Contains details about a version approver.",
+        "properties": {
+          "accountId": {
+            "description": "The Atlassian account ID of the approver.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "declineReason": {
+            "description": "A description of why the user is declining the approval.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "description": {
+            "description": "A description of what the user is approving within the specified version.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "status": {
+            "description": "The status of the approval, which can be *PENDING*, *APPROVED*, or *DECLINED*",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "VersionIssuesStatus": {
+        "additionalProperties": true,
+        "description": "Counts of the number of issues in various statuses.",
+        "properties": {
+          "done": {
+            "description": "Count of issues with status *done*.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "inProgress": {
+            "description": "Count of issues with status *in progress*.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "toDo": {
+            "description": "Count of issues with status *to do*.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          },
+          "unmapped": {
+            "description": "Count of issues with a status other than *to do*, *in progress*, and *done*.",
+            "format": "int64",
+            "readOnly": true,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      }
+    }
+  }
+}

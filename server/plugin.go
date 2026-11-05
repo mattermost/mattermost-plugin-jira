@@ -370,6 +370,11 @@ func (p *Plugin) OnActivate() error {
 
 	p.initializeRouter()
 
+	if atlassianURLsOverridden() {
+		p.client.Log.Warn("Jira Cloud OAuth endpoints are overridden; this build is for E2E testing only",
+			"auth_base_url", atlassianAuthBaseURL, "api_base_url", atlassianAPIBaseURL)
+	}
+
 	bundlePath, err := p.client.System.GetBundlePath()
 	if err != nil {
 		return errors.Wrap(err, "couldn't get bundle path")

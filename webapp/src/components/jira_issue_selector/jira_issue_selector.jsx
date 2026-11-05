@@ -146,6 +146,7 @@ export default class JiraIssueSelector extends Component {
                 {this.props.required && requiredStar}
                 <AsyncSelect
                     name={'issue'}
+                    inputId={'issue'}
                     placeholder={'Search for issues containing text...'}
                     onChange={this.onChange}
                     required={true}
