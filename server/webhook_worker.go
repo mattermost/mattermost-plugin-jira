@@ -45,7 +45,7 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 	}()
 	defer func() {
 		if x := recover(); x != nil {
-			ww.p.client.Log.Warn("Recovered from a panic while processing a webhook",
+			ww.p.client.Log.Error("Recovered from a panic while processing a webhook",
 				"workerID", ww.id,
 				"instanceID", msg.InstanceID.String(),
 				"error", fmt.Sprintf("%v", x),

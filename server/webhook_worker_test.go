@@ -210,7 +210,7 @@ func TestWebhookWorkerContinuesAfterPanic(t *testing.T) {
 		api.On("KVSetWithOptions", mock.MatchedBy(func(key string) bool {
 			return strings.HasPrefix(key, "chan_dedup_")
 		}), mock.Anything, mock.Anything).Return(true, nil).Maybe()
-		api.On("LogWarn", recoveredMsg, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+		api.On("LogError", recoveredMsg, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
 			mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 		api.On("LogError", mock.Anything).Return()
 		return api, p
@@ -222,7 +222,7 @@ func TestWebhookWorkerContinuesAfterPanic(t *testing.T) {
 		ww := webhookWorker{id: 1, p: p}
 		err := ww.process(&webhookMessage{InstanceID: testInstance1.GetID(), Data: webhookData})
 		require.ErrorContains(t, err, "recovered from a panic")
-		api.AssertCalled(t, "LogWarn", recoveredMsg, "workerID", 1, "instanceID", testInstance1.GetID().String(),
+		api.AssertCalled(t, "LogError", recoveredMsg, "workerID", 1, "instanceID", testInstance1.GetID().String(),
 			"error", "instance store unavailable", mock.Anything, mock.Anything)
 	})
 
@@ -238,7 +238,10 @@ func TestWebhookWorkerContinuesAfterPanic(t *testing.T) {
 		close(queue)
 
 		require.NotPanics(t, webhookWorker{id: 1, p: p, workQueue: queue}.work)
-		api.AssertNumberOfCalls(t, "LogWarn", 1)
+		// One log from the recovery and one from work() reporting the returned error.
+		api.AssertNumberOfCalls(t, "LogError", 2)
+		api.AssertCalled(t, "LogError", recoveredMsg, "workerID", 1, "instanceID", testInstance1.GetID().String(),
+			"error", "instance store unavailable", mock.Anything, mock.Anything)
 		api.AssertNumberOfCalls(t, "CreatePost", 1)
 	})
 }
