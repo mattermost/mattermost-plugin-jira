@@ -18,6 +18,20 @@ import (
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
+func TestParseWebhookRejectsEmptyPayloads(t *testing.T) {
+	for _, body := range []string{"null", " null\n", "{}"} {
+		t.Run(fmt.Sprintf("%q", body), func(t *testing.T) {
+			var wh Webhook
+			var err error
+			require.NotPanics(t, func() {
+				wh, err = ParseWebhook([]byte(body))
+			})
+			require.Error(t, err)
+			require.Nil(t, wh)
+		})
+	}
+}
+
 func TestMarkdown(t *testing.T) {
 	f, err := os.Open("testdata/webhook-issue-created.json")
 	require.NoError(t, err)
