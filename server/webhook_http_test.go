@@ -930,27 +930,31 @@ func TestHTTPWebhookSecretViaHandler(t *testing.T) {
 	configured := "ab+c/d=e%f"
 	twice := url.QueryEscape(url.QueryEscape(configured))
 
+	// The webhook requests omit the team parameter, so a request that passes the
+	// secret check stops at the next validation step with a known error.
 	for name, tc := range map[string]struct {
-		path     string
-		secret   string
-		expected int
-		notEqual bool
+		path           string
+		secret         string
+		expectedStatus int
+		expectedBody   string
+		expectedQueued int
 	}{
-		"webhook_wrong_secret":              {"/webhook?team=theteam&channel=thechannel&secret=", "wrong", http.StatusForbidden, false},
-		"webhook_two_level_encoded_secret":  {"/webhook?team=theteam&channel=thechannel&secret=", url.QueryEscape(twice), http.StatusForbidden, true},
-		"subscribe_wrong_secret":            {"/api/v2/webhook?secret=", "wrong", http.StatusForbidden, false},
-		"subscribe_two_level_encoded_value": {"/api/v2/webhook?secret=", url.QueryEscape(twice), http.StatusForbidden, true},
+		"webhook_wrong_secret":              {"/webhook?secret=", "wrong", http.StatusForbidden, "secret did not match", 0},
+		"webhook_two_level_encoded_secret":  {"/webhook?secret=", url.QueryEscape(twice), http.StatusBadRequest, "no team name found", 0},
+		"subscribe_wrong_secret":            {"/api/v2/webhook?secret=", "wrong", http.StatusForbidden, "secret did not match", 0},
+		"subscribe_two_level_encoded_value": {"/api/v2/webhook?secret=", url.QueryEscape(twice), http.StatusOK, "", 1},
 	} {
 		t.Run(name, func(t *testing.T) {
 			p := newSecretTestPlugin(configured)
 			req := httptest.NewRequest("POST", tc.path+tc.secret, strings.NewReader("{}"))
 			w := httptest.NewRecorder()
 			p.ServeHTTP(&plugin.Context{}, w, req)
-			if tc.notEqual {
-				assert.NotEqual(t, tc.expected, w.Result().StatusCode)
-			} else {
-				assert.Equal(t, tc.expected, w.Result().StatusCode)
+
+			assert.Equal(t, tc.expectedStatus, w.Result().StatusCode)
+			if tc.expectedBody != "" {
+				assert.Contains(t, w.Body.String(), tc.expectedBody)
 			}
+			assert.Len(t, p.webhookQueue, tc.expectedQueued)
 		})
 	}
 }
