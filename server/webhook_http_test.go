@@ -5,10 +5,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -813,4 +816,141 @@ func TestHTTPWebhookDeliveryGuard(t *testing.T) {
 
 		api.AssertCalled(t, "CreatePost", mock.AnythingOfType("*model.Post"))
 	})
+}
+
+func TestVerifyHTTPSecret(t *testing.T) {
+	generated := "Zk3x9QpL0aVbT7uYc2WnR5dEhJ8mXs1G"
+	special := "ab+c/d=e%f"
+
+	encode := func(v string, levels int) string {
+		for i := 0; i < levels; i++ {
+			v = url.QueryEscape(v)
+		}
+		return v
+	}
+
+	t.Run("accepted", func(t *testing.T) {
+		for name, expected := range map[string]string{
+			"generated": generated,
+			"special":   special,
+		} {
+			for levels := 0; levels <= maxSecretDecodeDepth; levels++ {
+				got := encode(expected, levels)
+				t.Run(fmt.Sprintf("%s_%d_level_encoding", name, levels), func(t *testing.T) {
+					status, err := verifyHTTPSecret(expected, got)
+					require.NoError(t, err)
+					assert.Equal(t, 0, status)
+				})
+			}
+		}
+	})
+
+	maxLen := maxSecretLen(special)
+	t.Run("generated_secret_unchanged_by_query_escape", func(t *testing.T) {
+		assert.Len(t, generated, 32)
+		assert.Equal(t, generated, url.QueryEscape(generated))
+	})
+
+	rejected := []struct {
+		name     string
+		expected string
+		got      string
+	}{
+		{"wrong_value", special, "something-else"},
+		{"empty_got", special, ""},
+		{"invalid_escape", special, "%zz"},
+		{"prefix_of_secret", special, special[:len(special)-1]},
+		{"secret_plus_trailing", special, special + "xyz"},
+		{"four_level_encoding_special", special, encode(special, maxSecretDecodeDepth+1)},
+		{"empty_expected", "", "anything"},
+		{"empty_expected_and_got", "", ""},
+		{"over_length", special, strings.Repeat("a", maxLen+1)},
+		{"exact_max_length_wrong", special, strings.Repeat("a", maxLen)},
+	}
+	for _, tc := range rejected {
+		t.Run("rejected_"+tc.name, func(t *testing.T) {
+			status, err := verifyHTTPSecret(tc.expected, tc.got)
+			require.Error(t, err)
+			assert.Equal(t, http.StatusForbidden, status)
+			assert.Equal(t, "request URL: secret did not match", err.Error())
+		})
+	}
+}
+
+func TestSecretLengthWithinBound(t *testing.T) {
+	for _, n := range []int{1, 10, 32} {
+		expected := strings.Repeat("e", n)
+		limit := maxSecretLen(expected)
+		assert.True(t, secretLengthWithinBound(expected, strings.Repeat("a", limit)))
+		assert.False(t, secretLengthWithinBound(expected, strings.Repeat("a", limit+1)))
+	}
+}
+
+func TestMaxSecretLenCoversDeepestEncoding(t *testing.T) {
+	// Percent-encoding every byte at each decode pass produces the longest
+	// value maxSecretLen allows. verifyHTTPSecret must still accept it.
+	encodeEveryByte := func(v string) string {
+		var b strings.Builder
+		for i := 0; i < len(v); i++ {
+			fmt.Fprintf(&b, "%%%02X", v[i])
+		}
+		return b.String()
+	}
+	expected := "ab+c/d=e%f"
+	got := expected
+	for i := 0; i < maxSecretDecodeDepth; i++ {
+		got = encodeEveryByte(got)
+	}
+	assert.Equal(t, maxSecretLen(expected), len(got))
+	status, err := verifyHTTPSecret(expected, got)
+	require.NoError(t, err)
+	assert.Equal(t, 0, status)
+}
+
+func newSecretTestPlugin(secret string) *Plugin {
+	api := &plugintest.API{}
+	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return(nil)
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 10)...).Return(nil)
+	api.On("LogWarn", mockAnythingOfTypeBatch("string", 13)...).Return(nil)
+	api.On("KVGet", mock.AnythingOfType("string")).Return(make([]byte, 0), (*model.AppError)(nil))
+
+	p := &Plugin{}
+	p.updateConfig(func(conf *config) {
+		conf.Secret = secret
+	})
+	p.SetAPI(api)
+	p.client = pluginapi.NewClient(api, p.Driver)
+	p.instanceStore = p.getMockInstanceStoreKV(1)
+	p.webhookQueue = make(chan *webhookMessage, 1)
+	p.initializeRouter()
+	return p
+}
+
+func TestHTTPWebhookSecretViaHandler(t *testing.T) {
+	configured := "ab+c/d=e%f"
+	twice := url.QueryEscape(url.QueryEscape(configured))
+
+	for name, tc := range map[string]struct {
+		path     string
+		secret   string
+		expected int
+		notEqual bool
+	}{
+		"webhook_wrong_secret":              {"/webhook?team=theteam&channel=thechannel&secret=", "wrong", http.StatusForbidden, false},
+		"webhook_two_level_encoded_secret":  {"/webhook?team=theteam&channel=thechannel&secret=", url.QueryEscape(twice), http.StatusForbidden, true},
+		"subscribe_wrong_secret":            {"/api/v2/webhook?secret=", "wrong", http.StatusForbidden, false},
+		"subscribe_two_level_encoded_value": {"/api/v2/webhook?secret=", url.QueryEscape(twice), http.StatusForbidden, true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			p := newSecretTestPlugin(configured)
+			req := httptest.NewRequest("POST", tc.path+tc.secret, strings.NewReader("{}"))
+			w := httptest.NewRecorder()
+			p.ServeHTTP(&plugin.Context{}, w, req)
+			if tc.notEqual {
+				assert.NotEqual(t, tc.expected, w.Result().StatusCode)
+			} else {
+				assert.Equal(t, tc.expected, w.Result().StatusCode)
+			}
+		})
+	}
 }
