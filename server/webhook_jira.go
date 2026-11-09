@@ -59,6 +59,9 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 		} else if instance, ok := instance.(*cloudOAuthInstance); ok {
 			accountID := jwh.Comment.Author.AccountID
 			if jwh.WebhookEvent == issueCreated {
+				if jwh.Issue.Fields.Creator == nil {
+					return jwh.expandIssueWithAPIToken(p, instance, errors.New("issue creator is missing from the webhook payload"))
+				}
 				accountID = jwh.Issue.Fields.Creator.AccountID
 			}
 
@@ -81,6 +84,9 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 			if err != nil {
 				return err
 			}
+			if issue == nil || issue.Fields == nil {
+				return errors.Errorf("Jira returned no fields for issue %s", jwh.Issue.ID)
+			}
 
 			jwh.Issue = *issue
 		}
@@ -100,6 +106,9 @@ func (jwh *JiraWebhook) expandIssueWithAPIToken(p *Plugin, instance Instance, no
 	issue, err := p.GetIssueDataWithAPIToken(jwh.Issue.Key, instance)
 	if err != nil {
 		return err
+	}
+	if issue == nil || issue.Fields == nil {
+		return errors.Errorf("Jira returned no fields for issue %s", jwh.Issue.Key)
 	}
 
 	jwh.Issue = *issue
