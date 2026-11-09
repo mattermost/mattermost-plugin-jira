@@ -108,6 +108,7 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
             // this.filterOptions() to limit the number of options being rendered at a given time.
             selectComponent = (
                 <AsyncSelect
+                    inputId={this.props.name}
                     {...this.props}
                     loadOptions={this.filterOptions}
                     defaultOptions={true}
@@ -120,6 +121,7 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
         } else if (this.props.allowUserDefinedValue) {
             selectComponent = (
                 <CreatableSelect
+                    inputId={this.props.name}
                     {...this.props}
                     noOptionsMessage={() => 'Start typing...'}
                     formatCreateLabel={(value) => `Add "${value}"`}
@@ -133,6 +135,7 @@ export default class ReactSelectSetting extends React.PureComponent<Props, State
         } else {
             selectComponent = (
                 <ReactSelect
+                    inputId={this.props.name}
                     {...this.props}
                     menuPortalTarget={document.body}
                     menuPlacement='auto'

@@ -90,6 +90,7 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props, Stat
             <FullScreenModal
                 show={isModalOpen}
                 onClose={this.handleClose}
+                ariaLabel='Jira Subscriptions'
             >
                 <div className='channel-subscriptions-modal'>
                     <div className='channel-subscriptions-modal-body'>

@@ -1,0 +1,175 @@
+name: e2e
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  playwright:
+    name: playwright (${{ matrix.name }}, ${{ matrix.jira }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: min-server
+            image: mattermost/mattermost-enterprise-edition:release-12.0
+            jira: cloud
+          - name: master
+            image: mattermostdevelopment/mattermost-enterprise-edition:master
+            jira: cloud
+          - name: master
+            image: mattermostdevelopment/mattermost-enterprise-edition:master
+            jira: server
+    env:
+      CI: true
+      MM_IMAGE: ${{ matrix.image }}
+      JIRA_FLAVOR: ${{ matrix.jira }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/e2e-setup
+        with:
+          build: e2e-dist
+          browser: true
+          stack: true
+
+      - name: Type-check e2e
+        working-directory: e2e/playwright
+        run: npm run tsc
+
+      - name: Run Playwright
+        working-directory: e2e/playwright
+        run: npm run test:ci
+
+      - name: Collect server logs
+        if: failure()
+        working-directory: e2e/playwright
+        run: mkdir -p playwright-report && docker compose logs mattermost > playwright-report/mattermost.log 2>&1 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.name }}-${{ matrix.jira }}
+          path: e2e/playwright/playwright-report
+          retention-days: 14
+
+  # Screenshot diffs of the plugin's modals and posts. Non-blocking: baselines need a human eye when they change.
+  visual:
+    name: playwright visual
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    env:
+      CI: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/e2e-setup
+        with:
+          build: e2e-dist
+
+      - name: Compare screenshots
+        working-directory: e2e/playwright
+        run: npm run test:visual
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-visual-diffs
+          path: |
+            e2e/playwright/playwright-report
+            e2e/playwright/test-results
+          retention-days: 14
+
+  contract-drift:
+    name: fake-jira contract drift
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/e2e-setup
+
+      - name: Compare committed specs with Atlassian's published OpenAPI
+        working-directory: e2e/playwright
+        run: npm run contract:check
+
+  real-cloud-parity:
+    name: fake-jira parity with real Jira Cloud
+    if: github.event_name == 'schedule' && vars.JIRA_REAL_CLOUD_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: jira-cloud-test-accounts
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/e2e-setup
+
+      - name: Compare fake-jira responses with real Jira Cloud
+        working-directory: e2e/playwright
+        run: npm run test:real-cloud
+        env:
+          CI: true
+          JIRA_CLOUD_URL: ${{ secrets.JIRA_CLOUD_URL }}
+          JIRA_CLOUD_ADMIN_EMAIL: ${{ secrets.JIRA_CLOUD_ADMIN_EMAIL }}
+          JIRA_CLOUD_ADMIN_API_TOKEN: ${{ secrets.JIRA_CLOUD_ADMIN_API_TOKEN }}
+          JIRA_CLOUD_USER_EMAIL: ${{ secrets.JIRA_CLOUD_USER_EMAIL }}
+          JIRA_CLOUD_USER_API_TOKEN: ${{ secrets.JIRA_CLOUD_USER_API_TOKEN }}
+
+  # Browser journeys against the real test site. Off until vars.JIRA_REAL_E2E_ENABLED is set.
+  # No report or logs are uploaded: they can contain real tokens and Atlassian cookies.
+  real-jira:
+    name: playwright (real Jira Cloud)
+    if: github.event_name == 'schedule' && vars.JIRA_REAL_E2E_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: jira-cloud-test-accounts
+      cancel-in-progress: false
+    env:
+      CI: true
+      MM_IMAGE: mattermost/mattermost-enterprise-edition:release-12.0
+      # Must match the callback URL registered in the Atlassian OAuth app.
+      MM_PORT: 8066
+      JIRA_CLOUD_URL: ${{ secrets.JIRA_CLOUD_URL }}
+      JIRA_CLOUD_ADMIN_EMAIL: ${{ secrets.JIRA_CLOUD_ADMIN_EMAIL }}
+      JIRA_CLOUD_ADMIN_API_TOKEN: ${{ secrets.JIRA_CLOUD_ADMIN_API_TOKEN }}
+      JIRA_CLOUD_USER_EMAIL: ${{ secrets.JIRA_CLOUD_USER_EMAIL }}
+      JIRA_CLOUD_USER_API_TOKEN: ${{ secrets.JIRA_CLOUD_USER_API_TOKEN }}
+      JIRA_CLOUD_USER_PASSWORD: ${{ secrets.JIRA_CLOUD_USER_PASSWORD }}
+      JIRA_CLOUD_USER_TOTP_SECRET: ${{ secrets.JIRA_CLOUD_USER_TOTP_SECRET }}
+      JIRA_CLOUD_OAUTH_CLIENT_ID: ${{ secrets.JIRA_CLOUD_OAUTH_CLIENT_ID }}
+      JIRA_CLOUD_OAUTH_CLIENT_SECRET: ${{ secrets.JIRA_CLOUD_OAUTH_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/e2e-setup
+        with:
+          build: dist
+          browser: true
+          stack: true
+
+      - name: Run real Jira journeys
+        working-directory: e2e/playwright
+        run: npm run test:real-jira
