@@ -819,7 +819,8 @@ func TestHTTPWebhookDeliveryGuard(t *testing.T) {
 }
 
 func TestVerifyHTTPSecret(t *testing.T) {
-	generated := "Zk3x9QpL0aVbT7uYc2WnR5dEhJ8mXs1G"
+	generated, err := generateSecret()
+	require.NoError(t, err)
 	special := "ab+c/d=e%f"
 
 	encode := func(v string, levels int) string {
@@ -872,17 +873,8 @@ func TestVerifyHTTPSecret(t *testing.T) {
 			status, err := verifyHTTPSecret(tc.expected, tc.got)
 			require.Error(t, err)
 			assert.Equal(t, http.StatusForbidden, status)
-			assert.Equal(t, "request URL: secret did not match", err.Error())
+			require.ErrorIs(t, err, errSecretMismatch)
 		})
-	}
-}
-
-func TestSecretLengthWithinBound(t *testing.T) {
-	for _, n := range []int{1, 10, 32} {
-		expected := strings.Repeat("e", n)
-		limit := maxSecretLen(expected)
-		assert.True(t, secretLengthWithinBound(expected, strings.Repeat("a", limit)))
-		assert.False(t, secretLengthWithinBound(expected, strings.Repeat("a", limit+1)))
 	}
 }
 

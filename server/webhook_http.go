@@ -138,24 +138,20 @@ func maxSecretLen(expected string) int {
 	return limit
 }
 
-func secretLengthWithinBound(expected, got string) bool {
-	return len(got) <= maxSecretLen(expected)
-}
+// errSecretMismatch is returned when the supplied secret does not match the
+// configured one.
+var errSecretMismatch = errors.New("request URL: secret did not match")
 
 // verifyHTTPSecret compares the supplied secret against the expected one. The
 // raw value is compared first, followed by up to maxSecretDecodeDepth
 // URL-decoded forms of it, so the amount of work per request is bounded.
 func verifyHTTPSecret(expected, got string) (status int, err error) {
-	mismatch := func() (int, error) {
-		return http.StatusForbidden, errors.New("request URL: secret did not match")
-	}
-
 	if expected == "" {
-		return mismatch()
+		return http.StatusForbidden, errSecretMismatch
 	}
 
-	if !secretLengthWithinBound(expected, got) {
-		return mismatch()
+	if len(got) > maxSecretLen(expected) {
+		return http.StatusForbidden, errSecretMismatch
 	}
 
 	for decodes := 0; ; decodes++ {
@@ -163,12 +159,12 @@ func verifyHTTPSecret(expected, got string) (status int, err error) {
 			return 0, nil
 		}
 		if decodes == maxSecretDecodeDepth {
-			return mismatch()
+			return http.StatusForbidden, errSecretMismatch
 		}
 
 		unescaped, unescapeErr := url.QueryUnescape(got)
 		if unescapeErr != nil || unescaped == got {
-			return mismatch()
+			return http.StatusForbidden, errSecretMismatch
 		}
 		got = unescaped
 	}
