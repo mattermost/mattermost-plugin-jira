@@ -43,7 +43,7 @@ func ParseWebhook(bb []byte) (wh Webhook, err error) {
 	}()
 
 	jwh := &JiraWebhook{}
-	err = json.Unmarshal(bb, &jwh)
+	err = json.Unmarshal(bb, jwh)
 	if err != nil {
 		return nil, err
 	}

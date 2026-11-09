@@ -159,6 +159,91 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 	})
 }
 
+type panicOnceInstanceStore struct {
+	InstanceStore
+	panicked bool
+}
+
+func (s *panicOnceInstanceStore) LoadInstance(id types.ID) (Instance, error) {
+	if !s.panicked {
+		s.panicked = true
+		panic("instance store unavailable")
+	}
+	return s.InstanceStore.LoadInstance(id)
+}
+
+func TestWebhookWorkerContinuesAfterPanic(t *testing.T) {
+	const (
+		botUserID      = "botuser___________________"
+		channelID      = "openchannelbbbbbbbbbbbbbb"
+		fixtureIssueID = "10040"
+	)
+	const recoveredMsg = "Recovered from a panic while processing a webhook"
+
+	webhookData, err := getJiraTestData("webhook-issue-created.json")
+	require.NoError(t, err)
+
+	setup := func(t *testing.T) (*plugintest.API, *Plugin) {
+		api := &plugintest.API{}
+		p := &Plugin{}
+		p.updateConfig(func(conf *config) {
+			conf.Secret = someSecret
+			conf.botUserID = botUserID
+			conf.HideDecriptionComment = true
+			conf.ThreadedJiraCommentSubscriptionDuration = "30"
+		})
+		p.SetAPI(api)
+		p.client = pluginapi.NewClient(api, p.Driver)
+		p.instanceStore = &panicOnceInstanceStore{InstanceStore: p.getMockInstanceStoreKV(1)}
+		p.userStore = getMockUserStoreKV()
+
+		sub := ChannelSubscription{
+			ID:        "sub5______________________",
+			ChannelID: channelID,
+			Filters:   SubscriptionFilters{Events: NewStringSet("event_created")},
+		}
+		existingBytes, err := json.Marshal(withExistingChannelSubscriptions([]ChannelSubscription{sub}))
+		require.NoError(t, err)
+		api.On("KVGet", testSubKey).Return(existingBytes, nil)
+		api.On("KVSetWithOptions", mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "chan_dedup_")
+		}), mock.Anything, mock.Anything).Return(true, nil).Maybe()
+		api.On("LogError", recoveredMsg, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+			mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+		api.On("LogError", mock.Anything).Return()
+		return api, p
+	}
+
+	t.Run("process returns the recovered panic as an error", func(t *testing.T) {
+		api, p := setup(t)
+
+		ww := webhookWorker{id: 1, p: p}
+		err := ww.process(&webhookMessage{InstanceID: testInstance1.GetID(), Data: webhookData})
+		require.ErrorContains(t, err, "recovered from a panic")
+		api.AssertCalled(t, "LogError", recoveredMsg, "workerID", 1, "instanceID", testInstance1.GetID().String(),
+			"error", "instance store unavailable", mock.Anything, mock.Anything)
+	})
+
+	t.Run("work keeps processing the queue after a panic", func(t *testing.T) {
+		api, p := setup(t)
+		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypeOpen}, nil)
+		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{Id: "createdpost3"}, nil)
+		api.On("KVSetWithOptions", fmt.Sprintf(ticketRootPostIDKey, fixtureIssueID, channelID), mock.Anything, mock.Anything).Return(true, nil)
+
+		queue := make(chan *webhookMessage, 2)
+		queue <- &webhookMessage{InstanceID: testInstance1.GetID(), Data: webhookData}
+		queue <- &webhookMessage{InstanceID: testInstance1.GetID(), Data: webhookData}
+		close(queue)
+
+		require.NotPanics(t, webhookWorker{id: 1, p: p, workQueue: queue}.work)
+		// One log from the recovery and one from work() reporting the returned error.
+		api.AssertNumberOfCalls(t, "LogError", 2)
+		api.AssertCalled(t, "LogError", recoveredMsg, "workerID", 1, "instanceID", testInstance1.GetID().String(),
+			"error", "instance store unavailable", mock.Anything, mock.Anything)
+		api.AssertNumberOfCalls(t, "CreatePost", 1)
+	})
+}
+
 type failingConnectionUserStore struct {
 	UserStore
 }
