@@ -4,6 +4,9 @@
 package main
 
 import (
+	"fmt"
+	"runtime/debug"
+
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
@@ -38,6 +41,16 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		if errors.Is(err, ErrWebhookIgnored) {
 			// ignore ErrWebhookIgnored - from here up it's a success
 			err = nil
+		}
+	}()
+	defer func() {
+		if x := recover(); x != nil {
+			ww.p.client.Log.Error("Recovered from a panic while processing a webhook",
+				"workerID", ww.id,
+				"instanceID", msg.InstanceID.String(),
+				"error", fmt.Sprintf("%v", x),
+				"stack", string(debug.Stack()))
+			err = errors.Errorf("recovered from a panic while processing a webhook: %v", x)
 		}
 	}()
 
