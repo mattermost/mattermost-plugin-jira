@@ -6,7 +6,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
@@ -106,21 +105,6 @@ func (store mockUserStore) MapUsers(func(*User) error) error {
 
 type mockInstanceStore struct {
 	mock.Mock
-}
-
-func (store *mockInstanceStore) CreateInactiveCloudInstance(types.ID, string) (string, error) {
-	return strings.Repeat("a", 64), nil
-}
-func (store *mockInstanceStore) LoadPendingCloudSetupRoute(types.ID) (types.ID, error) {
-	return "", nil
-}
-
-func (store *mockInstanceStore) StorePendingCloudSetupRoute(types.ID, types.ID) error {
-	return nil
-}
-
-func (store *mockInstanceStore) DeletePendingCloudSetupRoute(types.ID) error {
-	return nil
 }
 
 func (store *mockInstanceStore) DeleteInstance(types.ID) error {

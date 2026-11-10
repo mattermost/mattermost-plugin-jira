@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack --mode=production",
     "build:watch": "webpack --mode=production --watch",
-    "debug": "webpack --mode=none",
+    "debug": "webpack --mode=development",
     "debug:watch": "webpack --mode=development --watch",
     "lint": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx --ext tsx --ext ts . --quiet --cache",
     "fix": "eslint --ignore-pattern node_modules --ignore-pattern dist --ext .js --ext .jsx --ext tsx --ext ts . --quiet --fix --cache",
@@ -109,6 +109,7 @@
       "^testlib/(.*)$": "<rootDir>/src/testlib/$1",
       "^utils/(.*)$": "<rootDir>/src/utils/$1",
       "^actions$": "<rootDir>/src/actions",
+      "^selectors$": "<rootDir>/src/selectors",
       "^components/(.*)$": "<rootDir>/src/components/$1",
       "^.+\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "identity-obj-proxy",
       "^.+\\.(css|less|scss)$": "identity-obj-proxy",

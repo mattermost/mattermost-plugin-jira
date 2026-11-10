@@ -406,12 +406,12 @@ export const fetchChannelSubscriptions = (channelId: string) => {
     };
 };
 
-export const fetchAllSubscriptionTemplates = () => {
+export const fetchAllSubscriptionTemplates = (channelId: string) => {
     return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         const connectedInstances = getUserConnectedInstances(getState());
         const instances = connectedInstances.map((instance) => {
-            return doFetch(`${baseUrl}/api/v2/subscription-templates?instance_id=${instance.instance_id}`, {
+            return doFetch(`${baseUrl}/api/v2/subscription-templates?instance_id=${instance.instance_id}&channel_id=${channelId}`, {
                 method: 'get',
             });
         });
@@ -446,11 +446,11 @@ export const fetchAllSubscriptionTemplates = () => {
     };
 };
 
-export const fetchSubscriptionTemplatesForProjectKey = (instanceId: string, projectKey: string) => {
+export const fetchSubscriptionTemplatesForProjectKey = (instanceId: string, projectKey: string, channelId: string) => {
     return async (dispatch: Dispatch, getState: GlobalState) => {
         const baseUrl = getPluginServerRoute(getState());
         try {
-            const data = await doFetch(`${baseUrl}/api/v2/subscription-templates?instance_id=${instanceId}&project_key=${projectKey}`, {
+            const data = await doFetch(`${baseUrl}/api/v2/subscription-templates?instance_id=${instanceId}&project_key=${projectKey}&channel_id=${channelId}`, {
                 method: 'get',
             });
 

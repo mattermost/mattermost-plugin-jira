@@ -11,10 +11,13 @@ import CloseIcon from './close_icon';
 const ANIMATION_DURATION = 100;
 
 export default class FullScreenModal extends React.Component {
+    modalRef = React.createRef();
+
     static propTypes = {
         show: PropTypes.bool.isRequired,
         children: PropTypes.node.isRequired,
         onClose: PropTypes.func.isRequired,
+        ariaLabel: PropTypes.string,
     };
 
     componentDidMount() {
@@ -44,8 +47,14 @@ export default class FullScreenModal extends React.Component {
                 unmountOnExit={true}
                 timeout={ANIMATION_DURATION}
                 appear={true}
+                nodeRef={this.modalRef}
             >
-                <div className='FullScreenModal FullScreenModal--compact'>
+                <div
+                    ref={this.modalRef}
+                    className='FullScreenModal FullScreenModal--compact'
+                    role='dialog'
+                    aria-label={this.props.ariaLabel}
+                >
                     <CloseIcon
                         className='close-x'
                         onClick={this.close}

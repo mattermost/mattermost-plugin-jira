@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -17,7 +18,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
-	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -33,7 +33,6 @@ type cloudOAuthInstance struct {
 	JiraBaseURL      string
 	CodeVerifier     string
 	CodeChallenge    string
-	JWTInstance      *cloudInstance
 }
 
 type CloudOAuthConfigure struct {
@@ -43,7 +42,8 @@ type CloudOAuthConfigure struct {
 }
 
 type JiraAccessibleResources []struct {
-	ID string
+	ID  string `json:"id"`
+	URL string `json:"url"`
 }
 
 type PKCEParams struct {
@@ -52,7 +52,23 @@ type PKCEParams struct {
 }
 
 var _ Instance = (*cloudOAuthInstance)(nil)
-var jiraOAuthAccessibleResourcesURL = "https://api.atlassian.com/oauth/token/accessible-resources"
+
+const (
+	defaultAtlassianAuthBaseURL = "https://auth.atlassian.com"
+	defaultAtlassianAPIBaseURL  = "https://api.atlassian.com"
+)
+
+// Only E2E builds override these (via -ldflags -X) to point at a fake Atlassian; -X requires constant initializers.
+var (
+	atlassianAuthBaseURL = defaultAtlassianAuthBaseURL
+	atlassianAPIBaseURL  = defaultAtlassianAPIBaseURL
+)
+
+var jiraOAuthAccessibleResourcesURL = atlassianAPIBaseURL + "/oauth/token/accessible-resources"
+
+func atlassianURLsOverridden() bool {
+	return atlassianAuthBaseURL != defaultAtlassianAuthBaseURL || atlassianAPIBaseURL != defaultAtlassianAPIBaseURL
+}
 
 const (
 	JiraScopes          = "read:jira-user,read:jira-work,write:jira-work,read:board-scope:jira-software,read:project:jira,read:sprint:jira-software"
@@ -84,38 +100,6 @@ func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthIn
 		CodeChallenge:  params.CodeChallenge,
 	}
 
-	existingInstance, err := p.instanceStore.LoadInstance(types.ID(jiraURL))
-	if err != nil && !errors.Is(err, kvstore.ErrNotFound) {
-		return "", nil, errors.Wrapf(err, "failed to load existing jira instance. ID: %s", jiraURL)
-	}
-
-	// Handle backwards compatibility with existing JWT instance
-	if existingInstance != nil {
-		if existingInstance.Common().Type == CloudOAuthInstanceType {
-			oauthInstance, ok := existingInstance.(*cloudOAuthInstance)
-			if !ok {
-				return "", nil, errors.Wrapf(err, "failed to assert existing cloud-oauth instance as cloudOAuthInstance. ID: %s", jiraURL)
-			}
-
-			newInstance.JWTInstance = oauthInstance.JWTInstance
-			if newInstance.JWTInstance != nil {
-				p.API.LogDebug("Installing cloud-oauth over existing cloud-oauth instance. Carrying over existing saved JWT instance.")
-			} else {
-				p.API.LogDebug("Installing cloud-oauth over existing cloud-oauth instance. There exists no previous JWT instance to carry over.")
-			}
-		} else if existingInstance.Common().Type == CloudInstanceType {
-			jwtInstance, ok := existingInstance.(*cloudInstance)
-			if !ok {
-				return "", nil, errors.Wrapf(err, "failed to assert existing cloud instance as cloudInstance. ID: %s", jiraURL)
-			}
-
-			newInstance.JWTInstance = jwtInstance
-			p.API.LogDebug("Installing cloud-oauth over existing cloud JWT instance. Carrying over existing saved JWT instance.")
-		}
-	} else {
-		p.API.LogDebug("Installing new cloud-oauth instance. There exists no previous JWT instance to carry over.")
-	}
-
 	if err = p.InstallInstance(newInstance); err != nil {
 		return "", nil, errors.Wrapf(err, "failed to install cloud-oauth instance. ID: %s", jiraURL)
 	}
@@ -135,14 +119,13 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 	oauth2Conf := ci.GetOAuthConfig()
 	ctx := context.Background()
 
-	// Checking if this user's connection is for a JWT instance
 	if connection.OAuth2Token == nil {
-		if ci.JWTInstance != nil {
-			ci.Plugin.API.LogDebug("Returning a JWT token client since the stored JWT instance is not nil and the user's oauth token is nil")
-			return ci.JWTInstance.getClientForConnection(connection)
+		// A stored connection without an OAuth token was made through the Atlassian Connect app.
+		if connection.MattermostUserID != "" {
+			ci.Plugin.disconnectUserWithNotice(connection.MattermostUserID, ci.GetID(), connectConnectionRemovedNotice)
+			return nil, nil, errors.New("your Jira connection was made with the Atlassian Connect app, which is no longer supported. Please use `/jira connect` to reconnect your account")
 		}
-
-		return nil, nil, errors.New("failed to create client for OAuth instance: no JWT instance found, and connection's OAuth token is missing")
+		return nil, nil, errors.New("your Jira account is not connected, please use `/jira connect`")
 	}
 
 	tokenSource := oauth2Conf.TokenSource(ctx, connection.OAuth2Token)
@@ -169,15 +152,23 @@ func (ci *cloudOAuthInstance) getClientForConnection(connection *Connection) (*j
 		}
 	}
 
-	// TODO: Get resource ID if not in the KV Store?
-	jiraID, err := ci.getJiraCloudResourceID(*client)
-	ci.JiraResourceID = jiraID
+	resourceID, err := ci.resolveJiraCloudResourceID(*client)
 	if err != nil {
 		if errors.Is(err, errTokenExpired) {
 			ci.Plugin.disconnectUserDueToExpiredToken(connection.MattermostUserID, ci.GetID())
 			return nil, nil, errors.New("your Jira token has expired, please use `/jira connect` to reconnect your account")
 		}
 		return nil, nil, err
+	}
+
+	if ci.JiraResourceID != resourceID {
+		ci.JiraResourceID = resourceID
+		// Cached so the lookup above stops running on every Jira request. A
+		// failure only costs the next request another lookup.
+		if err := ci.Plugin.instanceStore.StoreInstance(ci); err != nil {
+			ci.Plugin.client.Log.Warn("Failed to cache the resolved Jira resource ID",
+				"instance_id", string(ci.InstanceID), "error", err.Error())
+		}
 	}
 
 	jiraClient, err := jira.NewClient(client, ci.GetURL())
@@ -215,14 +206,14 @@ func (ci *cloudOAuthInstance) GetOAuthConfig() *oauth2.Config {
 		Scopes:       strings.Split(JiraScopesOffline, ","),
 		RedirectURL:  fmt.Sprintf("%s%s", ci.Plugin.GetPluginURL(), instancePath(routeOAuth2Complete, ci.InstanceID)),
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://auth.atlassian.com/authorize",
-			TokenURL: "https://auth.atlassian.com/oauth/token",
+			AuthURL:  atlassianAuthBaseURL + "/authorize",
+			TokenURL: atlassianAuthBaseURL + "/oauth/token",
 		},
 	}
 }
 
 func (ci *cloudOAuthInstance) GetURL() string {
-	return "https://api.atlassian.com/ex/jira/" + ci.JiraResourceID
+	return atlassianAPIBaseURL + "/ex/jira/" + ci.JiraResourceID
 }
 
 func (ci *cloudOAuthInstance) GetJiraBaseURL() string {
@@ -243,7 +234,11 @@ func (ci *cloudOAuthInstance) GetMattermostKey() string {
 
 var errTokenExpired = errors.New("token expired or revoked")
 
-func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string, error) {
+func (ci *cloudOAuthInstance) resolveJiraCloudResourceID(client http.Client) (string, error) {
+	if ci.JiraResourceID != "" {
+		return ci.JiraResourceID, nil
+	}
+
 	request, err := http.NewRequest(
 		http.MethodGet,
 		jiraOAuthAccessibleResourcesURL,
@@ -275,10 +270,43 @@ func (ci *cloudOAuthInstance) getJiraCloudResourceID(client http.Client) (string
 		return "", errors.Wrap(err, "failed to unmarshal JiraAccessibleResources")
 	}
 
-	// We return the first resource ID only
+	return ci.selectResourceID(resources)
+}
+
+// selectResourceID picks the resource for this instance's own site. A token can
+// grant access to several Jira sites in an unspecified order, and each site has
+// its own project key sequences, so taking the wrong one sends reads and writes
+// to one site while every link we render points at another. No match has to be
+// an error rather than a guess.
+func (ci *cloudOAuthInstance) selectResourceID(resources JiraAccessibleResources) (string, error) {
 	if len(resources) < 1 {
 		return "", errors.New("No resources are available for this Jira Cloud Account.")
 	}
 
-	return resources[0].ID, nil
+	wantHost := jiraURLHost(ci.JiraBaseURL)
+	if wantHost == "" {
+		return "", errors.Errorf("instance has an unusable Jira base URL %q", ci.JiraBaseURL)
+	}
+
+	available := make([]string, 0, len(resources))
+	for _, resource := range resources {
+		if jiraURLHost(resource.URL) == wantHost {
+			return resource.ID, nil
+		}
+		available = append(available, resource.URL)
+	}
+
+	return "", errors.Errorf(
+		"your Jira account does not have access to %s, only to: %s. Please use `/jira disconnect` and `/jira connect`, and authorize %s",
+		ci.JiraBaseURL, strings.Join(available, ", "), ci.JiraBaseURL)
+}
+
+// jiraURLHost reduces a Jira site URL to the only part that identifies the
+// site, so scheme, case, port and trailing path cannot cause a false mismatch.
+func jiraURLHost(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	return strings.ToLower(u.Hostname())
 }

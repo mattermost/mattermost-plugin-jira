@@ -1,0 +1,54 @@
+name: e2e setup
+description: Builds the plugin, installs the Playwright suite and starts the Mattermost stack.
+inputs:
+  build:
+    description: Make target that builds the plugin bundle (dist or e2e-dist). Empty skips the build.
+    default: ""
+  browser:
+    description: Install Chromium for Playwright.
+    default: "false"
+  stack:
+    description: Start the Mattermost stack with docker compose.
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - if: inputs.build != ''
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+        cache-dependency-path: |
+          webapp/package-lock.json
+          e2e/playwright/package-lock.json
+
+    - name: Build plugin bundle
+      if: inputs.build != ''
+      shell: bash
+      run: make "$BUILD_TARGET"
+      env:
+        BUILD_TARGET: ${{ inputs.build }}
+        # Builds only for the runner's OS/arch.
+        MM_SERVICESETTINGS_ENABLEDEVELOPER: "true"
+
+    - name: Install e2e dependencies
+      shell: bash
+      working-directory: e2e/playwright
+      run: npm ci
+
+    - name: Install Chromium
+      if: inputs.browser == 'true'
+      shell: bash
+      working-directory: e2e/playwright
+      run: npx playwright install --with-deps chromium
+
+    - name: Start Mattermost
+      if: inputs.stack == 'true'
+      shell: bash
+      working-directory: e2e/playwright
+      run: docker compose up -d --wait

@@ -55,45 +55,19 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 	isCommentEvent := jwh.WebhookEvent == commentCreated || jwh.WebhookEvent == commentUpdated || jwh.WebhookEvent == commentDeleted || jwh.WebhookEvent == issueCreated
 	if isCommentEvent {
 		if _, ok := instance.(*cloudInstance); ok {
-			issue, err := p.getIssueDataForCloudWebhook(instance, jwh.Issue.ID)
-			if err != nil {
-				return err
-			}
-
-			jwh.Issue = *issue
+			return jwh.expandIssueWithAPIToken(p, instance, errConnectInstanceUnsupported)
 		} else if instance, ok := instance.(*cloudOAuthInstance); ok {
 			accountID := jwh.Comment.Author.AccountID
 			if jwh.WebhookEvent == issueCreated {
+				if jwh.Issue.Fields.Creator == nil {
+					return jwh.expandIssueWithAPIToken(p, instance, errors.New("issue creator is missing from the webhook payload"))
+				}
 				accountID = jwh.Issue.Fields.Creator.AccountID
 			}
 
 			mmUserID, err := p.userStore.LoadMattermostUserID(instanceID, accountID)
 			if err != nil {
-				// User is not connected, so we try to fall back to JWT bot
-				if instance.JWTInstance == nil {
-					// Using API token to fetch the issue details as users were not getting notified for the events triggered by a non connected user i.e. oauth token is absent
-					if p.getConfig().AdminAPIToken != "" {
-						issue, apiTokenErr := p.GetIssueDataWithAPIToken(jwh.Issue.Key, instance.GetID().String())
-						if apiTokenErr != nil {
-							return apiTokenErr
-						}
-
-						jwh.Issue = *issue
-						return nil
-					}
-
-					return errors.Wrap(err, "Cannot create subscription posts for this comment as the Jira comment author is not connected to Mattermost.")
-				}
-
-				// Fetch issue details with bot JWT bot
-				var issue *jira.Issue
-				issue, err = p.getIssueDataForCloudWebhook(instance.JWTInstance, jwh.Issue.ID)
-				if err != nil {
-					return errors.Wrap(err, "failed to getIssueDataForCloudWebhook using bot account")
-				}
-
-				jwh.Issue = *issue
-				return nil
+				return jwh.expandIssueWithAPIToken(p, instance, err)
 			}
 
 			conn, err := p.userStore.LoadConnection(instance.GetID(), mmUserID)
@@ -110,11 +84,34 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 			if err != nil {
 				return err
 			}
+			if issue == nil || issue.Fields == nil {
+				return errors.Errorf("Jira returned no fields for issue %s", jwh.Issue.ID)
+			}
 
 			jwh.Issue = *issue
 		}
 	}
 
+	return nil
+}
+
+// expandIssueWithAPIToken fetches the issue when no connected user can do it,
+// e.g. the Jira author hasn't connected their account.
+func (jwh *JiraWebhook) expandIssueWithAPIToken(p *Plugin, instance Instance, noUserErr error) error {
+	if !p.hasAdminAPIToken(instance) {
+		p.notifyAdminsIfAPITokenMissing(instance)
+		return errors.Wrap(noUserErr, "cannot create subscription posts for this event without a connected Jira author or an Admin API Token")
+	}
+
+	issue, err := p.GetIssueDataWithAPIToken(jwh.Issue.Key, instance)
+	if err != nil {
+		return err
+	}
+	if issue == nil || issue.Fields == nil {
+		return errors.Errorf("Jira returned no fields for issue %s", jwh.Issue.Key)
+	}
+
+	jwh.Issue = *issue
 	return nil
 }
 

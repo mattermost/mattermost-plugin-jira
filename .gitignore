@@ -36,3 +36,7 @@ server/manifest.go
 .cursor/scripts/*
 !.cursor/scripts/cloud-agent-install.sh
 !.cursor/scripts/cloud-agent-start.sh
+
+# Playwright output when run from the repo root
+/test-results/
+/playwright-report/
