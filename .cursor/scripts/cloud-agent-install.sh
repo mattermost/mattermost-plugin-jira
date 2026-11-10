@@ -45,14 +45,14 @@ if ! is_true "${CLOUD_AGENT_SKIP_WEBAPP_DEPS:-}" && [[ -f webapp/package-lock.js
     npm ci --prefix webapp
 fi
 
-if ! is_true "${CLOUD_AGENT_SKIP_PLAYWRIGHT:-}" && [[ -f e2e/package.json ]]; then
+if ! is_true "${CLOUD_AGENT_SKIP_PLAYWRIGHT:-}" && [[ -f e2e/playwright/package.json ]]; then
     log "Installing Playwright browsers for e2e/"
-    if [[ -f e2e/package-lock.json ]]; then
-        npm ci --prefix e2e
+    if [[ -f e2e/playwright/package-lock.json ]]; then
+        npm ci --prefix e2e/playwright
     else
-        npm install --prefix e2e
+        npm install --prefix e2e/playwright
     fi
-    npx --prefix e2e playwright install chromium --with-deps \
+    sudo npx --prefix e2e/playwright playwright install chromium --with-deps \
         || log "Playwright browser install failed; will retry next boot"
 fi
 
