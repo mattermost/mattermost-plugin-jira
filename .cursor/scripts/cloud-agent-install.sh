@@ -52,7 +52,7 @@ if ! is_true "${CLOUD_AGENT_SKIP_PLAYWRIGHT:-}" && [[ -f e2e/playwright/package.
     else
         npm install --prefix e2e/playwright
     fi
-    sudo npx --prefix e2e/playwright playwright install chromium --with-deps \
+    npx --prefix e2e/playwright playwright install chromium --with-deps \
         || log "Playwright browser install failed; will retry next boot"
 fi
 
