@@ -2,16 +2,18 @@
 // See LICENSE.txt for license information.
 
 import React, {PureComponent} from 'react';
-import {Modal} from 'react-bootstrap';
 
-import {Instance, ReactSelectOption} from 'types/model';
+import {Button} from '@mattermost/compass-ui/components/button';
+import {Modal} from '@mattermost/compass-ui/components/modal';
+import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
 
-import {getModalStyles} from 'utils/styles';
+import {Instance, SelectOption} from 'types/model';
 
-import ReactSelectSetting from 'components/react_select_setting';
-import FormButton from 'components/form_button';
+import SelectSetting from 'components/select_setting';
 
 import {Props} from './props';
+const FORM_ID = 'jira-connect-modal-form';
+
 export type State = {
     submitting: boolean;
     error: string;
@@ -49,7 +51,7 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
         return Boolean(this.props.connectedInstances.find((instance) => instance.instance_id === instanceID));
     };
 
-    closeModal = (e: React.FormEvent<HTMLFormElement>) => {
+    closeModal = () => {
         this.props.closeModal();
     };
 
@@ -67,16 +69,16 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
     };
 
     render(): JSX.Element {
-        const style = getModalStyles(this.props.theme);
         const {selectedInstance} = this.state;
 
-        const options: ReactSelectOption[] = this.props.installedInstances.map((instance: Instance) => (
+        const options: SelectOption[] = this.props.installedInstances.map((instance: Instance) => (
             {label: instance.alias || instance.instance_id, value: instance.instance_id}
         ));
         const instanceSelector = (
-            <ReactSelectSetting
+            <SelectSetting
+                name='instance'
+                label='Jira Instance'
                 options={options}
-                theme={this.props.theme}
                 onChange={this.handleInstanceChoice}
                 value={options.find((opt) => opt.value === this.state.selectedInstance)}
             />
@@ -84,40 +86,49 @@ export default class ConnectModalForm extends PureComponent<Props, State> {
 
         const disableSubmit = !selectedInstance || this.isAlreadyConnectedToInstance(selectedInstance);
         const footer = (
-            <React.Fragment>
-                <FormButton
-                    type='button'
-                    btnClass='btn-link'
-                    defaultMessage='Cancel'
+            <>
+                <Button
+                    emphasis='tertiary'
                     onClick={this.closeModal}
-                />
-                <FormButton
+                >
+                    {'Cancel'}
+                </Button>
+                <Button
                     type='submit'
-                    btnClass='btn btn-primary'
-                    defaultMessage='Connect'
+                    form={FORM_ID}
+                    emphasis='primary'
                     disabled={disableSubmit}
-                    saving={this.state.submitting}
-                />
-                <p className={'error-text'}>
-                    {this.state.error}
-                </p>
-            </React.Fragment>
+                    loading={this.state.submitting}
+                >
+                    {'Connect'}
+                </Button>
+            </>
         );
 
         return (
-            <form
-                role='form'
-                onSubmit={this.submit}
+            <Modal
+                open={this.props.visible}
+                size='small'
+                title='Connect to Jira'
+                onClose={this.closeModal}
+                footer={footer}
             >
-                <Modal.Body
-                    style={style.modalBody}
+                <form
+                    id={FORM_ID}
+                    role='form'
+                    onSubmit={this.submit}
                 >
+                    {this.state.error && (
+                        <SectionNotice
+                            className='jira-form-notice'
+                            role='alert'
+                            type='danger'
+                            title={this.state.error}
+                        />
+                    )}
                     {instanceSelector}
-                </Modal.Body>
-                <Modal.Footer style={style.modalFooter}>
-                    {footer}
-                </Modal.Footer>
-            </form>
+                </form>
+            </Modal>
         );
     }
 }

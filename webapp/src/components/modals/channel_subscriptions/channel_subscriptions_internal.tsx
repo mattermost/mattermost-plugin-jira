@@ -5,8 +5,6 @@ import React from 'react';
 
 import {AllProjectMetadata, ChannelSubscription} from 'types/model';
 
-import BackIcon from '../full_screen_modal/back_icon';
-
 import EditChannelSubscription from './edit_channel_subscription';
 import SelectChannelSubscription from './select_channel_subscription';
 import {SharedProps} from './shared_props';
@@ -51,19 +49,10 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
         this.setState({selectedSubscription: null, creatingSubscription: false, selectedSubscriptionTemplate: null, creatingSubscriptionTemplate: false});
     };
 
-    handleBack = (): void => {
-        this.setState({
-            creatingSubscription: false,
-            selectedSubscription: null,
-            creatingSubscriptionTemplate: false,
-            selectedSubscriptionTemplate: null,
-        });
-    };
-
     render(): JSX.Element {
         const {selectedSubscription, creatingSubscription, creatingSubscriptionTemplate, selectedSubscriptionTemplate} = this.state;
 
-        let form;
+        let form: JSX.Element;
         if (selectedSubscription || creatingSubscription || creatingSubscriptionTemplate || selectedSubscriptionTemplate) {
             form = (
                 <EditChannelSubscription
@@ -88,21 +77,6 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
             );
         }
 
-        let backIcon;
-        if (this.state.creatingSubscription || this.state.selectedSubscription || this.state.creatingSubscriptionTemplate || this.state.selectedSubscriptionTemplate) {
-            backIcon = (
-                <BackIcon
-                    className='back'
-                    onClick={this.handleBack}
-                />
-            );
-        }
-
-        return (
-            <React.Fragment>
-                {backIcon}
-                {form}
-            </React.Fragment>
-        );
+        return form;
     }
 }

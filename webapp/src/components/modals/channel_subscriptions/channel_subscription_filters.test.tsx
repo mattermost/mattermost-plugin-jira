@@ -8,7 +8,7 @@ import {useFieldForIssueMetadata} from 'testdata/jira-issue-metadata-helpers';
 
 import {FilterFieldInclusion} from 'types/model';
 import {getCustomFieldFiltersForProjects} from 'utils/jira_issue_metadata';
-import {mockTheme, renderWithRedux} from 'testlib/test-utils';
+import {renderWithRedux} from 'testlib/test-utils';
 
 import ChannelSubscriptionFilters, {Props} from './channel_subscription_filters';
 
@@ -46,7 +46,6 @@ describe('components/ChannelSubscriptionFilters', () => {
     const issueMetadata = useFieldForIssueMetadata(field, 'priority');
 
     const baseProps: Props = {
-        theme: mockTheme,
         fields: getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []),
         values: [{
             key: 'priority',

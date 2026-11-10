@@ -4,7 +4,7 @@
 import React from 'react';
 import {act} from '@testing-library/react';
 
-import {mockTheme, renderWithRedux} from 'testlib/test-utils';
+import {renderWithRedux} from 'testlib/test-utils';
 
 import DisconnectModalForm from './disconnect_modal_form';
 
@@ -18,7 +18,6 @@ describe('components/DisconnectModalForm', () => {
     const baseProps = {
         ...baseActions,
         visible: true,
-        theme: mockTheme,
         connectedInstances: [],
     };
 

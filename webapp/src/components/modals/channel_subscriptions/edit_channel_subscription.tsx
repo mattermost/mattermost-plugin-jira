@@ -2,17 +2,19 @@
 // See LICENSE.txt for license information.
 
 import React, {PureComponent} from 'react';
-import {Modal} from 'react-bootstrap';
 
-import ReactSelectSetting from 'components/react_select_setting';
+import {Button} from '@mattermost/compass-ui/components/button';
+import {ErrorMessage} from '@mattermost/compass-ui/components/error-message';
+import {Modal} from '@mattermost/compass-ui/components/modal';
+import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
+
+import SelectSetting from 'components/select_setting';
 import ConfirmModal from 'components/confirm_modal';
-import FormButton from 'components/form_button';
 import Input from 'components/input';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
 import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project_selector';
 
-import {getBaseStyles, getModalStyles} from 'utils/styles';
 import {
     filterValueIsSecurityField,
     generateJQLStringFromSubscriptionFilters,
@@ -27,14 +29,14 @@ import {
     ChannelSubscriptionFilters as ChannelSubscriptionFiltersModel,
     FilterValue,
     IssueMetadata,
-    ReactSelectOption,
     SavedFieldValues,
+    SelectOption,
 } from 'types/model';
 
 import ChannelSubscriptionFilters from './channel_subscription_filters';
 import {SharedProps} from './shared_props';
 
-const JiraEventOptions: ReactSelectOption[] = [
+const JiraEventOptions: SelectOption[] = [
     {value: 'event_created', label: 'Issue Created'},
     {value: 'event_deleted', label: 'Issue Deleted'},
     {value: 'event_deleted_unresolved', label: 'Issue Deleted, Unresolved'},
@@ -73,7 +75,7 @@ export type State = {
     instanceID: string;
     fetchingIssueMetadata: boolean;
     jiraIssueMetadata: IssueMetadata | null;
-    templateOptions: ReactSelectOption[] | null;
+    templateOptions: SelectOption[] | null;
     error: string | null;
     getMetaDataErr: string | null;
     submitting: boolean;
@@ -309,7 +311,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             }
 
             const subscriptionTemplate = subs.data as ChannelSubscription[];
-            let templateOptions: ReactSelectOption[] | null = null;
+            let templateOptions: SelectOption[] | null = null;
             if (subscriptionTemplate) {
                 templateOptions = subscriptionTemplate.map((template: ChannelSubscription) => (
                     {label: template.name || template.id, value: template.id}
@@ -462,8 +464,6 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
     };
 
     render(): JSX.Element {
-        const style = getModalStyles(this.props.theme);
-
         const issueTypes = getIssueTypes(this.state.jiraIssueMetadata, this.state.filters.projects[0], {includeSubtasks: true});
         const issueOptions = issueTypes.map((it) => ({label: it.name, value: it.id}));
 
@@ -475,9 +475,10 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         let conflictingErrorComponent = null;
         if (this.state.conflictingError) {
             conflictingErrorComponent = (
-                <p className='help-text error-text'>
-                    <span>{this.state.conflictingError}</span>
-                </p>
+                <ErrorMessage
+                    className='jira-form-notice'
+                    message={this.state.conflictingError}
+                />
             );
         }
 
@@ -489,36 +490,33 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             } else if (this.state.filters.projects[0] && !this.state.getMetaDataErr && this.state.jiraIssueMetadata) {
                 innerComponent = (
                     <React.Fragment>
-                        <ReactSelectSetting
+                        <SelectSetting
                             name='template'
                             label='Use Template'
                             options={this.state.templateOptions}
                             onChange={this.handleTemplateChange}
                             value={this.state.templateOptions && this.state.templateOptions.find((option) => option.value === this.state.selectedTemplateID)}
                             required={false}
-                            theme={this.props.theme}
                             isLoading={false}
                         />
-                        <ReactSelectSetting
+                        <SelectSetting
                             name='events'
                             label='Events'
                             required={true}
                             onChange={this.handleSettingChange}
                             options={eventOptions}
                             isMulti={true}
-                            theme={this.props.theme}
                             value={eventOptions.filter((option) => this.state.filters.events.includes(option.value))}
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
                         />
-                        <ReactSelectSetting
+                        <SelectSetting
                             name='issue_types'
                             label='Issue Type'
                             required={true}
                             onChange={this.handleIssueChange}
                             options={issueOptions}
                             isMulti={true}
-                            theme={this.props.theme}
                             value={issueOptions.filter((option) => this.state.filters.issue_types.includes(option.value))}
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
@@ -529,7 +527,6 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                             values={this.state.filters.fields}
                             chosenIssueTypes={this.state.filters.issue_types}
                             issueMetadata={this.state.jiraIssueMetadata}
-                            theme={this.props.theme}
                             onChange={this.handleFilterFieldChange}
                             addValidate={this.validator.addComponent}
                             removeValidate={this.validator.removeComponent}
@@ -538,28 +535,33 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                             searchTeamFields={this.props.searchTeamFields}
                             projectKey={this.state.filters.projects[0] || ''}
                         />
-                        <div>
-                            <label className='control-label margin-bottom'>
+                        <div className='jira-subscriptions__jql'>
+                            <h4 className='jira-subscriptions__jql-label'>
                                 {'Approximate JQL Output'}
-                            </label>
-                            <div style={getBaseStyles(this.props.theme).codeBlock}>
-                                <span>{generateJQLStringFromSubscriptionFilters(this.state.jiraIssueMetadata, filterFields, this.state.filters, this.props.securityLevelEmptyForJiraSubscriptions)}</span>
-                            </div>
+                            </h4>
+                            <code className='jira-subscriptions__jql-code'>
+                                {generateJQLStringFromSubscriptionFilters(this.state.jiraIssueMetadata, filterFields, this.state.filters, this.props.securityLevelEmptyForJiraSubscriptions)}
+                            </code>
                             {this.shouldShowEmptySecurityLevelMessage() && (
-                                <div>
-                                    <span>
-                                        <strong>{'Note'}</strong>
-                                        {' that since you have not selected a security level filter, the subscription will only allow issues that have no security level assigned.'}
-                                    </span>
-                                </div>
+                                <SectionNotice
+                                    type='info'
+                                    title='No security level filter selected'
+                                    description='The subscription will only allow issues that have no security level assigned.'
+                                />
                             )}
-                            <div className='channel-subscriptions-modal__learnMore'>
+                            <Button
+                                asChild={true}
+                                emphasis='link'
+                                size='small'
+                            >
                                 <a
                                     href='https://github.com/mattermost/mattermost-plugin-jira#create-a-channel-subscription'
                                     target='_blank'
                                     rel='noopener noreferrer'
-                                >{'Learn More'}</a>
-                            </div>
+                                >
+                                    {'Learn More'}
+                                </a>
+                            </Button>
                         </div>
                     </React.Fragment>
                 );
@@ -567,34 +569,28 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
             component = (
                 <React.Fragment>
-                    <div className='container-fluid'>
-                        <Input
-                            label='Subscription Name'
-                            placeholder='Name'
-                            type={'input'}
-                            maxLength={100}
-                            required={true}
-                            onChange={this.handleNameChange}
-                            value={this.state.subscriptionName}
-                            readOnly={false}
-                            addValidate={this.validator.addComponent}
-                            removeValidate={this.validator.removeComponent}
-                        />
-                    </div>
-                    <div className='container-fluid'>
-                        <JiraInstanceAndProjectSelector
-                            selectedInstanceID={this.state.instanceID}
-                            selectedProjectID={this.state.filters.projects[0]}
-                            onInstanceChange={this.handleJiraInstanceChange}
-                            onProjectChange={this.handleProjectChange}
-                            onError={(error: string) => this.setState({error})}
-
-                            theme={this.props.theme}
-                            addValidate={this.validator.addComponent}
-                            removeValidate={this.validator.removeComponent}
-                        />
-                        {innerComponent}
-                    </div>
+                    <Input
+                        label='Subscription Name'
+                        placeholder='Name'
+                        type={'input'}
+                        maxLength={100}
+                        required={true}
+                        onChange={this.handleNameChange}
+                        value={this.state.subscriptionName}
+                        readOnly={false}
+                        addValidate={this.validator.addComponent}
+                        removeValidate={this.validator.removeComponent}
+                    />
+                    <JiraInstanceAndProjectSelector
+                        selectedInstanceID={this.state.instanceID}
+                        selectedProjectID={this.state.filters.projects[0]}
+                        onInstanceChange={this.handleJiraInstanceChange}
+                        onProjectChange={this.handleProjectChange}
+                        onError={(error: string) => this.setState({error})}
+                        addValidate={this.validator.addComponent}
+                        removeValidate={this.validator.removeComponent}
+                    />
+                    {innerComponent}
                 </React.Fragment>
             );
         } else {
@@ -611,106 +607,97 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
             }
         }
 
-        let confirmComponent;
-        if (this.props.selectedSubscription || this.props.selectedSubscriptionTemplate || this.props.creatingSubscriptionTemplate) {
-            confirmComponent = (
-                <ConfirmModal
-                    cancelButtonText='Cancel'
-                    confirmButtonText={this.state.confirmActionType === 'delete' ? 'Delete' : 'Discard'}
-                    confirmButtonClass={'btn btn-danger'}
-                    hideCancel={false}
-                    message={confirmMessage}
-                    onCancel={this.handleCancelAction}
-                    onConfirm={this.handleConfirmAction}
-                    show={this.state.showConfirmModal}
-                    title={this.props.selectedSubscription ? 'Subscription' : 'Subscription Template'}
-                />
-            );
-        }
+        const isSubscription = Boolean(this.props.selectedSubscription || this.props.creatingSubscription);
+        const confirmComponent = (
+            <ConfirmModal
+                cancelButtonText='Cancel'
+                confirmButtonText={this.state.confirmActionType === 'delete' ? 'Delete' : 'Discard'}
+                destructive={true}
+                hideCancel={false}
+                message={confirmMessage}
+                onCancel={this.handleCancelAction}
+                onConfirm={this.handleConfirmAction}
+                show={showConfirmModal}
+                title={isSubscription ? 'Subscription' : 'Subscription Template'}
+            />
+        );
 
-        let error = null;
-        if (this.state.error || this.state.getMetaDataErr) {
-            error = (
-                <p className='help-text error-text'>
-                    <span>{this.state.error || this.state.getMetaDataErr}</span>
-                </p>
-            );
-        }
+        const error = this.state.error || this.state.getMetaDataErr;
 
         const enableSubmitButton = Boolean(this.state.filters.projects[0]);
         const enableDeleteButton = Boolean(this.props.selectedSubscription || this.props.selectedSubscriptionTemplate);
         let saveSubscriptionButtonText = '';
         let headerText = '';
-        if (this.props.selectedSubscription || this.props.creatingSubscription) {
-            saveSubscriptionButtonText = 'Save Subscription';
-            headerText = 'Edit Jira Subscription for ';
-            if (this.props.creatingSubscription) {
-                saveSubscriptionButtonText = 'Add Subscription';
-                headerText = 'Add Jira Subscription in ';
+        if (isSubscription) {
+            saveSubscriptionButtonText = this.props.creatingSubscription ? 'Add Subscription' : 'Save Subscription';
+            headerText = this.props.creatingSubscription ? 'Add subscription' : 'Edit subscription';
+            if (this.props.channel) {
+                headerText += ` in ${this.props.channel.display_name}`;
             }
         } else {
             saveSubscriptionButtonText = 'Add Template';
-            headerText = 'Add Subscription Template';
+            headerText = 'Add subscription template';
             if (this.props.selectedSubscriptionTemplate && this.props.selectedSubscriptionTemplate.name) {
                 saveSubscriptionButtonText = 'Save Template';
-                headerText = 'Edit Subscription Template';
+                headerText = 'Edit subscription template';
             }
         }
 
-        return (
-            <form
-                role='form'
+        const submitting = isSubscription ? this.state.submitting : this.state.submittingTemplate;
+        const deleteButton = (
+            <Button
+                id='jira-delete-subscription'
+                emphasis='tertiary'
+                destructive={true}
+                disabled={!enableDeleteButton}
+                onClick={this.handleDeleteChannelSubscription}
             >
-                <div className='margin-bottom x3 text-center'>
-                    {this.props.selectedSubscription || this.props.creatingSubscription ? <h2>{headerText}<strong>{this.props.channel.display_name}</strong></h2> : <h2>{headerText}</h2>}
-                </div>
-                <div style={style.modalBody}>
+                {'Delete'}
+            </Button>
+        );
+        const footer = (
+            <>
+                <Button
+                    emphasis='tertiary'
+                    onClick={this.handleCancel}
+                >
+                    {'Cancel'}
+                </Button>
+                <Button
+                    emphasis='primary'
+                    disabled={!enableSubmitButton}
+                    loading={submitting}
+                    onClick={this.handleCreate}
+                >
+                    {saveSubscriptionButtonText}
+                </Button>
+            </>
+        );
+
+        return (
+            <Modal
+                size='large'
+                title='Jira Subscriptions'
+                subtitle={headerText}
+                showBackButton={true}
+                onBack={this.props.finishEditSubscription}
+                onClose={this.props.close}
+                footer={footer}
+                footerLeading={deleteButton}
+            >
+                <form role='form'>
+                    {error && (
+                        <SectionNotice
+                            className='jira-form-notice'
+                            role='alert'
+                            type='danger'
+                            title={error}
+                        />
+                    )}
                     {component}
-                    {error}
-                    {confirmComponent}
-                </div>
-                <Modal.Footer style={style.modalFooter}>
-                    <FormButton
-                        id='jira-delete-subscription'
-                        type='button'
-                        btnClass='btn-danger pull-left'
-                        defaultMessage='Delete'
-                        disabled={!enableDeleteButton}
-                        onClick={this.handleDeleteChannelSubscription}
-                    />
-                    <FormButton
-                        type='button'
-                        btnClass='btn-link'
-                        defaultMessage='Cancel'
-                        onClick={this.handleCancel}
-                    />
-                    <FormButton
-                        type='button'
-                        onClick={this.handleCreate}
-                        disabled={!enableSubmitButton}
-                        btnClass='btn-primary'
-                        saving={this.props.creatingSubscriptionTemplate || this.props.selectedSubscriptionTemplate ? this.state.submittingTemplate : this.state.submitting}
-                        defaultMessage={saveSubscriptionButtonText}
-                        savingMessage='Saving...'
-                    />
-                </Modal.Footer>
-            </form>
+                </form>
+                {confirmComponent}
+            </Modal>
         );
     }
 }
-
-const getStyle = (theme: any): any => ({
-    modalBody: {
-        padding: '2em 0',
-        color: theme.centerChannelColor,
-        backgroundColor: theme.centerChannelBg,
-    },
-    modalFooter: {
-        padding: '2rem 15px',
-    },
-    descriptionArea: {
-        height: 'auto',
-        width: '100%',
-        color: '#000',
-    },
-});

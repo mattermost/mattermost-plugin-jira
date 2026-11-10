@@ -1,7 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ReactSelectOption} from 'types/model';
+import {SelectOption} from 'types/model';
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 import {TEAM_FIELD} from '../../../constant';
 
@@ -25,7 +25,7 @@ type Props = Omit<BackendSelectorProps, 'fetchInitialSelectedValues' | 'search' 
 const JiraTeamSelector = (props: Props): JSX.Element => {
     const {value, instanceID, searchTeamFields} = props;
 
-    const teamFields = async (inputValue: string): Promise<ReactSelectOption[]> => {
+    const teamFields = async (inputValue: string): Promise<SelectOption[]> => {
         if (!instanceID) {
             return [];
         }
@@ -47,7 +47,7 @@ const JiraTeamSelector = (props: Props): JSX.Element => {
         });
     };
 
-    const fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> => {
+    const fetchInitialSelectedValues = async (): Promise<SelectOption[]> => {
         if (!value) {
             return [];
         }

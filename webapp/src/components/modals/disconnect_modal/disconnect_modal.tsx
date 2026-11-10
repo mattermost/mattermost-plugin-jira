@@ -2,35 +2,21 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Modal} from 'react-bootstrap';
+
+import {ModalOverlay} from '@mattermost/compass-ui/components/modal';
+
+import {Z_INDEX_MODAL} from 'utils/styles';
 
 import DisconnectModalForm from './disconnect_modal_form';
 import {Props} from './props';
 
 export default function DisconnectModal(props: Props) {
-    const {visible} = props;
-    let content;
-    if (visible) {
-        content = (
-            <DisconnectModalForm {...props}/>
-        );
-    }
-
     return (
-        <Modal
-            dialogClassName='modal--scroll'
-            show={visible}
-            onHide={props.closeModal}
-            onExited={props.closeModal}
-            bsSize='large'
-            backdrop='static'
+        <ModalOverlay
+            open={props.visible}
+            zIndex={Z_INDEX_MODAL}
         >
-            <Modal.Header closeButton={true}>
-                <Modal.Title>
-                    {'Disconnect from Jira'}
-                </Modal.Title>
-            </Modal.Header>
-            {content}
-        </Modal>
+            <DisconnectModalForm {...props}/>
+        </ModalOverlay>
     );
 }

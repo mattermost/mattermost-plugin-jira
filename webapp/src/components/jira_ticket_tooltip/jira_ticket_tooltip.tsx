@@ -4,11 +4,13 @@
 import React, {ReactNode} from 'react';
 import ReactMarkdown from 'react-markdown';
 
+import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
+import {Spinner} from '@mattermost/compass-ui/components/spinner';
+import {Tag, TagType} from '@mattermost/compass-ui/components/tag';
+import {UserAvatar} from '@mattermost/compass-ui/components/user-avatar';
+
 import {Instance} from 'types/model';
-import SVGWrapper from 'components/svgWrapper';
-import {SVGIcons} from 'components/plugin_constants/icons';
 import {TicketData, TicketDetails} from 'types/tooltip';
-import DefaultAvatar from 'components/default_avatar/default_avatar';
 
 import './ticketStyle.scss';
 import {getJiraTicketDetails} from 'utils/jira_issue_metadata';
@@ -37,9 +39,9 @@ enum myStatus {
     DONE = 'done',
 }
 
-const myStatusClasses: Record<string, string> = {
-    [myStatus.INDETERMINATE]: 'ticket-status--indeterminate',
-    [myStatus.DONE]: 'ticket-status--done',
+const statusTagTypes: Record<string, TagType> = {
+    [myStatus.INDETERMINATE]: 'info',
+    [myStatus.DONE]: 'success',
 };
 
 export default class TicketPopover extends React.PureComponent<Props, State> {
@@ -127,9 +129,11 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
             return (
                 <div className='fix-version-label'>
                     {fixVersionString}
-                    <span className='fix-version-label-value'>
-                        {fixVersion}
-                    </span>
+                    <Tag
+                        className='fix-version-label-value'
+                        size='x-small'
+                        label={fixVersion}
+                    />
                 </div>
             );
         }
@@ -138,14 +142,13 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
     }
 
     tagTicketStatus(ticketStatus: string): ReactNode {
-        let ticketStatusClass = 'default-style ticket-status--default';
-
-        const myStatusClass = myStatusClasses[ticketStatus && ticketStatus.toLowerCase()];
-        if (myStatusClass) {
-            ticketStatusClass = 'default-style ' + myStatusClass;
-        }
-
-        return <span className={ticketStatusClass}>{ticketStatus}</span>;
+        return (
+            <Tag
+                className='ticket-status'
+                type={statusTagTypes[ticketStatus && ticketStatus.toLowerCase()] || 'default'}
+                label={ticketStatus}
+            />
+        );
     }
 
     renderLabelList(labels: string[]) {
@@ -160,22 +163,22 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                         // Return an element for the first three labels and if there are more than three labels, then return a combined label for the remaining labels
                         if (key < 3) {
                             return (
-                                <span
+                                <Tag
                                     key={key}
-                                    className='popover-labels__label-list'
-                                >
-                                    {label}
-                                </span>);
+                                    size='x-small'
+                                    label={label}
+                                />
+                            );
                         }
 
                         if (key === labels.length - 1 && labels.length > 3) {
                             return (
-                                <span
+                                <Tag
                                     key={key}
-                                    className='popover-labels__label-list'
-                                >
-                                    {`+${labels.length - 3} more`}
-                                </span>);
+                                    size='x-small'
+                                    label={`+${labels.length - 3} more`}
+                                />
+                            );
                         }
 
                         return null;
@@ -194,16 +197,11 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
         if (error) {
             return (
                 <div className='jira-issue-tooltip jira-issue-tooltip-error'>
-                    <SVGWrapper
-                        width={30}
-                        height={30}
-                        fill='#FF0000'
-                        className='bi bi-exclamation-triangle'
-                    >
-                        {SVGIcons.exclamationTriangle}
-                    </SVGWrapper>
-                    <div className='jira-issue-error-message'>{error}</div>
-                    <p className='jira-issue-error-footer'>{'Check your connection or try again later'}</p>
+                    <SectionNotice
+                        type='danger'
+                        title={error}
+                        description='Check your connection or try again later'
+                    />
                 </div>
             );
         }
@@ -216,9 +214,9 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
             // Display the spinner loader while ticket details are being fetched
             return (
                 <div className='jira-issue-tooltip jira-issue-tooltip-loading'>
-                    <span
-                        className='jira-issue-spinner fa fa-spin fa-spinner'
-                        title={'Loading Icon'}
+                    <Spinner
+                        size='32'
+                        aria-label='Loading'
                     />
                 </div>
             );
@@ -274,14 +272,13 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
                     </div>
                 </div>
                 <div className='popover-footer'>
-                    {ticketDetails.assigneeAvatar ? (
-                        <img
-                            className='popover-footer__assignee-profile'
-                            src={ticketDetails.assigneeAvatar}
-                            alt='jira assignee profile'
-                        />
-                    ) : <DefaultAvatar/>
-                    }
+                    <UserAvatar
+                        className='popover-footer__assignee-profile'
+                        size='20'
+                        src={ticketDetails.assigneeAvatar}
+                        name={ticketDetails.assigneeName}
+                        alt='jira assignee profile'
+                    />
                     {ticketDetails.assigneeName ? (
                         <span>
                             <span className='popover-footer__assignee-name'>

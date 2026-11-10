@@ -3,25 +3,41 @@
 
 import React from 'react';
 
-import {AvatarSize, JiraUser, ReactSelectOption} from 'types/model';
+import {AvatarSize, JiraUser, SelectOption} from 'types/model';
 
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 
-type Props = BackendSelectorProps & {
+type Props = Omit<BackendSelectorProps, 'value' | 'onChange' | 'search' | 'fetchInitialSelectedValues'> & {
     projectKey: string;
-    searchUsers: (params: {project: string; q: string}) => Promise<{data: {label: string; value: JiraUser[]}; error?: Error}>;
+    value?: JiraUser | null;
+    onChange: (user: JiraUser | null) => void;
+    searchUsers: (params: {project: string; q: string; instance_id: string}) => Promise<{data: JiraUser[]; error?: Error}>;
+};
+
+const userKey = (user: JiraUser) => user.accountId || user.name || user.displayName;
+
+const userToOption = (user: JiraUser): SelectOption => {
+    const option: SelectOption = {value: userKey(user), label: user.displayName};
+    const avatarURL = user.avatarUrls?.[AvatarSize.SMALL];
+    if (avatarURL) {
+        option.leadingAvatar = {src: avatarURL, alt: user.displayName};
+    }
+    return option;
 };
 
 export default class JiraUserSelector extends React.PureComponent<Props> {
-    fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> => {
-        if (!this.props.value || (this.props.isMulti && !this.props.value.length)) {
+    private usersByKey = new Map<string, JiraUser>();
+
+    fetchInitialSelectedValues = async (): Promise<SelectOption[]> => {
+        if (!this.props.value) {
             return [];
         }
 
-        return this.searchUsers('');
+        this.usersByKey.set(userKey(this.props.value), this.props.value);
+        return [userToOption(this.props.value)];
     };
 
-    searchUsers = (inputValue: string): Promise<ReactSelectOption[]> => {
+    searchUsers = (inputValue: string): Promise<SelectOption[]> => {
         const params = {
             q: inputValue,
             project: this.props.projectKey,
@@ -34,34 +50,25 @@ export default class JiraUserSelector extends React.PureComponent<Props> {
             }
 
             return data.map((user) => {
-                let label: string | React.ReactElement = user.displayName;
-                const avatarURL = user.avatarUrls[AvatarSize.SMALL];
-                if (avatarURL) {
-                    label = (
-                        <span>
-                            <img
-                                src={avatarURL}
-                                style={{width: '24px', marginRight: '10px'}}
-                            />
-                            <span>{user.displayName}</span>
-                        </span>
-                    );
-                }
-
-                return {
-                    value: user,
-                    label,
-                };
+                this.usersByKey.set(userKey(user), user);
+                return userToOption(user);
             });
-        }).catch((e) => {
+        }).catch(() => {
             throw new Error('Error fetching data');
         });
+    };
+
+    handleChange = (key: string | string[]) => {
+        const selected = Array.isArray(key) ? key[0] : key;
+        this.props.onChange((selected && this.usersByKey.get(selected)) || null);
     };
 
     render = (): JSX.Element => {
         return (
             <BackendSelector
                 {...this.props}
+                value={this.props.value ? userKey(this.props.value) : ''}
+                onChange={this.handleChange}
                 fetchInitialSelectedValues={this.fetchInitialSelectedValues}
                 search={this.searchUsers}
             />

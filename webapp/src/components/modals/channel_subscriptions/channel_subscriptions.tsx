@@ -3,9 +3,11 @@
 
 import React, {PureComponent} from 'react';
 
-import FullScreenModal from '../full_screen_modal/full_screen_modal';
+import {ModalOverlay} from '@mattermost/compass-ui/components/modal';
 
 import {AllProjectMetadata} from 'types/model';
+
+import {Z_INDEX_MODAL} from 'utils/styles';
 
 import ChannelSubscriptionsModalInner from './channel_subscriptions_internal';
 import {SharedProps} from './shared_props';
@@ -65,14 +67,6 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props, Stat
         this.setState({showModal: true, allProjectMetadata: projectResponses.data});
     };
 
-    handleClose = (e?: Event): void => {
-        if (e && e.preventDefault) {
-            e.preventDefault();
-        }
-
-        this.props.close();
-    };
-
     render(): JSX.Element {
         const isModalOpen = Boolean(this.props.channel && this.state.showModal);
 
@@ -87,17 +81,12 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props, Stat
         }
 
         return (
-            <FullScreenModal
-                show={isModalOpen}
-                onClose={this.handleClose}
-                ariaLabel='Jira Subscriptions'
+            <ModalOverlay
+                open={isModalOpen}
+                zIndex={Z_INDEX_MODAL}
             >
-                <div className='channel-subscriptions-modal'>
-                    <div className='channel-subscriptions-modal-body'>
-                        {inner}
-                    </div>
-                </div>
-            </FullScreenModal>
+                {inner}
+            </ModalOverlay>
         );
     }
 }

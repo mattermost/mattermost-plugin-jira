@@ -3,9 +3,13 @@
 
 import React from 'react';
 
-import {Theme} from 'mattermost-redux/selectors/entities/preferences';
+import {TrashCanOutlineIcon} from '@mattermost/compass-icons/components';
+import {Button} from '@mattermost/compass-ui/components/button';
+import {ErrorMessage} from '@mattermost/compass-ui/components/error-message';
+import {Icon} from '@mattermost/compass-ui/components/icon';
+import {IconButton} from '@mattermost/compass-ui/components/icon-button';
 
-import ReactSelectSetting from 'components/react_select_setting';
+import SelectSetting from 'components/select_setting';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 import JiraSprintSelector from 'components/data_selectors/jira_sprint_selector';
 
@@ -26,7 +30,7 @@ import {
     FilterValue,
     IssueMetadata,
     IssueType,
-    ReactSelectOption,
+    SelectOption,
 } from 'types/model';
 import ConfirmModal from 'components/confirm_modal';
 import JiraAutoCompleteSelector from 'components/data_selectors/jira_autocomplete_selector';
@@ -37,7 +41,6 @@ export type Props = {
     fields: FilterField[];
     field: FilterField;
     value: FilterValue;
-    theme: Theme;
     chosenIssueTypes: string[];
     issueMetadata: IssueMetadata;
     onChange: (f1: FilterValue, f2: FilterValue) => void;
@@ -175,57 +178,16 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         return null;
     };
 
-    renderInclusionDropdownOption = (data: ReactSelectOption, meta: {context: string}): JSX.Element | string => {
-        const {value, label} = data;
-        const {context} = meta;
-
-        // context === value means it is rendering the selected value
-        if (context === 'value') {
-            return label;
-        }
-
-        // otherwise it is rendering an option in the open dropdown
-        let subtext = '';
-        switch (value) {
-        case FilterFieldInclusion.INCLUDE_ANY:
-            subtext = 'Includes either of the values (or)';
-            break;
-        case FilterFieldInclusion.INCLUDE_ALL:
-            subtext = 'Includes all of the values (and)';
-            break;
-        case FilterFieldInclusion.EXCLUDE_ANY:
-            subtext = 'Excludes all of the values';
-            break;
-        case FilterFieldInclusion.EMPTY:
-            subtext = 'Includes when the value is empty';
-            break;
-        case FilterFieldInclusion.INCLUDE_OR_EMPTY:
-            subtext = 'Includes the specified values or when the value is empty';
-            break;
-        }
-
-        return (
-            <div>
-                <div>{label}</div>
-                <div style={{opacity: 0.6}}>
-                    {subtext}
-                </div>
-            </div>
-        );
-    };
-
     render(): JSX.Element {
-        const {field, fields, value, theme} = this.props;
-        let chosenFieldValues: ReactSelectOption[] = [];
-        const style = getStyle(theme);
-
+        const {field, fields, value} = this.props;
+        let chosenFieldValues: SelectOption[] = [];
         const fieldTypeOptions = fields.map((f) => ({
             value: f.key,
             label: f.name,
         }));
         let chosenFieldType = null;
 
-        let inclusionSelectOptions: ReactSelectOption[] = [
+        let inclusionSelectOptions: SelectOption[] = [
             {label: 'Include', value: FilterFieldInclusion.INCLUDE_ANY},
             {label: 'Include All', value: FilterFieldInclusion.INCLUDE_ALL},
             {label: 'Exclude', value: FilterFieldInclusion.EXCLUDE_ANY},
@@ -253,12 +215,14 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
             inclusionSelectOptions.splice(includeAllIndex, 1);
         }
 
+        inclusionSelectOptions = inclusionSelectOptions.map((opt) => ({...opt, secondaryLabel: INCLUSION_DESCRIPTIONS[opt.value]}));
+
         let chosenInclusionOption = inclusionSelectOptions[0];
 
         const fieldValueOptions = (field && field.values) || [];
 
         if (field && value) {
-            chosenInclusionOption = inclusionSelectOptions.find((opt) => opt.value === value.inclusion) as ReactSelectOption;
+            chosenInclusionOption = inclusionSelectOptions.find((opt) => opt.value === value.inclusion) as SelectOption;
             chosenFieldType = fieldTypeOptions.find((option) => option.value === value.key);
             if (field.userDefined) {
                 chosenFieldValues = value.values.map((option) => ({
@@ -266,7 +230,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     value: option,
                 }));
             } else {
-                chosenFieldValues = fieldValueOptions.filter((option: ReactSelectOption) =>
+                chosenFieldValues = fieldValueOptions.filter((option: SelectOption) =>
                     value.values.includes(option.value),
                 );
             }
@@ -275,24 +239,22 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         let deleteButton;
         if (field) {
             deleteButton = (
-                <button
+                <IconButton
+                    aria-label='Delete filter'
+                    destructive={true}
+                    icon={<Icon glyph={<TrashCanOutlineIcon/>}/>}
                     onClick={this.openDeleteModal}
-                    className='style--none'
-                    style={style.trashIcon}
-                    type='button'
-                >
-                    <i className='fa fa-trash'/>
-                </button>
+                />
             );
         } else {
             deleteButton = (
-                <button
+                <Button
+                    emphasis='tertiary'
+                    size='small'
                     onClick={this.openDeleteModal}
-                    className='btn btn-info'
-                    type='button'
                 >
                     {'Cancel'}
-                </button>
+                </Button>
             );
         }
 
@@ -304,12 +266,12 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         }
 
         const selectProps = {
+            'aria-label': 'Values',
             instanceID: this.props.instanceID,
             required: !disableLastSelect,
             isDisabled: disableLastSelect,
             isClearable: false,
             placeholder: lastSelectPlaceholder,
-            theme,
             resetInvalidOnChange: true,
             hideRequiredStar: true,
             isMulti: true,
@@ -379,7 +341,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
             );
         } else {
             valueSelector = (
-                <ReactSelectSetting
+                <SelectSetting
                     {...selectProps}
                     name={'values'}
                     options={fieldValueOptions}
@@ -394,7 +356,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
             <ConfirmModal
                 cancelButtonText={'Cancel'}
                 confirmButtonText={'Delete'}
-                confirmButtonClass={'btn btn-danger'}
+                destructive={true}
                 hideCancel={false}
                 message={'Are you sure you want to delete this filter?'}
                 onCancel={this.handleCancelDelete}
@@ -405,51 +367,40 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         );
 
         return (
-            <div className='row'>
-                <div className='col-md-12 col-sm-12'>
-                    <div
-                        className='help-text error-text'
-                        style={style.conflictingError}
-                    >
-                        {this.state.error}
+            <div className='jira-subscription-filter'>
+                {this.state.error && (
+                    <ErrorMessage
+                        className='jira-subscription-filter__error'
+                        message={this.state.error}
+                    />
+                )}
+                <div className='jira-subscription-filter__row'>
+                    <SelectSetting
+                        name={'fieldtype'}
+                        aria-label='Field'
+                        required={true}
+                        hideRequiredStar={true}
+                        options={fieldTypeOptions}
+                        value={chosenFieldType}
+                        onChange={this.handleFieldTypeChange}
+                        addValidate={this.props.addValidate}
+                        removeValidate={this.props.removeValidate}
+                    />
+                    <SelectSetting
+                        name={'inclusion'}
+                        aria-label='Inclusion'
+                        required={true}
+                        hideRequiredStar={true}
+                        options={inclusionSelectOptions}
+                        onChange={this.handleInclusionChange}
+                        value={chosenInclusionOption}
+                        addValidate={this.props.addValidate}
+                        removeValidate={this.props.removeValidate}
+                    />
+                    {valueSelector}
+                    <div className='jira-subscription-filter__action'>
+                        {deleteButton}
                     </div>
-                </div>
-                <div className='col-md-11 col-sm-12'>
-                    <div className='row'>
-                        <div className='col-md-4 col-sm-12'>
-                            <ReactSelectSetting
-                                name={'fieldtype'}
-                                required={true}
-                                hideRequiredStar={true}
-                                options={fieldTypeOptions}
-                                value={chosenFieldType}
-                                onChange={this.handleFieldTypeChange}
-                                theme={theme}
-                                addValidate={this.props.addValidate}
-                                removeValidate={this.props.removeValidate}
-                            />
-                        </div>
-                        <div className='col-md-4 col-sm-12'>
-                            <ReactSelectSetting
-                                name={'inclusion'}
-                                required={true}
-                                hideRequiredStar={true}
-                                options={inclusionSelectOptions}
-                                onChange={this.handleInclusionChange}
-                                value={chosenInclusionOption}
-                                theme={theme}
-                                addValidate={this.props.addValidate}
-                                removeValidate={this.props.removeValidate}
-                                formatOptionLabel={this.renderInclusionDropdownOption}
-                            />
-                        </div>
-                        <div className='col-md-4 col-sm-12'>
-                            {valueSelector}
-                        </div>
-                    </div>
-                </div>
-                <div className='col-md-1 col-sm-12 text-center'>
-                    {deleteButton}
                 </div>
                 {confirmDeleteModal}
             </div>
@@ -459,7 +410,6 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
 
 type EmptyChannelSubscriptionFilterProps = {
     fields: FilterField[];
-    theme: Theme;
     chosenIssueTypes: string[];
     issueMetadata: IssueMetadata;
     onChange: (f1: FilterValue | null, f2: FilterValue) => void;
@@ -473,65 +423,49 @@ export function EmptyChannelSubscriptionFilter(props: EmptyChannelSubscriptionFi
         onChange(null, {values: [], key: choice, inclusion: FilterFieldInclusion.INCLUDE_ANY});
     };
 
-    const {fields, theme} = props;
-    const style = getStyle(theme);
-
-    const fieldTypeOptions = fields.map((f) => ({
+    const fieldTypeOptions = props.fields.map((f) => ({
         value: f.key,
         label: f.name,
     }));
 
     return (
-        <div className='row'>
-            <div className='col-md-11 col-sm-12'>
-                <div className='row'>
-                    <div className='col-md-4 col-sm-12'>
-                        <ReactSelectSetting
-                            name={'fieldtype'}
-                            options={fieldTypeOptions}
-                            onChange={handleFieldTypeChange}
-                            theme={theme}
-                        />
-                    </div>
-                    <div className='col-md-4 col-sm-12'>
-                        <ReactSelectSetting
-                            name={'exclude'}
-                            options={[]}
-                            isDisabled={true}
-                            theme={theme}
-                        />
-                    </div>
-                    <div className='col-md-4 col-sm-12'>
-                        <ReactSelectSetting
-                            name={'values'}
-                            options={[]}
-                            isDisabled={true}
-                            theme={theme}
-                        />
-                    </div>
+        <div className='jira-subscription-filter'>
+            <div className='jira-subscription-filter__row'>
+                <SelectSetting
+                    name={'fieldtype'}
+                    aria-label='Field'
+                    options={fieldTypeOptions}
+                    onChange={handleFieldTypeChange}
+                />
+                <SelectSetting
+                    name={'exclude'}
+                    aria-label='Inclusion'
+                    options={[]}
+                    isDisabled={true}
+                />
+                <SelectSetting
+                    name={'values'}
+                    aria-label='Values'
+                    options={[]}
+                    isDisabled={true}
+                />
+                <div className='jira-subscription-filter__action'>
+                    <IconButton
+                        aria-label='Remove filter'
+                        destructive={true}
+                        icon={<Icon glyph={<TrashCanOutlineIcon/>}/>}
+                        onClick={props.cancelAdd}
+                    />
                 </div>
-            </div>
-            <div className='col-md-1 col-sm-12 text-center'>
-                <button
-                    onClick={props.cancelAdd}
-                    className='style--none'
-                    style={style.trashIcon}
-                    type='button'
-                >
-                    <i className='fa fa-trash'/>
-                </button>
             </div>
         </div>
     );
 }
 
-const getStyle = (theme: any): any => ({
-    trashIcon: {
-        color: theme.errorTextColor,
-        fontSize: '20px',
-        margin: '0.5rem 0 0',
-    },
-    conflictingError: {
-        margin: '0 0 10px',
-    },
-});
+const INCLUSION_DESCRIPTIONS: Record<string, string> = {
+    [FilterFieldInclusion.INCLUDE_ANY]: 'Includes either of the values (or)',
+    [FilterFieldInclusion.INCLUDE_ALL]: 'Includes all of the values (and)',
+    [FilterFieldInclusion.EXCLUDE_ANY]: 'Excludes all of the values',
+    [FilterFieldInclusion.EMPTY]: 'Includes when the value is empty',
+    [FilterFieldInclusion.INCLUDE_OR_EMPTY]: 'Includes the specified values or when the value is empty',
+};

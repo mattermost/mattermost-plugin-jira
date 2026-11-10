@@ -89,7 +89,7 @@ async function chooseOption(page: Page, form: Locator, field: string, search: st
         await input.fill(search);
         await expect(page.getByRole('option', {name: option, exact: true})).toBeVisible({timeout: 5000});
     }).toPass({timeout: 60_000});
-    await input.press('Enter');
+    await page.getByRole('option', {name: option, exact: true}).click();
 }
 
 async function pluginAPI(method: string, path: string, body?: unknown) {

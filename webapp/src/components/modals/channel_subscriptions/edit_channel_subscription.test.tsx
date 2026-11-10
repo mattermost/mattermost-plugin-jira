@@ -10,7 +10,6 @@ import {IntlProvider} from 'react-intl';
 import configureStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
 
-import Preferences from 'mattermost-redux/constants/preferences';
 import {Channel} from '@mattermost/types/channels';
 
 import cloudIssueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
@@ -124,7 +123,6 @@ describe('components/EditChannelSubscription', () => {
     const baseProps: Props = {
         ...baseActions,
         channel: testChannel as unknown as Channel,
-        theme: Preferences.THEMES.denim,
         finishEditSubscription: jest.fn(),
         channelSubscriptions: [channelSubscriptionForCloud],
         close: jest.fn(),

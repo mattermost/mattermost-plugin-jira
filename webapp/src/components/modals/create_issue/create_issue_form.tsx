@@ -2,9 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Modal} from 'react-bootstrap';
 
-import {Theme} from 'mattermost-redux/selectors/entities/preferences';
+import {Button} from '@mattermost/compass-ui/components/button';
+import {Modal} from '@mattermost/compass-ui/components/modal';
+import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
+
 import {Post} from '@mattermost/types/posts';
 import {Team} from '@mattermost/types/teams';
 
@@ -18,14 +20,12 @@ import {
 } from 'types/model';
 
 import {getFields, getIssueTypes} from 'utils/jira_issue_metadata';
-import {getModalStyles} from 'utils/styles';
 
 import Validator from 'components/validator';
 import JiraFields from 'components/jira_fields';
 import {isFieldSupported} from 'components/jira_field';
-import FormButton from 'components/form_button';
 import Loading from 'components/loading';
-import ReactSelectSetting from 'components/react_select_setting';
+import SelectSetting from 'components/select_setting';
 import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project_selector';
 
 type Props = {
@@ -35,10 +35,11 @@ type Props = {
     channelId?: string;
     currentTeam: Team;
     post?: Post;
-    theme: Theme;
     visible: boolean;
     fetchJiraIssueMetadataForProjects: (projectKeys: string[], instanceID: string) => Promise<APIResponse<IssueMetadata>>;
 };
+
+const FORM_ID = 'jira-create-issue-form';
 
 type State = {
     submitting: boolean;
@@ -81,7 +82,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         };
     }
 
-    handleClose = (e?: Event) => {
+    handleClose = (e?: React.SyntheticEvent) => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
@@ -241,14 +242,13 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
 
         return (
             <div>
-                <ReactSelectSetting
+                <SelectSetting
                     name={'issue_type'}
                     label={'Issue Type'}
                     required={true}
                     onChange={this.handleIssueTypeChange}
                     options={issueOptions}
                     isMulti={false}
-                    theme={this.props.theme}
                     value={issueOptions.find((option) => option.value === this.state.issueType)}
                     addValidate={this.validator.addComponent}
                     removeValidate={this.validator.removeComponent}
@@ -263,7 +263,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                     issueMetadata={this.state.jiraIssueMetadata as IssueMetadata}
                     onChange={this.handleFieldChange}
                     values={this.state.fields}
-                    theme={this.props.theme}
                     addValidate={this.validator.addComponent}
                     removeValidate={this.validator.removeComponent}
                     isFilter={false}
@@ -273,8 +272,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
     };
 
     render() {
-        const style = getModalStyles(this.props.theme);
-
         const instanceSelector = (
             <JiraInstanceAndProjectSelector
                 selectedInstanceID={this.state.instanceID}
@@ -282,8 +279,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                 onInstanceChange={this.handleInstanceChange}
                 onProjectChange={this.handleProjectChange}
                 onError={this.handleProjectFetchError}
-
-                theme={this.props.theme}
                 addValidate={this.validator.addComponent}
                 removeValidate={this.validator.removeComponent}
             />
@@ -292,21 +287,22 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         const disableSubmit = this.state.fetchingIssueMetadata || !(this.state.projectKey && this.state.jiraIssueMetadata);
         const footer = (
             <React.Fragment>
-                <FormButton
-                    type='button'
-                    btnClass='btn-link'
-                    defaultMessage='Cancel'
+                <Button
+                    emphasis='tertiary'
                     onClick={this.handleClose}
-                />
-                <FormButton
+                >
+                    {'Cancel'}
+                </Button>
+                <Button
                     id='submit-button'
                     type='submit'
-                    btnClass='btn btn-primary'
-                    saving={this.state.submitting}
+                    form={FORM_ID}
+                    emphasis='primary'
+                    loading={this.state.submitting}
                     disabled={disableSubmit}
                 >
                     {'Create'}
-                </FormButton>
+                </Button>
             </React.Fragment>
         );
 
@@ -320,33 +316,33 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         let error;
         if (this.state.error) {
             error = (
-                <p className='alert alert-danger'>
-                    <i
-                        style={{marginRight: '10px'}}
-                        className='fa fa-warning'
-                        title='Warning Icon'
-                    />
-                    <span>{this.state.error}</span>
-                </p>
+                <SectionNotice
+                    className='jira-form-notice'
+                    role='alert'
+                    type='danger'
+                    title={this.state.error}
+                />
             );
         }
 
         return (
-            <form
-                role='form'
-                onSubmit={this.handleSubmit}
+            <Modal
+                open={this.props.visible}
+                size='large'
+                title='Create Jira Issue'
+                onClose={this.handleClose}
+                footer={footer}
             >
-                <Modal.Body
-                    style={style.modalBody}
+                <form
+                    id={FORM_ID}
+                    role='form'
+                    onSubmit={this.handleSubmit}
                 >
                     {error}
                     {instanceSelector}
                     {form}
-                </Modal.Body>
-                <Modal.Footer style={style.modalFooter}>
-                    {footer}
-                </Modal.Footer>
-            </form>
+                </form>
+            </Modal>
         );
     }
 }

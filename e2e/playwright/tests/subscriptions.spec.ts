@@ -140,7 +140,7 @@ test.describe('channel subscriptions', () => {
         await modal.getByRole('row', {name: /Assignee changes/}).getByRole('button', {name: 'Delete'}).click();
 
         // # Confirm the deletion
-        const confirm = page.getByRole('dialog', {name: 'Subscription'});
+        const confirm = page.getByRole('dialog', {name: 'Subscription', exact: true});
         await expect(confirm).toContainText('Are you sure to delete the subscription');
         await confirm.getByRole('button', {name: 'Delete'}).click();
 

@@ -7,13 +7,12 @@ import {act} from '@testing-library/react';
 import testChannel from 'testdata/channel.json';
 
 import {InstanceType, IssueMetadata, ProjectMetadata} from 'types/model';
-import {mockTheme, renderWithRedux} from 'testlib/test-utils';
+import {renderWithRedux} from 'testlib/test-utils';
 
 import ChannelSubscriptionsModal, {Props} from './channel_subscriptions';
 
 describe('components/ChannelSettingsModal', () => {
     const baseProps = {
-        theme: mockTheme,
         fetchJiraProjectMetadataForAllInstances: jest.fn().mockResolvedValue({}),
         fetchChannelSubscriptions: jest.fn().mockResolvedValue({}),
         fetchAllSubscriptionTemplates: jest.fn().mockResolvedValue({}),

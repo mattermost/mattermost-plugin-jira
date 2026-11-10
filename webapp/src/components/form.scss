@@ -1,0 +1,24 @@
+.jira-setting {
+    margin-bottom: var(--spacing-l);
+}
+
+.jira-setting__label {
+    display: block;
+    margin: 0 0 var(--spacing-xxxs) var(--spacing-m);
+    font-size: var(--font-size-75);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+}
+
+.jira-setting__required {
+    color: var(--error-text);
+}
+
+.jira-form-notice {
+    margin-bottom: var(--spacing-l);
+}
+
+.jira-loading {
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-xxl) 0;
+}

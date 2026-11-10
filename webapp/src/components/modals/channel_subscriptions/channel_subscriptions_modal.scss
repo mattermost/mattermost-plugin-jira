@@ -1,62 +1,99 @@
-.channel-subscriptions-modal {
+.jira-subscriptions__section {
+    & + & {
+        margin-top: var(--spacing-xxl);
+    }
+}
+
+.jira-subscriptions__section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-m);
+    margin-bottom: var(--spacing-m);
+
+    h3 {
+        margin: 0;
+        font-size: var(--font-size-200);
+        font-weight: 600;
+    }
+}
+
+.jira-subscriptions__table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+        padding: var(--spacing-s) var(--spacing-m);
+        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    th {
+        font-size: var(--font-size-75);
+        font-weight: 600;
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
+
+    td {
+        word-break: break-word;
+        white-space: pre-wrap;
+    }
+}
+
+.jira-subscriptions__actions {
+    white-space: nowrap;
+
+    > * + * {
+        margin-left: var(--spacing-m);
+    }
+}
+
+.jira-subscriptions__filters {
+    margin-bottom: var(--spacing-l);
+}
+
+.jira-subscriptions__filters-label,
+.jira-subscriptions__jql-label {
+    margin: 0 0 var(--spacing-s);
+    font-size: var(--font-size-100);
+    font-weight: 600;
+}
+
+.jira-subscriptions__jql {
     display: flex;
     flex-direction: column;
-    padding-top: 38px;
+    align-items: flex-start;
+    gap: var(--spacing-s);
+}
+
+.jira-subscriptions__jql-code {
+    display: block;
     width: 100%;
-    height: 100%;
+    padding: var(--spacing-s) var(--spacing-m);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: var(--radius-s);
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+    color: var(--center-channel-color);
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.jira-subscription-filter__row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    gap: var(--spacing-s);
+    align-items: start;
+}
+
+.jira-subscription-filter__action {
+    display: flex;
     align-items: center;
-    font-size: 14px;
+    min-height: 40px;
+}
 
-    @media (max-width: 768px) {
-        padding-left: 15px;
-        padding-right: 15px;
-    }
-
-    .channel-subscriptions-modal-body {
-        max-width: 960px;
-        width: 100%;
-        margin-bottom: 28px;
-        padding-right: 20px;
-        padding-left: 20px;
-
-        table {
-            margin: 2rem 0;
-        }
-
-        .th-col {
-            width: 25%;
-        }
-
-        td {
-            padding: 1rem 0;
-        }
-    }
-
-    .select-channel-subscriptions-row {
-        button {
-            font-size: inherit;
-            font-weight: 600;
-            border-radius: 4px;
-
-            &:focus, &:active, &:focus:active {
-                outline: none;
-                border-color: transparent;
-            }
-        }
-
-        td {
-            word-break: break-word;
-            white-space: pre-wrap;
-        }
-    }
-    &__learnMore {
-        margin-top: 1em;
-    }
-
-    .title-message {
-        justify-content: space-between;
-        h2 {
-            margin: 15px 0;
-        }
-    }
+.jira-subscription-filter__error {
+    margin-bottom: var(--spacing-s);
 }

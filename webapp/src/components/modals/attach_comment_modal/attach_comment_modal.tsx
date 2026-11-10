@@ -2,40 +2,25 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Modal} from 'react-bootstrap';
 
-import {Theme} from 'mattermost-redux/selectors/entities/preferences';
+import {ModalOverlay} from '@mattermost/compass-ui/components/modal';
+
+import {Z_INDEX_MODAL} from 'utils/styles';
 
 import AttachCommentToIssueForm from './attach_comment_form';
 
 type Props = {
     visible: boolean;
-    theme: Theme;
     close: () => void;
 }
 
 export default function AttachCommentToIssueModal(props: Props) {
-    const {visible} = props;
-    if (!visible) {
-        return null;
-    }
-
     return (
-        <Modal
-            dialogClassName='modal--scroll'
-            show={visible}
-            onHide={props.close}
-            onExited={props.close}
-            bsSize='large'
-            backdrop='static'
-            aria-labelledby='jira-attach-comment-modal-title'
+        <ModalOverlay
+            open={props.visible}
+            zIndex={Z_INDEX_MODAL}
         >
-            <Modal.Header closeButton={true}>
-                <Modal.Title id='jira-attach-comment-modal-title'>
-                    {'Attach Message to Jira Issue'}
-                </Modal.Title>
-            </Modal.Header>
             <AttachCommentToIssueForm {...props}/>
-        </Modal>
+        </ModalOverlay>
     );
 }

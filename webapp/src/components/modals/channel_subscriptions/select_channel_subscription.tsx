@@ -3,6 +3,13 @@
 
 import React from 'react';
 
+import {PlusIcon} from '@mattermost/compass-icons/components';
+import {Button} from '@mattermost/compass-ui/components/button';
+import {EmptyState} from '@mattermost/compass-ui/components/empty-state';
+import {Icon} from '@mattermost/compass-ui/components/icon';
+import {Modal} from '@mattermost/compass-ui/components/modal';
+import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
+
 import {AllProjectMetadata, ChannelSubscription} from 'types/model';
 
 import ConfirmModal from 'components/confirm_modal';
@@ -87,101 +94,43 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
     };
 
     renderRow = (sub: ChannelSubscription, forTemplates = false): JSX.Element => {
-        const projectName = this.getProjectName(sub);
-
         const showInstanceColumn = this.props.installedInstances.length > 1;
-
         const alias = this.props.installedInstances.filter((instance) => instance.instance_id === sub.instance_id)[0].alias;
         const instanceName = alias || sub.instance_id;
+        const onEdit = forTemplates ? this.props.showEditSubscriptionTemplate : this.props.showEditChannelSubscription;
 
-        if (!forTemplates) {
-            return this.renderSubscriptionRow(sub, projectName, showInstanceColumn, instanceName);
-        }
-        return this.renderSubscriptionTemplateRow(sub, projectName, showInstanceColumn, instanceName);
-    };
-
-    renderSubscriptionRow(sub: ChannelSubscription, projectName: string, showInstanceColumn: boolean, instanceName: string): JSX.Element {
-        return (
-            <tr
-                key={sub.id}
-                className='select-channel-subscriptions-row'
-            >
-                <td>
-                    <span>{sub.name || '(no name)'}</span>
-                </td>
-                <td>
-                    <span>{projectName}</span>
-                </td>
-                {showInstanceColumn && (
-                    <td>
-                        <span>{instanceName}</span>
-                    </td>
-                )}
-
-                <td>
-                    <button
-                        className='style--none color--link'
-                        onClick={(): void => this.props.showEditChannelSubscription(sub)}
-                        type='button'
-                    >
-                        {'Edit'}
-                    </button>
-                    {' - '}
-                    <button
-                        className='style--none color--link'
-                        onClick={(): void => this.handleDeleteChannelSubscription(sub)}
-                        type='button'
-                    >
-                        {'Delete'}
-                    </button>
-                </td>
-            </tr>
-        );
-    }
-
-    renderSubscriptionTemplateRow(sub: ChannelSubscription, projectName: string, showInstanceColumn: boolean, instanceName: string): JSX.Element {
         return (
             <tr
                 key={sub.id}
                 className='select-channel-subscriptions-row'
             >
                 <td>{sub.name || '(no name)'}</td>
-                <td>{projectName}</td>
-                {showInstanceColumn && (
-                    <td>{instanceName}</td>
-                )}
-
-                <td>
-                    <button
-                        className='style--none color--link'
-                        onClick={() => this.props.showEditSubscriptionTemplate(sub)}
-                        type='button'
+                <td>{this.getProjectName(sub)}</td>
+                {showInstanceColumn && <td>{instanceName}</td>}
+                <td className='jira-subscriptions__actions'>
+                    <Button
+                        emphasis='link'
+                        size='small'
+                        onClick={() => onEdit(sub)}
                     >
                         {'Edit'}
-                    </button>
-                    {' - '}
-                    <button
-                        className='style--none color--link'
-                        onClick={() => this.handleDeleteChannelSubscription(sub, true)}
-                        type='button'
+                    </Button>
+                    <Button
+                        emphasis='link'
+                        size='small'
+                        destructive={true}
+                        onClick={() => this.handleDeleteChannelSubscription(sub, forTemplates)}
                     >
                         {'Delete'}
-                    </button>
+                    </Button>
                 </td>
             </tr>
         );
-    }
+    };
 
     render(): React.ReactElement {
         const {channel, channelSubscriptions, subscriptionTemplates, omitDisplayName} = this.props;
         const {error, showConfirmModal, subscriptionToDelete, isTemplate} = this.state;
-
-        let errorDisplay = null;
-        if (error) {
-            errorDisplay = (
-                <span className='error'>{error}</span>
-            );
-        }
 
         let confirmDeleteMessage = '';
         confirmDeleteMessage = `Are you sure to delete the subscription ${isTemplate ? 'template' : ''}?`;
@@ -195,7 +144,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                 <ConfirmModal
                     cancelButtonText={'Cancel'}
                     confirmButtonText={'Delete'}
-                    confirmButtonClass={'btn btn-danger'}
+                    destructive={true}
                     hideCancel={false}
                     message={confirmDeleteMessage}
                     onCancel={this.handleCancelDelete}
@@ -206,102 +155,88 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             );
         }
 
-        let titleMessage = <h2 className='text-center'>{'Jira Subscriptions in'} <strong>{channel.display_name}</strong></h2>;
-        if (omitDisplayName) {
-            titleMessage = <h2 className='text-center'>{'Jira Subscriptions'}</h2>;
-        }
-
-        const subscriptionTemplateTitle = <h2 className='text-center'>{'Jira Subscription Templates'}</h2>;
         const showInstanceColumn = this.props.installedInstances.length > 1;
-        let subscriptionRows;
-        let subscriptionTemplateRows;
         const columns = (
             <thead>
                 <tr>
                     <th scope='col'>{'Name'}</th>
-                    <th
-                        className='th-col'
-                        scope='col'
-                    >{'Project'}</th>
-                    {showInstanceColumn &&
-                    <th
-                        className='th-col'
-                        scope='col'
-                    >{'Instance'}</th>
-                    }
-                    <th
-                        className='th-col'
-                        scope='col'
-                    >{'Actions'}</th>
+                    <th scope='col'>{'Project'}</th>
+                    {showInstanceColumn && <th scope='col'>{'Instance'}</th>}
+                    <th scope='col'>{'Actions'}</th>
                 </tr>
             </thead>
         );
-        if (channelSubscriptions.length) {
-            subscriptionRows = (
-                <table className='table'>
-                    {columns}
-                    <tbody>
-                        {channelSubscriptions.map((element) => (
-                            this.renderRow(element, false)
-                        ))}
-                    </tbody>
-                </table>
-            );
-        } else {
-            subscriptionRows = (
-                <p>
-                    {'Click "Create Subscription" to receive Jira issue notifications in this channel.'}
-                </p>
-            );
-        }
 
-        if (subscriptionTemplates.length) {
-            subscriptionTemplateRows = (
-                <table className='table'>
-                    {columns}
-                    <tbody>
-                        {subscriptionTemplates.map((element) => (
-                            this.renderRow(element, true)
-                        ))}
-                    </tbody>
-                </table>
-            );
-        } else {
-            subscriptionTemplateRows = (
-                <p>{'Click "Create Template" to create a subscription template.'}</p>
-            );
-        }
+        const renderTable = (subs: ChannelSubscription[], forTemplates: boolean) => (
+            <table className='jira-subscriptions__table'>
+                {columns}
+                <tbody>
+                    {subs.map((sub) => this.renderRow(sub, forTemplates))}
+                </tbody>
+            </table>
+        );
+
+        const subscriptionRows = channelSubscriptions.length ? renderTable(channelSubscriptions, false) : (
+            <EmptyState
+                titleLevel={4}
+                title='No subscriptions yet'
+                description='Click "Create Subscription" to receive Jira issue notifications in this channel.'
+            />
+        );
+
+        const subscriptionTemplateRows = subscriptionTemplates.length ? renderTable(subscriptionTemplates, true) : (
+            <EmptyState
+                titleLevel={4}
+                title='No templates yet'
+                description='Click "Create Template" to create a subscription template.'
+            />
+        );
 
         return (
-            <div>
-                <div className='d-flex justify-content-between align-items-center margin-bottom x3 title-message'>
-                    {titleMessage}
-                    <button
-                        className='btn btn-primary'
-                        onClick={this.props.showCreateChannelSubscription}
-                        type='button'
-                    >
-                        {'Create Subscription'}
-                    </button>
-                </div>
-                {subscriptionRows}
-                <div
-                    className='d-flex align-items-center mb-3 w-100'
-                    style={{justifyContent: 'space-between'}}
-                >
-                    <div>{subscriptionTemplateTitle}</div>
-                    <button
-                        className='btn btn-primary'
-                        onClick={this.props.showCreateSubscriptionTemplate}
-                        type='button'
-                    >
-                        {'Create Template'}
-                    </button>
-                </div>
-                {subscriptionTemplateRows}
+            <Modal
+                size='large'
+                title='Jira Subscriptions'
+                subtitle={!omitDisplayName && channel && `Channel: ${channel.display_name}`}
+                onClose={this.props.close}
+            >
+                {error && (
+                    <SectionNotice
+                        className='jira-form-notice'
+                        role='alert'
+                        type='danger'
+                        title={error}
+                    />
+                )}
+                <section className='jira-subscriptions__section'>
+                    <div className='jira-subscriptions__section-header'>
+                        <h3>{'Subscriptions'}</h3>
+                        <Button
+                            emphasis='secondary'
+                            size='small'
+                            leadingIcon={<Icon glyph={<PlusIcon/>}/>}
+                            onClick={this.props.showCreateChannelSubscription}
+                        >
+                            {'Create Subscription'}
+                        </Button>
+                    </div>
+                    {subscriptionRows}
+                </section>
+                <section className='jira-subscriptions__section'>
+                    <div className='jira-subscriptions__section-header'>
+                        <h3>{'Subscription Templates'}</h3>
+                        <Button
+                            emphasis='secondary'
+                            size='small'
+                            leadingIcon={<Icon glyph={<PlusIcon/>}/>}
+                            onClick={this.props.showCreateSubscriptionTemplate}
+                        >
+                            {'Create Template'}
+                        </Button>
+                    </div>
+                    {subscriptionTemplateRows}
+                </section>
                 {confirmModal}
-                {errorDisplay}
-            </div>
+            </Modal>
         );
     }
 }
