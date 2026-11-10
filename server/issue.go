@@ -1643,7 +1643,7 @@ func (p *Plugin) GetIssueDataWithAPIToken(issueID string, instance Instance) (*j
 // GetWatchersWithAPIToken fetches the watcher list for an issue using the
 // admin API token configured in plugin settings. This serves as a fallback
 // when none of the issue's Creator, Assignee, or Reporter have connected
-// Jira accounts. Works with both Jira Cloud (email + API token via HTTP
+// Jira accounts, or when their token is rejected. Works with both Jira Cloud (email + API token via HTTP
 // Basic auth) and Server/Data Center (PAT via HTTP Bearer auth).
 func (p *Plugin) GetWatchersWithAPIToken(issueKeyOrID string, instance Instance) (*jira.Watches, error) {
 	isCloud := instance.Common().IsCloudInstance()
@@ -1722,32 +1722,19 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 		return
 	}
 	if client == nil {
-		instance, loadErr := p.instanceStore.LoadInstance(instanceID)
-		if loadErr != nil {
-			p.errorf("error loading instance for admin-token watcher lookup, instanceID %v, err: %v", instanceID, loadErr)
-			return
-		}
-
-		if !p.hasAdminAPIToken(instance) {
-			p.errorf("no connected user found and no admin API token configured for instanceID %v", instanceID)
-			return
-		}
-
-		issueRef := wh.Issue.ID
-		if wh.Issue.Key != "" {
-			issueRef = wh.Issue.Key
-		}
 		p.client.Log.Info("No connected users found for watcher lookup, falling back to admin API token",
-			"instanceID", instanceID.String(), "issue", issueRef)
-
-		lookupSource = "admin_api_token"
-		watchers, err = p.GetWatchersWithAPIToken(issueRef, instance)
-		if err != nil {
-			p.errorf("error while getting watchers with admin API token for issue %v, err: %v", issueRef, err)
-			return
-		}
+			"instanceID", instanceID.String(), "issue_id", wh.Issue.ID)
 	} else {
 		watchers, err = client.GetWatchers(instanceID.String(), wh.Issue.ID, connection)
+		if err != nil {
+			p.client.Log.Warn("Watcher lookup with connected user's token failed, falling back to admin API token",
+				"instanceID", instanceID.String(), "issue_id", wh.Issue.ID, "mattermost_user_id", connection.MattermostUserID.String(),
+				"status_code", StatusCode(err), "error", err.Error())
+		}
+	}
+	if watchers == nil {
+		lookupSource = "admin_api_token"
+		watchers, err = p.getWatchersWithAdminAPIToken(wh, instanceID)
 		if err != nil {
 			p.errorf("error while getting watchers for the issue id %v, err: %v", wh.Issue.ID, err)
 			return
@@ -1792,6 +1779,22 @@ func (p *Plugin) checkIssueWatchers(wh *webhook, instanceID types.ID) {
 
 		wh.notifications = append(wh.notifications, whUserNotification)
 	}
+}
+
+func (p *Plugin) getWatchersWithAdminAPIToken(wh *webhook, instanceID types.ID) (*jira.Watches, error) {
+	instance, err := p.instanceStore.LoadInstance(instanceID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load instance for admin API token watcher lookup")
+	}
+	if !p.hasAdminAPIToken(instance) {
+		return nil, errors.New("no usable connected user token and no admin API token configured")
+	}
+
+	issueRef := wh.Issue.ID
+	if wh.Issue.Key != "" {
+		issueRef = wh.Issue.Key
+	}
+	return p.GetWatchersWithAPIToken(issueRef, instance)
 }
 
 func (p *Plugin) applyReporterNotification(wh *webhook, instanceID types.ID, reporter *jira.User) {

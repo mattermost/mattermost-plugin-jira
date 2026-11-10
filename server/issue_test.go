@@ -2026,6 +2026,97 @@ func TestHasAdminAPIToken(t *testing.T) {
 	}
 }
 
+type staticClientInstance struct {
+	testInstance
+	client Client
+}
+
+func (i *staticClientInstance) GetClient(*Connection) (Client, error) {
+	return i.client, nil
+}
+
+func TestCheckIssueWatchersFallsBackWhenUserTokenRejected(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.Header.Get("Authorization"), "Basic ") {
+			assert.Equal(t, "/rest/api/2/issue/10001/watchers", r.URL.Path)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		assert.Equal(t, "/rest/api/3/issue/PROJ-1/watchers", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"watchCount":1,"watchers":[{"accountId":"watcher-1"}]}`))
+	}))
+	defer ts.Close()
+
+	anyArgs := func(n int) []interface{} {
+		args := make([]interface{}, n)
+		for i := range args {
+			args[i] = mock.Anything
+		}
+		return args
+	}
+
+	setup := func(t *testing.T) (*Plugin, *plugintest.API, types.ID) {
+		jiraClient, err := jira.NewClient(ts.Client(), ts.URL)
+		require.NoError(t, err)
+		instance := &staticClientInstance{
+			testInstance: testInstance{InstanceCommon: InstanceCommon{InstanceID: types.ID(ts.URL), Type: CloudOAuthInstanceType}},
+			client:       newCloudClient(jiraClient),
+		}
+		instanceStore := &mockInstanceStore{}
+		instanceStore.On("LoadInstance", instance.GetID()).Return(instance, nil)
+		userStore := &mockUserStoreForTokenExpiry{}
+		userStore.On("LoadConnection", instance.GetID(), mock.Anything).Return(&Connection{MattermostUserID: "mm-creator"}, nil)
+
+		api := &plugintest.API{}
+		api.On("LogWarn", anyArgs(11)...).Return().Once()
+		return newConnectTestPlugin(api, userStore, instanceStore), api, instance.GetID()
+	}
+
+	newWebhook := func() *webhook {
+		return &webhook{
+			JiraWebhook: &JiraWebhook{
+				Issue: jira.Issue{
+					ID:     "10001",
+					Key:    "PROJ-1",
+					Fields: &jira.IssueFields{Creator: &jira.User{AccountID: "creator-1"}},
+				},
+				Comment: jira.Comment{Body: "hello", UpdateAuthor: jira.User{AccountID: "author-1"}},
+			},
+			eventTypes: NewStringSet(createdCommentEvent),
+		}
+	}
+
+	t.Run("notifies watchers fetched with the admin API token", func(t *testing.T) {
+		p, api, instanceID := setup(t)
+		tokenJSON, _ := json.Marshal("test-api-token")
+		p.updateConfig(func(conf *config) {
+			conf.AdminAPIToken = string(tokenJSON)
+			conf.AdminEmail = "admin@example.com"
+			conf.EncryptionKey = ""
+		})
+
+		wh := newWebhook()
+		p.checkIssueWatchers(wh, instanceID)
+
+		require.Len(t, wh.notifications, 1)
+		assert.Equal(t, "watcher-1", wh.notifications[0].jiraAccountID)
+		assert.Equal(t, notificationTypeWatching, wh.notifications[0].notificationType)
+		api.AssertExpectations(t)
+	})
+
+	t.Run("logs an error when no admin API token is configured", func(t *testing.T) {
+		p, api, instanceID := setup(t)
+		api.On("LogError", mock.AnythingOfType("string")).Return().Once()
+
+		wh := newWebhook()
+		p.checkIssueWatchers(wh, instanceID)
+
+		assert.Empty(t, wh.notifications)
+		api.AssertExpectations(t)
+	})
+}
+
 func TestInjectTeamAllowedValues(t *testing.T) {
 	t.Run("with manual team config", func(t *testing.T) {
 		metaInfo := &jira.CreateMetaInfo{
