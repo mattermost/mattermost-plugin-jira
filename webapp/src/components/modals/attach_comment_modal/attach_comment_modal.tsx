@@ -6,6 +6,7 @@ import React from 'react';
 import {ModalOverlay} from '@mattermost/compass-ui/components/modal';
 
 import {Z_INDEX_MODAL} from 'utils/styles';
+import useModalSession from 'utils/use_modal_session';
 
 import AttachCommentToIssueForm from './attach_comment_form';
 
@@ -15,12 +16,17 @@ type Props = {
 }
 
 export default function AttachCommentToIssueModal(props: Props) {
+    const session = useModalSession(props);
+
     return (
         <ModalOverlay
             open={props.visible}
             zIndex={Z_INDEX_MODAL}
         >
-            <AttachCommentToIssueForm {...props}/>
+            <AttachCommentToIssueForm
+                key={session.key}
+                {...session.props}
+            />
         </ModalOverlay>
     );
 }

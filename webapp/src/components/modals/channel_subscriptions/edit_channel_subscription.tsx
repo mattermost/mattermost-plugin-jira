@@ -680,7 +680,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                 title='Jira Subscriptions'
                 subtitle={headerText}
                 showBackButton={true}
-                onBack={this.props.finishEditSubscription}
+                onBack={this.handleCancel}
                 onClose={this.props.close}
                 footer={footer}
                 footerLeading={deleteButton}

@@ -29,6 +29,13 @@ type State = {
     invalid: boolean;
 };
 
+function hasValue(value: Props['value']): value is string | number {
+    if (value === null || typeof value === 'undefined' || Number.isNaN(value)) {
+        return false;
+    }
+    return value.toString().length !== 0;
+}
+
 export default class Input extends React.PureComponent<Props, State> {
     state: State = {invalid: false};
 
@@ -67,7 +74,7 @@ export default class Input extends React.PureComponent<Props, State> {
             return true;
         }
 
-        const valid = Boolean(this.props.value) && this.props.value?.toString().length !== 0;
+        const valid = hasValue(this.props.value);
         this.setState({invalid: !valid});
         return valid;
     };
@@ -79,7 +86,7 @@ export default class Input extends React.PureComponent<Props, State> {
         const common = {
             id,
             placeholder: this.props.placeholder,
-            value: this.props.value || '',
+            value: hasValue(this.props.value) ? this.props.value : '',
             maxLength: this.props.maxLength,
             disabled: this.props.disabled,
             readOnly: this.props.readOnly,

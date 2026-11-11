@@ -6,6 +6,7 @@ import React from 'react';
 import {ModalOverlay} from '@mattermost/compass-ui/components/modal';
 
 import {Z_INDEX_MODAL} from 'utils/styles';
+import useModalSession from 'utils/use_modal_session';
 
 import CreateIssueForm from './create_issue_form';
 
@@ -15,12 +16,17 @@ type Props = {
 }
 
 export default function CreateIssueModal(props: Props) {
+    const session = useModalSession(props);
+
     return (
         <ModalOverlay
             open={props.visible}
             zIndex={Z_INDEX_MODAL}
         >
-            <CreateIssueForm {...props}/>
+            <CreateIssueForm
+                key={session.key}
+                {...session.props}
+            />
         </ModalOverlay>
     );
 }
