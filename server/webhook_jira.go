@@ -72,17 +72,20 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 
 			conn, err := p.userStore.LoadConnection(instance.GetID(), mmUserID)
 			if err != nil {
-				return err
+				return jwh.expandIssueWithAPIToken(p, instance, err)
 			}
 
 			client, err := instance.GetClient(conn)
 			if err != nil {
-				return err
+				return jwh.expandIssueWithAPIToken(p, instance, err)
 			}
 
 			issue, err := client.GetIssue(jwh.Issue.ID, nil)
 			if err != nil {
-				return err
+				p.client.Log.Warn("Issue lookup with connected user's token failed, falling back to admin API token",
+					"instanceID", instanceID.String(), "issue_id", jwh.Issue.ID, "mattermost_user_id", mmUserID.String(),
+					"status_code", StatusCode(err), "error", err.Error())
+				return jwh.expandIssueWithAPIToken(p, instance, err)
 			}
 			if issue == nil || issue.Fields == nil {
 				return errors.Errorf("Jira returned no fields for issue %s", jwh.Issue.ID)
@@ -96,11 +99,11 @@ func (jwh *JiraWebhook) expandIssue(p *Plugin, instanceID types.ID) error {
 }
 
 // expandIssueWithAPIToken fetches the issue when no connected user can do it,
-// e.g. the Jira author hasn't connected their account.
-func (jwh *JiraWebhook) expandIssueWithAPIToken(p *Plugin, instance Instance, noUserErr error) error {
+// e.g. the Jira author hasn't connected their account or their token was rejected.
+func (jwh *JiraWebhook) expandIssueWithAPIToken(p *Plugin, instance Instance, userErr error) error {
 	if !p.hasAdminAPIToken(instance) {
 		p.notifyAdminsIfAPITokenMissing(instance)
-		return errors.Wrap(noUserErr, "cannot create subscription posts for this event without a connected Jira author or an Admin API Token")
+		return errors.Wrap(userErr, "cannot create subscription posts for this event without a usable connected Jira author or an Admin API Token")
 	}
 
 	issue, err := p.GetIssueDataWithAPIToken(jwh.Issue.Key, instance)

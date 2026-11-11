@@ -14,6 +14,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -92,4 +93,47 @@ func TestExpandIssueCreatedWithoutCreator(t *testing.T) {
 		require.ErrorContains(t, jwh.expandIssue(p, instanceID), "no fields")
 		require.NotNil(t, jwh.Issue.Fields)
 	})
+}
+
+func TestExpandIssueCommentFallsBackWhenUserConnectionUnusable(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/rest/api/2/issue/PROJ-1", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"10001","key":"PROJ-1","fields":{"summary":"fetched summary"}}`))
+	}))
+	defer ts.Close()
+
+	for name, loadConnection := range map[string][]interface{}{
+		"connection cannot be loaded":           {nil, errors.New("connection not found")},
+		"client cannot be built from the token": {&Connection{}, nil},
+	} {
+		t.Run(name, func(t *testing.T) {
+			instance := &cloudOAuthInstance{
+				InstanceCommon: &InstanceCommon{InstanceID: types.ID(ts.URL), Type: CloudOAuthInstanceType},
+				JiraBaseURL:    ts.URL,
+			}
+			instanceStore := &mockInstanceStore{}
+			instanceStore.On("LoadInstance", instance.GetID()).Return(instance, nil)
+			userStore := &mockUserStoreForTokenExpiry{}
+			userStore.On("LoadConnection", instance.GetID(), mock.Anything).Return(loadConnection...)
+
+			p := newConnectTestPlugin(&plugintest.API{}, userStore, instanceStore)
+			instance.Plugin = p
+			tokenJSON, _ := json.Marshal("test-api-token")
+			p.updateConfig(func(conf *config) {
+				conf.AdminAPIToken = string(tokenJSON)
+				conf.AdminEmail = "admin@example.com"
+				conf.EncryptionKey = ""
+			})
+
+			jwh := &JiraWebhook{
+				WebhookEvent: commentCreated,
+				Issue:        jira.Issue{ID: "10001", Key: "PROJ-1"},
+				Comment:      jira.Comment{Author: jira.User{AccountID: "author-1"}},
+			}
+			require.NoError(t, jwh.expandIssue(p, instance.GetID()))
+			require.NotNil(t, jwh.Issue.Fields)
+			assert.Equal(t, "fetched summary", jwh.Issue.Fields.Summary)
+		})
+	}
 }
