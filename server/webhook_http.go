@@ -120,19 +120,52 @@ func (p *Plugin) httpWebhook(w http.ResponseWriter, r *http.Request, instanceID 
 	return http.StatusOK, nil
 }
 
+// maxSecretDecodeDepth is the number of URL-decoding passes applied to a
+// supplied secret before giving up.
+const maxSecretDecodeDepth = 3
+
+// secretEncodingExpansion is the maximum factor by which one pass of URL
+// encoding can grow a string: each byte becomes at most three characters ("%XX").
+const secretEncodingExpansion = 3
+
+// maxSecretLen returns an upper bound on the length of any value that decodes
+// to expected within maxSecretDecodeDepth passes.
+func maxSecretLen(expected string) int {
+	limit := len(expected)
+	for i := 0; i < maxSecretDecodeDepth; i++ {
+		limit *= secretEncodingExpansion
+	}
+	return limit
+}
+
+// errSecretMismatch is returned when the supplied secret does not match the
+// configured one.
+var errSecretMismatch = errors.New("request URL: secret did not match")
+
+// verifyHTTPSecret compares the supplied secret against the expected one. The
+// raw value is compared first, followed by up to maxSecretDecodeDepth
+// URL-decoded forms of it, so the amount of work per request is bounded.
 func verifyHTTPSecret(expected, got string) (status int, err error) {
-	for {
+	if expected == "" {
+		return http.StatusForbidden, errSecretMismatch
+	}
+
+	if len(got) > maxSecretLen(expected) {
+		return http.StatusForbidden, errSecretMismatch
+	}
+
+	for decodes := 0; ; decodes++ {
 		if subtle.ConstantTimeCompare([]byte(got), []byte(expected)) == 1 {
-			break
+			return 0, nil
+		}
+		if decodes == maxSecretDecodeDepth {
+			return http.StatusForbidden, errSecretMismatch
 		}
 
-		unescaped, _ := url.QueryUnescape(got)
-		if unescaped == got {
-			return http.StatusForbidden,
-				errors.New("request URL: secret did not match")
+		unescaped, unescapeErr := url.QueryUnescape(got)
+		if unescapeErr != nil || unescaped == got {
+			return http.StatusForbidden, errSecretMismatch
 		}
 		got = unescaped
 	}
-
-	return 0, nil
 }
