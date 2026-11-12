@@ -52,7 +52,7 @@ async function channelMessages(jira: JiraFixture, channelId: string) {
 async function openSubscriptions(pw: PlaywrightExtended, jira: JiraFixture) {
     const {page, channelsPage} = await openChannel(pw, jira);
     await channelsPage.postMessage('/jira subscribe');
-    return {page, modal: page.getByRole('dialog', {name: 'Jira Subscriptions'})};
+    return {page, modal: page.getByRole('dialog', {name: /Jira Subscription/})};
 }
 
 // The fixtures belong to project TES, which fake-jira doesn't serve, so the issue is moved into its project.
@@ -145,12 +145,38 @@ test.describe('channel subscriptions', () => {
         await confirm.getByRole('button', {name: 'Delete'}).click();
 
         // * Verify the list is empty and nothing is stored
-        await expect(modal.getByText('Click "Create Subscription" to receive Jira issue notifications in this channel.')).toBeVisible();
+        await expect(modal.getByRole('tabpanel')).toHaveText('No subscriptions yet');
         expect(await channelSubscriptions(jira, jira.channel.id)).toEqual([]);
 
         // * Verify the channel is told about the removal
         await expect.poll(() => channelMessages(jira, jira.channel.id)).
             toContain(`Jira subscription, "Assignee changes", was removed from this channel by ${fakeCloudUser.displayName}`);
+    });
+
+    /**
+     * @objective Verify the subscriptions modal closes with Escape and with a click on the backdrop, and asks before discarding edits.
+     */
+    test('closes subscriptions modal with Escape and backdrop', {tag: '@jira_plugin'}, async ({pw, jira}) => {
+        // # Open the modal and press Escape
+        const {page, channelsPage} = await openChannel(pw, jira);
+        const modal = page.getByRole('dialog', {name: /Jira Subscription/});
+        await channelsPage.postMessage('/jira subscribe');
+        await expect(modal).toBeVisible();
+        await page.keyboard.press('Escape');
+
+        // * Verify the modal closes
+        await expect(modal).toBeHidden();
+
+        // # Reopen it, start a subscription and type a name, then click the backdrop
+        await channelsPage.postMessage('/jira subscribe');
+        await modal.getByRole('button', {name: 'Create Subscription'}).click();
+        await modal.getByPlaceholder('Name').fill('Unsaved');
+        await page.mouse.click(5, 5);
+
+        // * Verify discarding is confirmed before the modal closes
+        const confirm = page.getByRole('dialog', {name: 'Subscription', exact: true});
+        await confirm.getByRole('button', {name: 'Discard'}).click();
+        await expect(modal).toBeHidden();
     });
 });
 

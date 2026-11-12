@@ -30,13 +30,19 @@ export function fieldLabel(label: React.ReactNode, required?: boolean): React.Re
 type Props = {
     children: React.ReactNode;
     error?: React.ReactNode;
+    errorId?: string;
 };
 
-export default function Setting({children, error}: Props) {
+export default function Setting({children, error, errorId}: Props) {
     return (
         <div className='jira-setting'>
             {children}
-            {error && <ErrorMessage message={error}/>}
+            {error && (
+                <ErrorMessage
+                    id={errorId}
+                    message={error}
+                />
+            )}
         </div>
     );
 }

@@ -21,6 +21,7 @@ export default function CreateIssueModal(props: Props) {
     return (
         <ModalOverlay
             open={props.visible}
+            onClose={props.close}
             zIndex={Z_INDEX_MODAL}
         >
             <CreateIssueForm

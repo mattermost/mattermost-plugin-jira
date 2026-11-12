@@ -5,11 +5,11 @@ import React, {PureComponent} from 'react';
 
 import {Button} from '@mattermost/compass-ui/components/button';
 import {ErrorMessage} from '@mattermost/compass-ui/components/error-message';
-import {Modal} from '@mattermost/compass-ui/components/modal';
 import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
 
 import SelectSetting from 'components/select_setting';
 import ConfirmModal from 'components/confirm_modal';
+import Modal from 'components/modal';
 import Input from 'components/input';
 import Loading from 'components/loading';
 import Validator from 'components/validator';
@@ -62,7 +62,16 @@ const JiraEventOptions: SelectOption[] = [
     {value: 'event_updated_components', label: 'Issue Updated: Components'},
 ];
 
+const snapshot = (filters: ChannelSubscriptionFiltersModel, name: string | null): string => JSON.stringify({
+    name: name || '',
+    projects: filters.projects,
+    events: filters.events,
+    issue_types: filters.issue_types,
+    fields: filters.fields,
+});
+
 export type Props = SharedProps & {
+    open?: boolean;
     finishEditSubscription: () => void;
     selectedSubscription: ChannelSubscription | null;
     creatingSubscription: boolean;
@@ -82,13 +91,14 @@ export type State = {
     submittingTemplate: boolean;
     subscriptionName: string | null;
     showConfirmModal: boolean;
-    confirmActionType: 'delete' | 'close' | null;
+    confirmActionType: 'delete' | 'close' | 'closeModal' | null;
     conflictingError: string | null;
     selectedTemplateID: string | null;
 };
 
 export default class EditChannelSubscription extends PureComponent<Props, State> {
     private validator: Validator;
+    private initialSnapshot: string;
 
     constructor(props: Props) {
         super(props);
@@ -146,6 +156,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         };
 
         this.validator = new Validator();
+        this.initialSnapshot = snapshot(filters, subscriptionName);
     }
 
     componentDidMount() {
@@ -164,8 +175,24 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         }
     }
 
+    isDirty = (): boolean => {
+        return snapshot(this.state.filters, this.state.subscriptionName) !== this.initialSnapshot;
+    };
+
     handleCancel = (): void => {
-        this.setState({showConfirmModal: true, confirmActionType: 'close'});
+        if (this.isDirty()) {
+            this.setState({showConfirmModal: true, confirmActionType: 'close'});
+        } else {
+            this.props.finishEditSubscription();
+        }
+    };
+
+    requestClose = (): void => {
+        if (this.isDirty()) {
+            this.setState({showConfirmModal: true, confirmActionType: 'closeModal'});
+        } else {
+            this.props.close();
+        }
     };
 
     handleClose = (e?: React.FormEvent) => {
@@ -209,6 +236,8 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
     handleConfirmAction = () => {
         if (this.state.confirmActionType === 'close') {
             this.props.finishEditSubscription();
+        } else if (this.state.confirmActionType === 'closeModal') {
+            this.props.close();
         } else if (this.state.confirmActionType === 'delete') {
             this.deleteChannelSubscription();
         }
@@ -627,19 +656,16 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         const enableSubmitButton = Boolean(this.state.filters.projects[0]);
         const enableDeleteButton = Boolean(this.props.selectedSubscription || this.props.selectedSubscriptionTemplate);
         let saveSubscriptionButtonText = '';
-        let headerText = '';
+        let title = '';
         if (isSubscription) {
             saveSubscriptionButtonText = this.props.creatingSubscription ? 'Add Subscription' : 'Save Subscription';
-            headerText = this.props.creatingSubscription ? 'Add subscription' : 'Edit subscription';
-            if (this.props.channel) {
-                headerText += ` in ${this.props.channel.display_name}`;
-            }
+            title = this.props.creatingSubscription ? 'New Jira Subscription' : 'Edit Jira Subscription';
         } else {
             saveSubscriptionButtonText = 'Add Template';
-            headerText = 'Add subscription template';
-            if (this.props.selectedSubscriptionTemplate && this.props.selectedSubscriptionTemplate.name) {
+            title = 'New Jira Subscription Template';
+            if (this.props.selectedSubscriptionTemplate) {
                 saveSubscriptionButtonText = 'Save Template';
-                headerText = 'Edit subscription template';
+                title = 'Edit Jira Subscription Template';
             }
         }
 
@@ -676,12 +702,12 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
 
         return (
             <Modal
-                size='large'
-                title='Jira Subscriptions'
-                subtitle={headerText}
+                open={this.props.open}
+                size='medium'
+                title={title}
                 showBackButton={true}
                 onBack={this.handleCancel}
-                onClose={this.props.close}
+                onClose={this.requestClose}
                 footer={footer}
                 footerLeading={deleteButton}
             >

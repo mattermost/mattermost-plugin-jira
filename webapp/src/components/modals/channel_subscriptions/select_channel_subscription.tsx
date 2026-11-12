@@ -5,18 +5,25 @@ import React from 'react';
 
 import {PlusIcon} from '@mattermost/compass-icons/components';
 import {Button} from '@mattermost/compass-ui/components/button';
-import {EmptyState} from '@mattermost/compass-ui/components/empty-state';
 import {Icon} from '@mattermost/compass-ui/components/icon';
-import {Modal} from '@mattermost/compass-ui/components/modal';
 import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
+import {Tabs} from '@mattermost/compass-ui/components/tabs';
 
 import {AllProjectMetadata, ChannelSubscription} from 'types/model';
 
 import ConfirmModal from 'components/confirm_modal';
+import Modal from 'components/modal';
 
 import {SharedProps} from './shared_props';
 
+export type SubscriptionsTab = 'subscriptions' | 'templates';
+
+const TAB_PANEL_ID = 'jira-subscriptions-panel';
+
 type Props = SharedProps & {
+    open?: boolean;
+    activeTab: SubscriptionsTab;
+    onTabChange: (tab: SubscriptionsTab) => void;
     showEditChannelSubscription: (subscription: ChannelSubscription) => void;
     showEditSubscriptionTemplate: (subscription: ChannelSubscription) => void;
     showCreateChannelSubscription: () => void;
@@ -129,7 +136,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
     };
 
     render(): React.ReactElement {
-        const {channel, channelSubscriptions, subscriptionTemplates, omitDisplayName} = this.props;
+        const {channel, channelSubscriptions, subscriptionTemplates, omitDisplayName, activeTab} = this.props;
         const {error, showConfirmModal, subscriptionToDelete, isTemplate} = this.state;
 
         let confirmDeleteMessage = '';
@@ -176,27 +183,46 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
             </table>
         );
 
-        const subscriptionRows = channelSubscriptions.length ? renderTable(channelSubscriptions, false) : (
-            <EmptyState
-                titleLevel={4}
-                title='No subscriptions yet'
-                description='Click "Create Subscription" to receive Jira issue notifications in this channel.'
-            />
+        const showTemplates = activeTab === 'templates';
+        const subs = showTemplates ? subscriptionTemplates : channelSubscriptions;
+        const panel = subs.length ? renderTable(subs, showTemplates) : (
+            <p className='jira-subscriptions__empty'>
+                {showTemplates ? 'No templates yet' : 'No subscriptions yet'}
+            </p>
         );
 
-        const subscriptionTemplateRows = subscriptionTemplates.length ? renderTable(subscriptionTemplates, true) : (
-            <EmptyState
-                titleLevel={4}
-                title='No templates yet'
-                description='Click "Create Template" to create a subscription template.'
+        const createButton = (
+            <Button
+                emphasis='secondary'
+                size='small'
+                leadingIcon={<Icon glyph={<PlusIcon/>}/>}
+                onClick={showTemplates ? this.props.showCreateSubscriptionTemplate : this.props.showCreateChannelSubscription}
+            >
+                {showTemplates ? 'Create Template' : 'Create Subscription'}
+            </Button>
+        );
+
+        const tabs = (
+            <Tabs
+                appearance='underlined'
+                activeKey={activeTab}
+                onChange={(key) => this.props.onTabChange(key as SubscriptionsTab)}
+                controls={createButton}
+                tabs={[
+                    {key: 'subscriptions', label: 'Subscriptions', id: 'jira-subscriptions-tab', panelId: TAB_PANEL_ID},
+                    {key: 'templates', label: 'Templates', id: 'jira-templates-tab', panelId: TAB_PANEL_ID},
+                ]}
             />
         );
 
         return (
             <Modal
-                size='large'
+                open={this.props.open}
+                size='medium'
                 title='Jira Subscriptions'
                 subtitle={!omitDisplayName && channel && `Channel: ${channel.display_name}`}
+                subtitlePlacement='beside'
+                headerSlot={tabs}
                 onClose={this.props.close}
             >
                 {error && (
@@ -207,34 +233,13 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                         title={error}
                     />
                 )}
-                <section className='jira-subscriptions__section'>
-                    <div className='jira-subscriptions__section-header'>
-                        <h3>{'Subscriptions'}</h3>
-                        <Button
-                            emphasis='secondary'
-                            size='small'
-                            leadingIcon={<Icon glyph={<PlusIcon/>}/>}
-                            onClick={this.props.showCreateChannelSubscription}
-                        >
-                            {'Create Subscription'}
-                        </Button>
-                    </div>
-                    {subscriptionRows}
-                </section>
-                <section className='jira-subscriptions__section'>
-                    <div className='jira-subscriptions__section-header'>
-                        <h3>{'Subscription Templates'}</h3>
-                        <Button
-                            emphasis='secondary'
-                            size='small'
-                            leadingIcon={<Icon glyph={<PlusIcon/>}/>}
-                            onClick={this.props.showCreateSubscriptionTemplate}
-                        >
-                            {'Create Template'}
-                        </Button>
-                    </div>
-                    {subscriptionTemplateRows}
-                </section>
+                <div
+                    role='tabpanel'
+                    id={TAB_PANEL_ID}
+                    aria-labelledby={showTemplates ? 'jira-templates-tab' : 'jira-subscriptions-tab'}
+                >
+                    {panel}
+                </div>
                 {confirmModal}
             </Modal>
         );

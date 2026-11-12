@@ -4,7 +4,6 @@
 import React, {PureComponent} from 'react';
 
 import {Button} from '@mattermost/compass-ui/components/button';
-import {Modal} from '@mattermost/compass-ui/components/modal';
 import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
 
 import {Post} from '@mattermost/types/posts';
@@ -12,11 +11,13 @@ import {Team} from '@mattermost/types/teams';
 
 import {APIResponse, AttachCommentRequest, SavedFieldValues} from 'types/model';
 
-import Input from 'components/input';
 import JiraIssueSelector from 'components/jira_issue_selector';
+import Modal from 'components/modal';
 import Validator from 'components/validator';
 
 import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project_selector';
+
+import './attach_comment_form.scss';
 
 function getPostDisplayMessage(post: Post): string {
     if (post.message) {
@@ -139,15 +140,17 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
                         value={this.state.issueKey}
                         instanceID={this.state.instanceID}
                     />
-                    <Input
-                        addValidate={this.validator.addComponent}
-                        removeValidate={this.validator.removeComponent}
-                        label='Message Attached to Jira Issue'
-                        id='jira-attach-comment-message'
-                        type='textarea'
-                        value={getPostDisplayMessage(this.props.post)}
-                        readOnly={true}
-                    />
+                    <figure className='jira-setting jira-attach-comment__message'>
+                        <figcaption className='jira-setting__label'>
+                            {'Message Attached to Jira Issue'}
+                        </figcaption>
+                        <blockquote
+                            id='jira-attach-comment-message'
+                            tabIndex={0}
+                        >
+                            {getPostDisplayMessage(this.props.post)}
+                        </blockquote>
+                    </figure>
                 </div>
             );
         }

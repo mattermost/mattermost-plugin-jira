@@ -3,10 +3,13 @@
 
 import React from 'react';
 
+import {DateRangePicker} from '@mattermost/compass-ui/components/date-range-picker';
 import {TextArea} from '@mattermost/compass-ui/components/text-area';
 import {TextInput} from '@mattermost/compass-ui/components/text-input';
 
 import Setting, {REQUIRED_MESSAGE, fieldLabel} from 'components/setting';
+
+import {Z_INDEX_MENU_PORTAL} from 'utils/styles';
 
 type InputType = 'input' | 'number' | 'textarea' | 'date' | 'datetime-local';
 
@@ -69,6 +72,10 @@ export default class Input extends React.PureComponent<Props, State> {
         }
     };
 
+    changeValue = (value: string) => {
+        this.props.onChange?.(this.props.id, value);
+    };
+
     isValid = () => {
         if (!this.props.required) {
             return true;
@@ -107,20 +114,49 @@ export default class Input extends React.PureComponent<Props, State> {
         }
 
         if (type === 'date' || type === 'datetime-local') {
+            const [date = '', time = ''] = common.value.toString().split('T');
+            const labelId = id && `${id}-label`;
+            let errorId;
+            if (message && id) {
+                errorId = `${id}-error`;
+            }
+
             return (
-                <Setting>
+                <Setting
+                    error={message}
+                    errorId={errorId}
+                >
                     {label && (
-                        <label
+                        <span
+                            id={labelId}
                             className='jira-setting__label'
-                            htmlFor={id}
                         >
                             {label}
-                        </label>
+                        </span>
                     )}
-                    <TextInput
-                        {...common}
-                        type={type}
-                    />
+                    <div
+                        role='group'
+                        aria-labelledby={labelId}
+                        aria-describedby={errorId}
+                        className='jira-setting__date'
+                    >
+                        <DateRangePicker
+                            id={id}
+                            value={date}
+                            disabled={this.props.disabled}
+                            zIndex={Z_INDEX_MENU_PORTAL}
+                            onChange={(nextDate) => this.changeValue(type === 'date' ? nextDate : `${nextDate}T${time || '00:00'}`)}
+                        />
+                        {type === 'datetime-local' && (
+                            <TextInput
+                                aria-label='Time'
+                                type='time'
+                                value={time}
+                                disabled={this.props.disabled || !date}
+                                onChange={(e) => this.changeValue(`${date}T${e.target.value}`)}
+                            />
+                        )}
+                    </div>
                 </Setting>
             );
         }

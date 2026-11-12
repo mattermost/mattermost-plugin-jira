@@ -1,21 +1,9 @@
-.jira-subscriptions__section {
-    & + & {
-        margin-top: var(--spacing-xxl);
-    }
-}
-
-.jira-subscriptions__section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--spacing-m);
-    margin-bottom: var(--spacing-m);
-
-    h3 {
-        margin: 0;
-        font-size: var(--font-size-200);
-        font-weight: 600;
-    }
+.jira-subscriptions__empty {
+    margin: 0;
+    padding: var(--spacing-xl) 0;
+    text-align: center;
+    font-size: var(--font-size-100);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
 }
 
 .jira-subscriptions__table {

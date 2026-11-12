@@ -86,7 +86,7 @@ test.describe('visual', {tag: '@visual'}, () => {
         await connectUserViaKV(jira.user.id);
         const {page, channelsPage} = await openChannel(pw, jira);
         await channelsPage.postMessage('/jira subscribe');
-        return {page, modal: page.getByRole('dialog', {name: 'Jira Subscriptions'})};
+        return {page, modal: page.getByRole('dialog', {name: /Jira Subscription/})};
     }
 
     /**

@@ -5,7 +5,9 @@ import React, {useRef, useState} from 'react';
 
 import {Button} from '@mattermost/compass-ui/components/button';
 import {Checkbox} from '@mattermost/compass-ui/components/checkbox';
-import {Modal, ModalOverlay} from '@mattermost/compass-ui/components/modal';
+import {ModalOverlay} from '@mattermost/compass-ui/components/modal';
+
+import Modal from 'components/modal';
 
 import {Z_INDEX_CONFIRM_MODAL} from 'utils/styles';
 
@@ -68,6 +70,8 @@ export default function ConfirmModal(props: Props) {
                 open={props.show}
                 size='small'
                 title={props.title}
+                headerDivider={false}
+                footerDivider={false}
                 onClose={handleCancel}
                 initialFocusRef={confirmRef}
                 footer={footer}

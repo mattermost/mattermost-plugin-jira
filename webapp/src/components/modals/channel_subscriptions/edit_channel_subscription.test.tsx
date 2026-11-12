@@ -4,7 +4,15 @@
 /* eslint-disable max-lines */
 
 import React from 'react';
-import {act, fireEvent, render} from '@testing-library/react';
+import {
+    act,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+    within,
+} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {Provider} from 'react-redux';
 import {IntlProvider} from 'react-intl';
 import configureStore from 'redux-mock-store';
@@ -844,6 +852,50 @@ describe('components/EditChannelSubscription', () => {
             ref.current?.handleCreate({preventDefault: jest.fn()});
         });
         expect(createChannelSubscription).not.toHaveBeenCalled();
+    });
+
+    test('should cancel without a discard prompt when nothing changed', async () => {
+        const finishEditSubscription = jest.fn();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...baseProps}
+                    finishEditSubscription={finishEditSubscription}
+                />,
+            );
+        });
+
+        await userEvent.click(screen.getByRole('button', {name: 'Cancel'}));
+
+        expect(finishEditSubscription).toHaveBeenCalledTimes(1);
+        expect(screen.queryByRole('button', {name: 'Discard'})).not.toBeInTheDocument();
+    });
+
+    test('should ask before discarding changes on cancel or close', async () => {
+        const finishEditSubscription = jest.fn();
+        const close = jest.fn();
+        await act(async () => {
+            renderWithRedux(
+                <EditChannelSubscription
+                    {...baseProps}
+                    finishEditSubscription={finishEditSubscription}
+                    close={close}
+                />,
+            );
+        });
+
+        const dialog = screen.getByRole('dialog', {name: 'Edit Jira Subscription'});
+        await userEvent.type(within(dialog).getByRole('textbox', {name: /Subscription Name/}), ' edited');
+
+        await userEvent.click(within(dialog).getByRole('button', {name: 'Cancel'}));
+        await userEvent.click(screen.getByRole('button', {name: 'Discard'}));
+        expect(finishEditSubscription).toHaveBeenCalledTimes(1);
+        await waitFor(() => expect(screen.queryByRole('button', {name: 'Discard'})).not.toBeInTheDocument());
+
+        await userEvent.click(within(dialog).getByRole('button', {name: 'Close'}));
+        expect(close).not.toHaveBeenCalled();
+        await userEvent.click(screen.getByRole('button', {name: 'Discard'}));
+        expect(close).toHaveBeenCalledTimes(1);
     });
 
     test('should hide the delete button when no subscription is present', async () => {

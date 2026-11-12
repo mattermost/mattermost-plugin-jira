@@ -27,6 +27,11 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props, Stat
         allProjectMetadata: null,
     };
 
+    private inner = React.createRef<ChannelSubscriptionsModalInner>();
+
+    // Keeps the last open view rendered while the overlay plays its exit.
+    private lastOpenProps: Props | null = null;
+
     componentDidUpdate(prevProps: Props) {
         if (prevProps.channel && !this.props.channel) {
             this.handleModalClosed();
@@ -67,15 +72,28 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props, Stat
         this.setState({showModal: true, allProjectMetadata: projectResponses.data});
     };
 
+    handleOverlayClose = () => {
+        if (this.inner.current) {
+            this.inner.current.requestClose();
+        } else {
+            this.props.close();
+        }
+    };
+
     render(): JSX.Element {
         const isModalOpen = Boolean(this.props.channel && this.state.showModal);
+        if (isModalOpen) {
+            this.lastOpenProps = this.props;
+        }
 
         let inner;
-        if (isModalOpen) {
+        if (this.lastOpenProps) {
             inner = (
                 <ChannelSubscriptionsModalInner
+                    ref={this.inner}
                     allProjectMetadata={this.state.allProjectMetadata}
-                    {...this.props}
+                    {...this.lastOpenProps}
+                    open={isModalOpen}
                 />
             );
         }
@@ -83,6 +101,10 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props, Stat
         return (
             <ModalOverlay
                 open={isModalOpen}
+                onClose={this.handleOverlayClose}
+                onExited={() => {
+                    this.lastOpenProps = null;
+                }}
                 zIndex={Z_INDEX_MODAL}
             >
                 {inner}

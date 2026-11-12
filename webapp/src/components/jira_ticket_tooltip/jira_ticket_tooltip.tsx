@@ -198,6 +198,7 @@ export default class TicketPopover extends React.PureComponent<Props, State> {
             return (
                 <div className='jira-issue-tooltip jira-issue-tooltip-error'>
                     <SectionNotice
+                        role='alert'
                         type='danger'
                         title={error}
                         description='Check your connection or try again later'

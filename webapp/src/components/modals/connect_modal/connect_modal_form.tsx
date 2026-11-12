@@ -4,8 +4,10 @@
 import React, {PureComponent} from 'react';
 
 import {Button} from '@mattermost/compass-ui/components/button';
-import {Modal} from '@mattermost/compass-ui/components/modal';
+
 import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
+
+import Modal from 'components/modal';
 
 import {Instance, SelectOption} from 'types/model';
 

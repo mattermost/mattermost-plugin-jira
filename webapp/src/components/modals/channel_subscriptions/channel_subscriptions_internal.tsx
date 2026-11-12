@@ -6,7 +6,7 @@ import React from 'react';
 import {AllProjectMetadata, ChannelSubscription} from 'types/model';
 
 import EditChannelSubscription from './edit_channel_subscription';
-import SelectChannelSubscription from './select_channel_subscription';
+import SelectChannelSubscription, {SubscriptionsTab} from './select_channel_subscription';
 import {SharedProps} from './shared_props';
 
 type State = {
@@ -14,35 +14,49 @@ type State = {
     selectedSubscription: ChannelSubscription | null;
     creatingSubscriptionTemplate: boolean;
     selectedSubscriptionTemplate: ChannelSubscription | null;
-
+    activeTab: SubscriptionsTab;
+    viewChanged: boolean;
 }
 
 type Props = SharedProps & {
     allProjectMetadata: AllProjectMetadata | null;
+    open: boolean;
 }
 
 export default class ChannelSubscriptionsModalInner extends React.PureComponent<Props, State> {
-    state = {
+    state: State = {
         creatingSubscription: false,
         selectedSubscription: null,
         creatingSubscriptionTemplate: false,
         selectedSubscriptionTemplate: null,
+        activeTab: 'subscriptions',
+        viewChanged: false,
+    };
+
+    private edit = React.createRef<EditChannelSubscription>();
+
+    requestClose = (): void => {
+        if (this.edit.current) {
+            this.edit.current.requestClose();
+        } else {
+            this.props.close();
+        }
     };
 
     showEditChannelSubscription = (subscription: ChannelSubscription): void => {
-        this.setState({selectedSubscription: subscription, creatingSubscription: false});
+        this.setState({selectedSubscription: subscription, creatingSubscription: false, viewChanged: true});
     };
 
     showEditSubscriptionTemplate = (subscription: ChannelSubscription): void => {
-        this.setState({selectedSubscriptionTemplate: subscription, creatingSubscriptionTemplate: false});
+        this.setState({selectedSubscriptionTemplate: subscription, creatingSubscriptionTemplate: false, viewChanged: true});
     };
 
     showCreateChannelSubscription = (): void => {
-        this.setState({selectedSubscription: null, creatingSubscription: true});
+        this.setState({selectedSubscription: null, creatingSubscription: true, viewChanged: true});
     };
 
     showCreateSubscriptionTemplate = (): void => {
-        this.setState({selectedSubscriptionTemplate: null, creatingSubscriptionTemplate: true});
+        this.setState({selectedSubscriptionTemplate: null, creatingSubscriptionTemplate: true, viewChanged: true});
     };
 
     finishEditSubscription = (): void => {
@@ -52,11 +66,18 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
     render(): JSX.Element {
         const {selectedSubscription, creatingSubscription, creatingSubscriptionTemplate, selectedSubscriptionTemplate} = this.state;
 
-        let form: JSX.Element;
+        // Only the first view plays the enter transition; later views swap in place.
+        let open;
+        if (!this.state.viewChanged) {
+            open = this.props.open;
+        }
+
         if (selectedSubscription || creatingSubscription || creatingSubscriptionTemplate || selectedSubscriptionTemplate) {
-            form = (
+            return (
                 <EditChannelSubscription
                     {...this.props}
+                    ref={this.edit}
+                    open={open}
                     finishEditSubscription={this.finishEditSubscription}
                     selectedSubscription={selectedSubscription}
                     creatingSubscription={creatingSubscription}
@@ -64,19 +85,20 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
                     selectedSubscriptionTemplate={selectedSubscriptionTemplate}
                 />
             );
-        } else {
-            form = (
-                <SelectChannelSubscription
-                    {...this.props}
-                    allProjectMetadata={this.props.allProjectMetadata}
-                    showEditChannelSubscription={this.showEditChannelSubscription}
-                    showCreateChannelSubscription={this.showCreateChannelSubscription}
-                    showEditSubscriptionTemplate={this.showEditSubscriptionTemplate}
-                    showCreateSubscriptionTemplate={this.showCreateSubscriptionTemplate}
-                />
-            );
         }
 
-        return form;
+        return (
+            <SelectChannelSubscription
+                {...this.props}
+                open={open}
+                activeTab={this.state.activeTab}
+                onTabChange={(activeTab) => this.setState({activeTab})}
+                allProjectMetadata={this.props.allProjectMetadata}
+                showEditChannelSubscription={this.showEditChannelSubscription}
+                showCreateChannelSubscription={this.showCreateChannelSubscription}
+                showEditSubscriptionTemplate={this.showEditSubscriptionTemplate}
+                showCreateSubscriptionTemplate={this.showCreateSubscriptionTemplate}
+            />
+        );
     }
 }

@@ -208,10 +208,19 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
             error = REQUIRED_MESSAGE;
         }
 
+        let errorId;
+        if (error && this.props.name) {
+            errorId = `${this.props.name}-error`;
+        }
+
         return (
-            <Setting error={error}>
+            <Setting
+                error={error}
+                errorId={errorId}
+            >
                 <Combobox
                     id={this.props.name}
+                    aria-describedby={errorId}
                     label={label && fieldLabel(label, required && !hideRequiredStar)}
                     aria-label={ariaLabel}
                     listboxLabel={typeof label === 'string' ? label : ariaLabel}

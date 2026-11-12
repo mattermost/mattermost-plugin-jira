@@ -17,6 +17,7 @@ export default function ConnectModal(props: Props) {
     return (
         <ModalOverlay
             open={props.visible}
+            onClose={props.closeModal}
             zIndex={Z_INDEX_MODAL}
         >
             <ConnectModalForm

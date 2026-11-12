@@ -46,6 +46,7 @@ describe('components/ChannelSubscriptionFilters', () => {
     const issueMetadata = useFieldForIssueMetadata(field, 'priority');
 
     const baseProps: Props = {
+        projectKey: 'KT',
         fields: getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []),
         values: [{
             key: 'priority',

@@ -1,12 +1,30 @@
 .jira-setting {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
     margin-bottom: var(--spacing-l);
 }
 
 .jira-setting__label {
     display: block;
-    margin: 0 0 var(--spacing-xxxs) var(--spacing-m);
+    margin: 0 0 0 var(--spacing-m);
     font-size: var(--font-size-75);
     color: rgba(var(--center-channel-color-rgb), 0.72);
+}
+
+.jira-setting__date {
+    display: flex;
+    gap: var(--spacing-s);
+
+    > * {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    // The native picker glyph ignores the Mattermost theme.
+    input[type='time']::-webkit-calendar-picker-indicator {
+        display: none;
+    }
 }
 
 .jira-setting__required {

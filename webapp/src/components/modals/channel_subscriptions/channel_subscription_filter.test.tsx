@@ -30,6 +30,7 @@ jest.mock('components/data_selectors/jira_team_selector', () => ({
 describe('components/ChannelSubscriptionFilter', () => {
     const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []);
     const baseProps: Props = {
+        projectKey: 'KT',
         fields,
         field: fields.find((f) => f.key === 'priority') as FilterField,
         value: {
@@ -200,7 +201,10 @@ describe('components/ChannelSubscriptionFilter', () => {
         );
 
         // With EXCLUDE_ANY for securitylevel, isValid should be false
-        const isValid = ref.current?.isValid();
+        let isValid;
+        act(() => {
+            isValid = ref.current?.isValid();
+        });
         expect(isValid).toBe(false);
 
         // The error is returned by checkInclusionError method

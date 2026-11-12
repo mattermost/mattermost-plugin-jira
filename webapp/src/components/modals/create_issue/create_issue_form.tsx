@@ -4,11 +4,13 @@
 import React from 'react';
 
 import {Button} from '@mattermost/compass-ui/components/button';
-import {Modal} from '@mattermost/compass-ui/components/modal';
+
 import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
 
 import {Post} from '@mattermost/types/posts';
 import {Team} from '@mattermost/types/teams';
+
+import Modal from 'components/modal';
 
 import {
     APIResponse,

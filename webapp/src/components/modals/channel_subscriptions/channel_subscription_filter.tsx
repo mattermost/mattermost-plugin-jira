@@ -10,6 +10,7 @@ import {Icon} from '@mattermost/compass-ui/components/icon';
 import {IconButton} from '@mattermost/compass-ui/components/icon-button';
 
 import SelectSetting from 'components/select_setting';
+import WithTooltip from 'components/with_tooltip';
 import JiraEpicSelector from 'components/data_selectors/jira_epic_selector';
 import JiraSprintSelector from 'components/data_selectors/jira_sprint_selector';
 
@@ -239,12 +240,14 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         let deleteButton;
         if (field) {
             deleteButton = (
-                <IconButton
-                    aria-label='Delete filter'
-                    destructive={true}
-                    icon={<Icon glyph={<TrashCanOutlineIcon/>}/>}
-                    onClick={this.openDeleteModal}
-                />
+                <WithTooltip label='Delete filter'>
+                    <IconButton
+                        aria-label='Delete filter'
+                        destructive={true}
+                        icon={<Icon glyph={<TrashCanOutlineIcon/>}/>}
+                        onClick={this.openDeleteModal}
+                    />
+                </WithTooltip>
             );
         } else {
             deleteButton = (
@@ -259,7 +262,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
         }
 
         let disableLastSelect = false;
-        let lastSelectPlaceholder;
+        let lastSelectPlaceholder = 'Values';
         if (value.inclusion === FilterFieldInclusion.EMPTY) {
             lastSelectPlaceholder = '';
             disableLastSelect = true;
@@ -378,6 +381,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     <SelectSetting
                         name={'fieldtype'}
                         aria-label='Field'
+                        placeholder='Field'
                         required={true}
                         hideRequiredStar={true}
                         options={fieldTypeOptions}
@@ -389,6 +393,7 @@ export default class ChannelSubscriptionFilter extends React.PureComponent<Props
                     <SelectSetting
                         name={'inclusion'}
                         aria-label='Inclusion'
+                        placeholder='Inclusion'
                         required={true}
                         hideRequiredStar={true}
                         options={inclusionSelectOptions}
@@ -434,28 +439,33 @@ export function EmptyChannelSubscriptionFilter(props: EmptyChannelSubscriptionFi
                 <SelectSetting
                     name={'fieldtype'}
                     aria-label='Field'
+                    placeholder='Field'
                     options={fieldTypeOptions}
                     onChange={handleFieldTypeChange}
                 />
                 <SelectSetting
                     name={'exclude'}
                     aria-label='Inclusion'
+                    placeholder='Inclusion'
                     options={[]}
                     isDisabled={true}
                 />
                 <SelectSetting
                     name={'values'}
                     aria-label='Values'
+                    placeholder='Values'
                     options={[]}
                     isDisabled={true}
                 />
                 <div className='jira-subscription-filter__action'>
-                    <IconButton
-                        aria-label='Remove filter'
-                        destructive={true}
-                        icon={<Icon glyph={<TrashCanOutlineIcon/>}/>}
-                        onClick={props.cancelAdd}
-                    />
+                    <WithTooltip label='Remove filter'>
+                        <IconButton
+                            aria-label='Remove filter'
+                            destructive={true}
+                            icon={<Icon glyph={<TrashCanOutlineIcon/>}/>}
+                            onClick={props.cancelAdd}
+                        />
+                    </WithTooltip>
                 </div>
             </div>
         </div>

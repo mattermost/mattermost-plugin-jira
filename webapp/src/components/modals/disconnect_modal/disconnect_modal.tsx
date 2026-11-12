@@ -17,6 +17,7 @@ export default function DisconnectModal(props: Props) {
     return (
         <ModalOverlay
             open={props.visible}
+            onClose={props.closeModal}
             zIndex={Z_INDEX_MODAL}
         >
             <DisconnectModalForm
