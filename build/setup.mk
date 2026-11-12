@@ -10,10 +10,10 @@ BUILD_TAG_LATEST = $(shell git describe --tags --match 'v*' --abbrev=0 2>/dev/nu
 BUILD_TAG_CURRENT = $(shell git tag --points-at HEAD)
 
 # Ensure that the build tools are compiled. Go's caching makes this quick.
-$(shell cd build/manifest && $(GO) build -ldflags '-X "main.BuildHashShort=$(BUILD_HASH_SHORT)" -X "main.BuildTagLatest=$(BUILD_TAG_LATEST)" -X "main.BuildTagCurrent=$(BUILD_TAG_CURRENT)"' -o ../bin/manifest)
+$(shell cd build/manifest && GOARCH= GOOS= $(GO) build -ldflags '-X "main.BuildHashShort=$(BUILD_HASH_SHORT)" -X "main.BuildTagLatest=$(BUILD_TAG_LATEST)" -X "main.BuildTagCurrent=$(BUILD_TAG_CURRENT)"' -o ../bin/manifest)
 
 # Ensure that the deployment tools are compiled. Go's caching makes this quick.
-$(shell cd build/pluginctl && $(GO) build -o ../bin/pluginctl)
+$(shell cd build/pluginctl && GOARCH= GOOS= $(GO) build -o ../bin/pluginctl)
 
 # Extract the plugin id from the manifest.
 PLUGIN_ID ?= $(shell build/bin/manifest id)

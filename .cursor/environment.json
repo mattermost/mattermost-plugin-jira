@@ -1,0 +1,27 @@
+{
+  "name": "Jira Plugin Cloud Agent",
+  "user": "ubuntu",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "install": "bash .cursor/scripts/cloud-agent-install.sh",
+  "start": "bash .cursor/scripts/cloud-agent-start.sh",
+  "terminals": [
+    {
+      "name": "jira-stack",
+      "command": "make e2e-env-up && echo 'E2E stack is healthy' && cd e2e/playwright && npx --yes tsx@4.23.15 ../../.cursor/fake-jira.ts",
+      "description": "Boots Mattermost and Postgres from e2e/playwright/docker-compose.yml, then runs the fake Jira (.cursor/fake-jira.ts, built on e2e/playwright/fake-jira/) in the foreground. Wait for '[fake-jira] Ready'. There is no real Jira here: never use `make e2e-real`, `npm run test:real-cloud`, `npm run test:real-jira` or Jira credentials. Open Mattermost at http://127.0.0.1:8065 (use 127.0.0.1, not localhost: the plugin rejects a localhost SiteURL). The server starts with no users; create the admin with `cd e2e/playwright && docker compose exec mattermost /mattermost/bin/mmctl --local user create --email sysadmin@example.com --username sysadmin --password 'Sys@dmin-sample1' --system-admin --email-verified`, then a team from the browser. Build and install the plugin with `MM_SERVICESETTINGS_ENABLEDEVELOPER=1 GOARCH=amd64 make e2e-dist && MM_SERVICESETTINGS_SITEURL=http://127.0.0.1:8065 MM_ADMIN_USERNAME=sysadmin MM_ADMIN_PASSWORD='Sys@dmin-sample1' ./build/bin/pluginctl deploy jira dist/e2e/jira-*-e2e.tar.gz` (the e2e bundle sends Atlassian OAuth and API calls to http://fake-jira:8090; `make dist` and `make deploy` would talk to the real Atlassian). Rerun it after every change, always with both variables: GOARCH=amd64 matches the amd64-only Mattermost image, and without it an arm64 agent's bundle can keep a stale plugin-linux-amd64 from an earlier build. In System Console > Plugins > Jira generate the Webhook Secret and the At Rest Encryption Key, then save. Install Jira Cloud with `/jira instance install cloud-oauth http://e2e.atlassian.net:8090`, click Configure in the DM from the jira bot and enter organization http://e2e.atlassian.net:8090, Client ID e2e-oauth-client-id and Client Secret e2e-oauth-client-secret. For Jira Server/Data Center use `/jira instance install server http://fake-jira:8090` instead. `/jira connect` then completes against the fake. The fake is seeded with project E2E and issues E2E-1 and E2E-2. Jira calls the plugin made: http://localhost:8090/__control/requests; responses that break Jira Cloud's API contract: http://localhost:8090/__control/contract-violations; inject errors with POST /__control/fault `{\"method\": \"GET\", \"path\": \"/rest/api/2/issue/E2E-1\", \"status\": 500}` (see e2e/playwright/support/fake_jira.ts). Reset the fake with `cd e2e/playwright && npx --yes tsx@4.23.15 ../../.cursor/fake-jira.ts --reset`. Inbound Jira webhooks are not sent by the fake; replay payloads from server/testdata/ as e2e/playwright/support/jira.ts does. Server logs: `cd e2e/playwright && docker compose logs mattermost`. Tests: `make e2e` or `cd e2e/playwright && npx playwright test tests/<spec>.spec.ts` (add JIRA_FLAVOR=server for the Server flavor). The suite reuses this fake and resets it, which drops tokens of users connected by hand; it also reinstalls the plugin with its own settings and reinstalls the Jira instance. Reset all data with `make e2e-env-down && make e2e-env-up`."
+    }
+  ],
+  "ports": [
+    {
+      "name": "Mattermost",
+      "port": 8065
+    },
+    {
+      "name": "Fake Jira",
+      "port": 8090
+    }
+  ]
+}
