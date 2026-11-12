@@ -47,7 +47,7 @@ fi
 
 if ! is_true "${CLOUD_AGENT_SKIP_E2E_DIST:-}"; then
     log "Building the e2e plugin bundle (Atlassian URLs point at the fake Jira)"
-    MM_SERVICESETTINGS_ENABLEDEVELOPER=1 make e2e-dist \
+    MM_SERVICESETTINGS_ENABLEDEVELOPER=1 GOARCH=amd64 make e2e-dist \
         || log "make e2e-dist failed; run it manually before deploying"
 fi
 
