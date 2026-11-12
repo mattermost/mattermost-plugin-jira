@@ -10,6 +10,7 @@ import {Combobox} from '@mattermost/compass-ui/components/combobox';
 import {IssueMetadata, SelectOption} from 'types/model';
 
 import {Z_INDEX_MENU_PORTAL} from 'utils/styles';
+import uniqueId from 'utils/unique_id';
 
 import {Props as SelectSettingProps} from 'components/select_setting';
 import Setting, {REQUIRED_MESSAGE, fieldLabel} from 'components/setting';
@@ -49,6 +50,8 @@ const toValues = (value: Props['value'] | null): string[] => {
 };
 
 export default class BackendSelector extends React.PureComponent<Props, State> {
+    private fallbackId = uniqueId('jira-backend-selector');
+
     static defaultProps = {
         isMulti: false,
     };
@@ -209,8 +212,8 @@ export default class BackendSelector extends React.PureComponent<Props, State> {
         }
 
         let errorId;
-        if (error && this.props.name) {
-            errorId = `${this.props.name}-error`;
+        if (error) {
+            errorId = `${this.props.name || this.fallbackId}-error`;
         }
 
         return (

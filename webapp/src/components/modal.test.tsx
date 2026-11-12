@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {render, screen, waitFor} from '@testing-library/react';
+import {
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {Select} from '@mattermost/compass-ui/components/select';
@@ -74,6 +79,25 @@ describe('components/Modal', () => {
 
         expect(onCancel).toHaveBeenCalledTimes(1);
         expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    test('should leave body Escape to the host while the modal is closing', () => {
+        document.removeEventListener('keydown', swallowEscape);
+        const onClose = jest.fn();
+        render(
+            <Modal
+                open={false}
+                title='Title'
+                onClose={onClose}
+            >
+                {'Body'}
+            </Modal>,
+        );
+
+        const notPrevented = fireEvent.keyDown(document.body, {key: 'Escape'});
+
+        expect(notPrevented).toBe(true);
+        expect(onClose).not.toHaveBeenCalled();
     });
 
     test('should leave Escape to an open menu inside the dialog', async () => {

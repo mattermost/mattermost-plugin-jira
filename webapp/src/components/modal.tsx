@@ -7,7 +7,7 @@ import {Modal as CompassModal, ModalProps} from '@mattermost/compass-ui/componen
 
 import {useTooltip} from 'components/with_tooltip';
 
-type StackEntry = {close: () => void};
+type StackEntry = {isOpen: () => boolean; close: () => void};
 
 const openModals: StackEntry[] = [];
 
@@ -23,16 +23,14 @@ export default function Modal({onKeyDown, backLabel = 'Back', backButtonProps, .
 
     useEffect(() => {
         const entry: StackEntry = {
-            close: () => {
-                if (latest.current.open !== false) {
-                    latest.current.onClose?.();
-                }
-            },
+            isOpen: () => latest.current.open !== false && Boolean(latest.current.onClose),
+            close: () => latest.current.onClose?.(),
         };
         openModals.push(entry);
 
         const handleBodyEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && e.target === document.body && openModals[openModals.length - 1] === entry) {
+            const topmost = openModals.filter((m) => m.isOpen()).pop();
+            if (e.key === 'Escape' && e.target === document.body && topmost === entry) {
                 e.preventDefault();
                 entry.close();
             }

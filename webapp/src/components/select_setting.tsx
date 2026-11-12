@@ -8,6 +8,7 @@ import {Combobox} from '@mattermost/compass-ui/components/combobox';
 import Setting, {REQUIRED_MESSAGE, fieldLabel} from 'components/setting';
 
 import {Z_INDEX_MENU_PORTAL} from 'utils/styles';
+import uniqueId from 'utils/unique_id';
 
 import {SelectOption} from 'types/model';
 
@@ -51,6 +52,8 @@ const toArray = (value: SelectValue): SelectOption[] => {
 const valueKey = (value: SelectValue) => toArray(value).map((opt) => opt.value).join(',');
 
 export default class SelectSetting extends React.PureComponent<Props, State> {
+    private fallbackId = uniqueId('jira-select-setting');
+
     state: State = {invalid: false, query: ''};
 
     componentDidMount() {
@@ -129,8 +132,8 @@ export default class SelectSetting extends React.PureComponent<Props, State> {
 
         const error = required && this.state.invalid ? REQUIRED_MESSAGE : null;
         let errorId;
-        if (error && this.props.name) {
-            errorId = `${this.props.name}-error`;
+        if (error) {
+            errorId = `${this.props.name || this.fallbackId}-error`;
         }
 
         return (

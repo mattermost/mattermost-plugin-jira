@@ -31,6 +31,8 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props, Stat
 
     // Keeps the last open view rendered while the overlay plays its exit.
     private lastOpenProps: Props | null = null;
+    private session = 0;
+    private wasOpen = false;
 
     componentDidUpdate(prevProps: Props) {
         if (prevProps.channel && !this.props.channel) {
@@ -83,13 +85,18 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props, Stat
     render(): JSX.Element {
         const isModalOpen = Boolean(this.props.channel && this.state.showModal);
         if (isModalOpen) {
+            if (!this.wasOpen) {
+                this.session += 1;
+            }
             this.lastOpenProps = this.props;
         }
+        this.wasOpen = isModalOpen;
 
         let inner;
         if (this.lastOpenProps) {
             inner = (
                 <ChannelSubscriptionsModalInner
+                    key={this.session}
                     ref={this.inner}
                     allProjectMetadata={this.state.allProjectMetadata}
                     {...this.lastOpenProps}

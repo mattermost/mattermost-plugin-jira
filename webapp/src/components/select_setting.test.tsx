@@ -93,4 +93,22 @@ describe('components/SelectSetting', () => {
             ...Array.from({length: 10}, (_, i) => `Project 14${i}`),
         ]);
     });
+
+    test('should describe a required error even without a field name', () => {
+        const ref = React.createRef<SelectSetting>();
+        render(
+            <SelectSetting
+                ref={ref}
+                aria-label='Values'
+                options={options}
+                required={true}
+            />,
+        );
+
+        act(() => {
+            ref.current?.isValid();
+        });
+
+        expect(screen.getByRole('combobox', {name: 'Values'})).toHaveAccessibleDescription('This field is required.');
+    });
 });

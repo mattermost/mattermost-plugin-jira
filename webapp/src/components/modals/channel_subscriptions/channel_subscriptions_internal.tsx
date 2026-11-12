@@ -68,7 +68,7 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
 
         // Only the first view plays the enter transition; later views swap in place.
         let open;
-        if (!this.state.viewChanged) {
+        if (!this.state.viewChanged || !this.props.open) {
             open = this.props.open;
         }
 

@@ -119,6 +119,29 @@ describe('components/ChannelSettingsModal', () => {
         expect(screen.getByRole('dialog', {name: 'Jira Subscriptions'})).toBeInTheDocument();
     });
 
+    test('should start from the list when reopened before the exit finishes', async () => {
+        const {rerender} = await openModal(baseProps);
+        await userEvent.click(screen.getByRole('button', {name: 'Create Subscription'}));
+        expect(screen.getByRole('dialog', {name: 'New Jira Subscription'})).toBeInTheDocument();
+
+        const ui = (channel: Props['channel']) => (
+            <ChannelSubscriptionsModal
+                {...baseProps}
+                subscriptionTemplates={[]}
+                channel={channel}
+            />
+        );
+        await act(async () => {
+            rerender(ui(null));
+        });
+        await act(async () => {
+            rerender(ui(testChannel as unknown as Props['channel']));
+        });
+
+        expect(screen.getByRole('dialog', {name: 'Jira Subscriptions'})).toBeInTheDocument();
+        expect(screen.queryByRole('dialog', {name: 'New Jira Subscription'})).not.toBeInTheDocument();
+    });
+
     test('should close when the backdrop is clicked', async () => {
         const close = jest.fn();
         await openModal({...baseProps, close});
