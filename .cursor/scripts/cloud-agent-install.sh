@@ -45,6 +45,12 @@ if ! is_true "${CLOUD_AGENT_SKIP_WEBAPP_DEPS:-}" && [[ -f webapp/package-lock.js
     npm ci --prefix webapp
 fi
 
+if ! is_true "${CLOUD_AGENT_SKIP_E2E_DIST:-}"; then
+    log "Building the e2e plugin bundle (Atlassian URLs point at the fake Jira)"
+    MM_SERVICESETTINGS_ENABLEDEVELOPER=1 make e2e-dist \
+        || log "make e2e-dist failed; run it manually before deploying"
+fi
+
 if ! is_true "${CLOUD_AGENT_SKIP_PLAYWRIGHT:-}" && [[ -f e2e/playwright/package.json ]]; then
     log "Installing Playwright browsers for e2e/"
     if [[ -f e2e/playwright/package-lock.json ]]; then
@@ -52,8 +58,13 @@ if ! is_true "${CLOUD_AGENT_SKIP_PLAYWRIGHT:-}" && [[ -f e2e/playwright/package.
     else
         npm install --prefix e2e/playwright
     fi
+    # Satisfies the Makefile's e2e/playwright/node_modules target so `make e2e` skips a second npm ci.
+    touch e2e/playwright/node_modules
     npx --prefix e2e/playwright playwright install chromium --with-deps \
         || log "Playwright browser install failed; will retry next boot"
+    log "Caching tsx for the fake Jira launcher"
+    (cd e2e/playwright && npx --yes tsx@4.23.15 --version >/dev/null) \
+        || log "tsx download failed; the jira-stack terminal will retry"
 fi
 
 log "Tool versions:"

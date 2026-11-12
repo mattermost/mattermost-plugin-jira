@@ -18,6 +18,15 @@ if [[ -f .cursor/cursor.md ]]; then
     log "Materialized Cloud Agent instructions at .cursor/AGENTS.md"
 fi
 
+# The e2e bundle (`make e2e-dist`) sends Atlassian traffic to the fake Jira on this machine, and its
+# OAuth flows redirect the agent's browser through these hosts. Mattermost resolves them via
+# extra_hosts in e2e/playwright/docker-compose.yml; Playwright's Chromium via --host-resolver-rules.
+for host in fake-jira e2e.atlassian.net; do
+    if ! grep -qE "^127\.0\.0\.1[[:space:]]+${host//./\\.}$" /etc/hosts; then
+        echo "127.0.0.1 ${host}" | sudo tee -a /etc/hosts >/dev/null
+    fi
+done
+
 if [[ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]]; then
     sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 >/dev/null 2>&1 || \
         log "Could not relax AppArmor userns restriction; userns-based tests may fail"

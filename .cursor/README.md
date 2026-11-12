@@ -2,11 +2,12 @@
 
 This directory defines the checked-in environment for Cursor Cloud Agents.
 
-- `environment.json` selects the Dockerfile build and declares the Mattermost port.
+- `environment.json` selects the Dockerfile build, declares the Mattermost (8065) and fake Jira (8090) ports, and defines the `jira-stack` terminal, which runs `make e2e-env-up` and then the fake Jira in the foreground.
 - `Dockerfile` installs Go, Node.js, Docker-in-Docker support, Docker Compose, AWS CLI, Chromium runtime libraries, and cached Mattermost/Postgres image archives.
-- `scripts/cloud-agent-install.sh` hydrates Go and webapp dependencies and runs `make apply`.
-- `scripts/cloud-agent-start.sh` starts `dockerd`, fixes socket permissions, logs in to Docker Hub when credentials are configured, loads cached images, and materializes `.cursor/AGENTS.md`.
-- `cursor.md` contains cloud-only instructions for running Mattermost and deploying this plugin.
+- `fake-jira.ts` runs the E2E suite's fake Jira (`e2e/playwright/fake-jira/`) on its own via `tsx`, so agents can use the plugin from a browser. `--reset` restores its seeded state.
+- `scripts/cloud-agent-install.sh` hydrates Go, webapp and e2e dependencies, runs `make apply`, builds the e2e bundle (`make e2e-dist`, Atlassian URLs pointed at the fake) and caches `tsx`.
+- `scripts/cloud-agent-start.sh` maps `fake-jira` and `e2e.atlassian.net` to `127.0.0.1` in `/etc/hosts`, starts `dockerd`, fixes socket permissions, logs in to Docker Hub when credentials are configured, loads cached images, and materializes `.cursor/AGENTS.md`.
+- `cursor.md` contains cloud-only instructions for running Mattermost with the fake Jira and deploying this plugin.
 
 `.cursor/AGENTS.md` is generated at cloud-agent startup from `cursor.md` and should not be committed.
 

@@ -4,6 +4,8 @@ This repository uses a Dockerfile-backed Cursor Cloud Agent environment with Doc
 
 Browser automation and screenshots use Cursor's `computerUse` subagent (a Cursor-provided Chrome desktop). Nothing extra is installed in the image for it.
 
+There is no real Jira in this environment. The plugin runs against the E2E suite's fake Jira (`e2e/playwright/fake-jira/`), started by `.cursor/fake-jira.ts` in the `jira-stack` terminal.
+
 ## Skip Flags
 
 Set these environment variables to shorten boot when you already have dependencies or images:
@@ -11,6 +13,7 @@ Set these environment variables to shorten boot when you already have dependenci
 - `CLOUD_AGENT_SKIP_GO_MOD=1` — skip `go mod download`
 - `CLOUD_AGENT_SKIP_BUILD_TOOLS=1` — skip `make apply` (manifest/pluginctl build)
 - `CLOUD_AGENT_SKIP_WEBAPP_DEPS=1` — skip `npm ci --prefix webapp`
+- `CLOUD_AGENT_SKIP_E2E_DIST=1` — skip building the e2e plugin bundle (`make e2e-dist`)
 - `CLOUD_AGENT_SKIP_PLAYWRIGHT=1` — skip Playwright browser install (no-op unless `e2e/` exists)
 - `CLOUD_AGENT_SKIP_IMAGE_LOAD=1` — skip loading preloaded Docker image archives
 
@@ -23,139 +26,74 @@ When `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are configured as Cloud Agent se
 - **Go server plugin** (`server/`) — compiled with `CGO_ENABLED=0`
 - **React/TypeScript webapp** (`webapp/`) — bundled with Webpack
 
-The plugin id is `jira`. Bundles are named `jira-<version>.tar.gz` under `dist/`. `make apply` generates `server/manifest.go` and `webapp/src/manifest.ts` (both gitignored).
+The plugin id is `jira`. Release bundles are named `jira-<version>.tar.gz` under `dist/`; the e2e bundle used here is `dist/e2e/jira-<version>-e2e.tar.gz`. `make apply` generates `server/manifest.go` and `webapp/src/manifest.ts` (both gitignored).
 
 Minimum Mattermost server version is `10.7.0` (`plugin.json`). The preloaded image is Mattermost Enterprise `master`, which satisfies that requirement.
 
-## Start Mattermost
+## Start Mattermost And The Fake Jira
 
-After cloud-agent startup, Docker should be ready and Mattermost/Postgres images should be loaded. Start the stack:
-
-```bash
-export MM_IMAGE="${MATTERMOST_IMAGE:-mattermostdevelopment/mattermost-enterprise-edition}:${MATTERMOST_IMAGE_TAG:-master}"
-export MM_PLATFORM="${MATTERMOST_PLATFORM:-linux/amd64}"
-export POSTGRES_IMAGE="${POSTGRES_IMAGE:-postgres}:${POSTGRES_IMAGE_TAG:-16-alpine}"
-export MM_DB_USER=mmuser
-export MM_DB_PASSWORD=mostest
-export MM_DB_NAME=mattermost_test
-export MM_ADMIN_USERNAME=admin
-export MM_ADMIN_PASSWORD=Password123
-
-docker network create mattermost-dev || true
-docker rm -f mattermost mm-postgres 2>/dev/null || true
-docker volume create mm-postgres-data
-
-docker run -d \
-  --name mm-postgres \
-  --network mattermost-dev \
-  -e POSTGRES_USER="$MM_DB_USER" \
-  -e POSTGRES_PASSWORD="$MM_DB_PASSWORD" \
-  -e POSTGRES_DB="$MM_DB_NAME" \
-  --health-cmd='pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
-  --health-interval=5s \
-  --health-timeout=5s \
-  --health-retries=24 \
-  -v mm-postgres-data:/var/lib/postgresql/data \
-  "$POSTGRES_IMAGE"
-
-timeout=120
-elapsed=0
-until [ "$(docker inspect -f '{{.State.Health.Status}}' mm-postgres)" = "healthy" ]; do
-  if [ $elapsed -ge $timeout ]; then
-    echo "PostgreSQL failed to become healthy within ${timeout}s"
-    docker logs mm-postgres
-    exit 1
-  fi
-  sleep 2
-  elapsed=$((elapsed + 2))
-done
-
-mkdir -p /tmp/mattermost/{config,data,logs,plugins,client-plugins,bleve-indexes}
-chmod -R 777 /tmp/mattermost
-
-docker run -d \
-  --name mattermost \
-  --platform "$MM_PLATFORM" \
-  --network mattermost-dev \
-  -p 127.0.0.1:8065:8065 \
-  -e MM_SQLSETTINGS_DRIVERNAME=postgres \
-  -e "MM_SQLSETTINGS_DATASOURCE=postgres://$MM_DB_USER:$MM_DB_PASSWORD@mm-postgres:5432/$MM_DB_NAME?sslmode=disable&connect_timeout=10" \
-  -e MM_SERVICESETTINGS_SITEURL=http://localhost:8065 \
-  -e MM_SERVICESETTINGS_ENABLEDEVELOPER=true \
-  -e MM_SERVICESETTINGS_ENABLELOCALMODE=true \
-  -e MM_PLUGINSETTINGS_ENABLEUPLOADS=true \
-  -e MM_PLUGINSETTINGS_ENABLEMARKETPLACE=false \
-  -e MM_FILESETTINGS_MAXFILESIZE=256000000 \
-  -v /tmp/mattermost/config:/mattermost/config \
-  -v /tmp/mattermost/data:/mattermost/data \
-  -v /tmp/mattermost/logs:/mattermost/logs \
-  -v /tmp/mattermost/plugins:/mattermost/plugins \
-  -v /tmp/mattermost/client-plugins:/mattermost/client/plugins \
-  -v /tmp/mattermost/bleve-indexes:/mattermost/bleve-indexes \
-  "$MM_IMAGE"
-```
-
-Wait for Mattermost, then create a system admin:
+The `jira-stack` terminal (`.cursor/environment.json`) does this on boot. To run it by hand:
 
 ```bash
-timeout=120
-elapsed=0
-until curl -fsS http://localhost:8065/api/v4/system/ping | jq -e '.status == "OK"' >/dev/null; do
-  if [ $elapsed -ge $timeout ]; then
-    echo "Mattermost failed to become ready within ${timeout}s"
-    docker logs mattermost | tail -50
-    exit 1
-  fi
-  sleep 2
-  elapsed=$((elapsed + 2))
-done
-
-docker exec mattermost mmctl --local user search "$MM_ADMIN_USERNAME" | grep -q "$MM_ADMIN_USERNAME" || \
-  docker exec mattermost mmctl --local user create \
-    --email admin@example.com \
-    --username "$MM_ADMIN_USERNAME" \
-    --password "$MM_ADMIN_PASSWORD" \
-    --system-admin
+make e2e-env-up
+cd e2e/playwright && npx --yes tsx@4.23.15 ../../.cursor/fake-jira.ts
 ```
 
-Mattermost will be available on port `8065`.
+`make e2e-env-up` starts Postgres and Mattermost from `e2e/playwright/docker-compose.yml`. Mattermost listens on `http://127.0.0.1:8065` and resolves `fake-jira` and `e2e.atlassian.net` to this machine via `extra_hosts`. The fake Jira listens on port `8090`; wait for `[fake-jira] Ready`. The start hook maps the same two hostnames in `/etc/hosts` so the agent's browser can follow the OAuth redirects.
 
-`MM_FILESETTINGS_MAXFILESIZE=256000000` raises the upload limit so plugin bundles can be deployed via `pluginctl`. The default limit is 100 MB.
+Always open Mattermost at `http://127.0.0.1:8065`, not `localhost`: it is the SiteURL, and the plugin rejects a `localhost` SiteURL.
+
+The server starts with no users. Create the system admin (the Playwright suite uses the same credentials):
+
+```bash
+cd e2e/playwright && docker compose exec mattermost /mattermost/bin/mmctl --local user create \
+  --email sysadmin@example.com \
+  --username sysadmin \
+  --password 'Sys@dmin-sample1' \
+  --system-admin \
+  --email-verified
+```
+
+Then create a team from the browser.
 
 ## Deploy The Plugin
 
-Use `MM_DEBUG=true` and `MM_SERVICESETTINGS_ENABLEDEVELOPER=1` for faster local-only builds (debug symbols + single platform binary):
+Build the e2e bundle. It compiles the Jira Cloud OAuth and API base URLs to `http://fake-jira:8090`. Do not use `make dist` or `make deploy` here: those bundles talk to the real Atlassian.
 
 ```bash
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-export MM_ADMIN_USERNAME=admin
-export MM_ADMIN_PASSWORD=Password123
-
-MM_DEBUG=true MM_SERVICESETTINGS_ENABLEDEVELOPER=1 make dist
-./build/bin/pluginctl deploy jira dist/jira-*.tar.gz
+make e2e-dist
+MM_SERVICESETTINGS_SITEURL=http://127.0.0.1:8065 \
+MM_ADMIN_USERNAME=sysadmin \
+MM_ADMIN_PASSWORD='Sys@dmin-sample1' \
+  ./build/bin/pluginctl deploy jira dist/e2e/jira-*-e2e.tar.gz
 ```
 
-Or use the Makefile deploy target (rebuilds via `make dist`):
+Rerun both commands after every change. The install hook builds the bundle once (`MM_SERVICESETTINGS_ENABLEDEVELOPER=1`, single platform); set the same variable to keep rebuilds fast.
 
-```bash
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-export MM_ADMIN_USERNAME=admin
-export MM_ADMIN_PASSWORD=Password123
+In **System Console > Plugins > Jira**, generate the Webhook Secret and the At Rest Encryption Key, then save.
 
-MM_DEBUG=true MM_SERVICESETTINGS_ENABLEDEVELOPER=1 make deploy
-```
+## Connect Jira
 
-For iterative webapp work:
+Jira Cloud (OAuth 2.0):
 
-```bash
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-export MM_ADMIN_USERNAME=admin
-export MM_ADMIN_PASSWORD=Password123
+1. Run `/jira instance install cloud-oauth http://e2e.atlassian.net:8090`.
+2. In the DM from the `jira` bot, click **Configure** and enter organization `http://e2e.atlassian.net:8090`, Client ID `e2e-oauth-client-id`, Client Secret `e2e-oauth-client-secret`.
+3. Run `/jira connect`. The OAuth flow completes against the fake.
 
-MM_DEBUG=true MM_SERVICESETTINGS_ENABLEDEVELOPER=1 make watch
-```
+Jira Server / Data Center (OAuth 1.0a): run `/jira instance install server http://fake-jira:8090`, then `/jira connect`.
 
-Most plugin code, tests, and UI work do not need a live Jira. Connecting a Jira instance (`/jira install` / `/jira instance install`) is only required when verifying webhooks, issue create/attach, or OAuth flows. See `readme.md` for local Jira Server Docker setup if that is in scope.
+The fake is seeded with project `E2E` and issues `E2E-1` and `E2E-2`. Use its control API (see `e2e/playwright/support/fake_jira.ts`):
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET http://localhost:8090/__control/requests` | Every Jira call the plugin made |
+| `GET http://localhost:8090/__control/contract-violations` | Cloud requests/responses that break Atlassian's OpenAPI contract |
+| `POST http://localhost:8090/__control/fault` | Inject an error, e.g. `{"method": "GET", "path": "/rest/api/2/issue/E2E-1", "status": 500}` |
+| `POST http://localhost:8090/__control/reset` | Restore the seeded state (also `npx --yes tsx@4.23.15 ../../.cursor/fake-jira.ts --reset` from `e2e/playwright`) |
+
+The fake does not send webhooks. To exercise inbound Jira events, replay payloads from `server/testdata/` the way `e2e/playwright/support/jira.ts` does.
+
+Never use the real-Jira lanes (`make e2e-real`, `npm run test:real-cloud`, `npm run test:real-jira`) or Jira credentials.
 
 ## Lint, Test, and Type Check
 
@@ -166,16 +104,19 @@ Most plugin code, tests, and UI work do not need a live Jira. Connecting a Jira 
 | Webapp unit tests | `cd webapp && npm run test` |
 | Server lint | `make check-style` |
 | Server unit tests | `make test` or `go test ./...` |
-| Full plugin build | `MM_DEBUG=true MM_SERVICESETTINGS_ENABLEDEVELOPER=1 make dist` |
+| E2E type check | `cd e2e/playwright && npm run tsc` |
+| E2E suite | `make e2e` or `cd e2e/playwright && npx playwright test tests/<spec>.spec.ts` |
 
 `make apply` must run before compiling or testing so generated manifests exist.
+
+The Playwright suite reuses the running fake Jira and resets it, which drops the tokens of users connected by hand. It also reinstalls the plugin with its own settings and reinstalls the Jira instance. Set `JIRA_FLAVOR=server` to run it against the Server flavor.
 
 ## Drive The Mattermost UI
 
 Use the `computerUse` subagent's Chrome desktop against the running local Mattermost instance:
 
-1. Open `http://localhost:8065/login`
-2. Sign in as `admin` / `Password123`
+1. Open `http://127.0.0.1:8065/login`
+2. Sign in as `sysadmin` / `Sys@dmin-sample1`
 3. Confirm the Jira plugin is enabled (slash command `/jira` should be available)
 4. Screenshot to `/tmp/artifacts/` when a visual record is needed
 
@@ -197,9 +138,9 @@ Do not print AWS credentials or secret environment variables. If `aws sts get-ca
 
 - Server tests use HTTP mocks (`httpmock`) and do not require a live Jira or PostgreSQL instance.
 - `make apply` must run before `go test` / `make dist`; `server/manifest.go` and `webapp/src/manifest.ts` are generated and gitignored.
-- Plugin deploy needs `MM_PLUGINSETTINGS_ENABLEUPLOADS=true` and `FileSettings.MaxFileSize` large enough for the bundle (see **Start Mattermost**). If Mattermost was started without `MM_FILESETTINGS_MAXFILESIZE`, raise it before deploy: `docker exec mattermost mmctl --local config set FileSettings.MaxFileSize 256000000 && docker exec mattermost mmctl --local config reload`.
-- Without `MM_SERVICESETTINGS_ENABLEDEVELOPER=1`, `make dist` cross-compiles five architectures and is much slower.
-- Connecting Jira to Mattermost requires a SiteURL that Jira can reach. `http://localhost:8065` is enough for in-Mattermost plugin UI and slash-command checks; it is not enough for Jira webhooks or Application Links. Use a tunnel or `host.docker.internal` only when that flow is in scope.
+- The e2e bundle logs a warning on activation that the Atlassian URLs are overridden. That is expected; never ship it.
+- Without `MM_SERVICESETTINGS_ENABLEDEVELOPER=1`, `make e2e-dist` cross-compiles five architectures and is much slower.
+- If the browser cannot reach `fake-jira` or `e2e.atlassian.net`, check that `/etc/hosts` maps both to `127.0.0.1` (the start hook adds them).
 - Multiple Jira instances require Mattermost Professional, Enterprise, or Enterprise Advanced.
 
 ## Troubleshooting
@@ -207,7 +148,7 @@ Do not print AWS credentials or secret environment variables. If `aws sts get-ca
 - If Docker Hub rate limits block fallback pulls, configure `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` as Cloud Agent secrets and restart the agent.
 - If Docker is unavailable, inspect `/tmp/docker-service-start.log` and `/tmp/dockerd.log`.
 - If artifact uploads fail, run `aws sts get-caller-identity` and verify the target S3 URI before retrying.
-- If the plugin upload fails with `Uploaded plugin size exceeds limit`, confirm `MM_FILESETTINGS_MAXFILESIZE=256000000` was set when starting Mattermost (or use the `mmctl` command in **Gotchas**).
-- If the plugin upload fails for other reasons, confirm `MM_PLUGINSETTINGS_ENABLEUPLOADS=true` and the admin credentials are exported.
-- If Mattermost is unhealthy, run `docker logs mattermost` and `docker logs mm-postgres`.
-- To reset the local Mattermost stack, run `docker rm -f mattermost mm-postgres` and remove `/tmp/mattermost` or `mm-postgres-data` if persisted data is not needed.
+- If `pluginctl deploy` fails, confirm the admin credentials are exported and the stack is healthy (`cd e2e/playwright && docker compose ps`).
+- If the plugin calls fail with `fake-jira has no route for ...`, the flow needs a new route in `e2e/playwright/fake-jira/server.ts`.
+- Mattermost logs: `cd e2e/playwright && docker compose logs mattermost`.
+- To reset all Mattermost data, run `make e2e-env-down && make e2e-env-up` (Postgres uses tmpfs).
