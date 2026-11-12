@@ -21,8 +21,9 @@ export default async function globalSetup() {
 }
 
 // A fake already running on the port (the Cursor cloud agent's `.cursor/fake-jira.ts`) is reset and left running.
+// Probes a control route because injected faults can't affect it, unlike /status.
 async function startOrReuseFakeJira(): Promise<() => Promise<void>> {
-    const running = await fetch(`${fakeJiraControlURL}/status`).then((res) => res.ok, () => false);
+    const running = await fetch(`${fakeJiraControlURL}/__control/requests`).then((res) => res.ok, () => false);
     if (running) {
         await fakeJira.reset();
         return async () => {};

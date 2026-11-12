@@ -61,14 +61,17 @@ Then create a team from the browser.
 Build the e2e bundle. It compiles the Jira Cloud OAuth and API base URLs to `http://fake-jira:8090`. Do not use `make dist` or `make deploy` here: those bundles talk to the real Atlassian.
 
 ```bash
-make e2e-dist
+MM_SERVICESETTINGS_ENABLEDEVELOPER=1 GOARCH=amd64 make e2e-dist
 MM_SERVICESETTINGS_SITEURL=http://127.0.0.1:8065 \
 MM_ADMIN_USERNAME=sysadmin \
 MM_ADMIN_PASSWORD='Sys@dmin-sample1' \
   ./build/bin/pluginctl deploy jira dist/e2e/jira-*-e2e.tar.gz
 ```
 
-Rerun both commands after every change. The install hook builds the bundle once (`MM_SERVICESETTINGS_ENABLEDEVELOPER=1`, single platform); set the same variable to keep rebuilds fast.
+Rerun both commands after every change. The install hook builds the bundle the same way. Always set both variables together:
+
+- `MM_SERVICESETTINGS_ENABLEDEVELOPER=1` builds a single platform instead of five.
+- `GOARCH=amd64` makes that platform `linux-amd64`, the only one the Mattermost image runs. Without it, an arm64 agent builds `plugin-linux-arm64`. `server/dist` is never cleaned, so the bundle keeps the `plugin-linux-amd64` from an earlier build, and Mattermost silently loads that old code.
 
 In **System Console > Plugins > Jira**, generate the Webhook Secret and the At Rest Encryption Key, then save.
 
@@ -139,7 +142,7 @@ Do not print AWS credentials or secret environment variables. If `aws sts get-ca
 - Server tests use HTTP mocks (`httpmock`) and do not require a live Jira or PostgreSQL instance.
 - `make apply` must run before `go test` / `make dist`; `server/manifest.go` and `webapp/src/manifest.ts` are generated and gitignored.
 - The e2e bundle logs a warning on activation that the Atlassian URLs are overridden. That is expected; never ship it.
-- Without `MM_SERVICESETTINGS_ENABLEDEVELOPER=1`, `make e2e-dist` cross-compiles five architectures and is much slower.
+- Without `MM_SERVICESETTINGS_ENABLEDEVELOPER=1`, `make e2e-dist` cross-compiles five architectures and is much slower. With it, also set `GOARCH=amd64` (see **Deploy The Plugin**).
 - If the browser cannot reach `fake-jira` or `e2e.atlassian.net`, check that `/etc/hosts` maps both to `127.0.0.1` (the start hook adds them).
 - Multiple Jira instances require Mattermost Professional, Enterprise, or Enterprise Advanced.
 
