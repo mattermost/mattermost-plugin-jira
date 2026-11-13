@@ -119,6 +119,7 @@ export default class Input extends React.PureComponent<Props, State> {
 
         if (type === 'date' || type === 'datetime-local') {
             const [date = '', time = ''] = common.value.toString().split('T');
+            const locked = this.props.disabled || this.props.readOnly;
             const labelId = id && `${id}-label`;
             let errorId;
             if (message && id) {
@@ -147,7 +148,7 @@ export default class Input extends React.PureComponent<Props, State> {
                         <DateRangePicker
                             id={id}
                             value={date}
-                            disabled={this.props.disabled}
+                            disabled={locked}
                             zIndex={Z_INDEX_MENU_PORTAL}
                             onChange={(nextDate) => this.changeValue(type === 'date' ? nextDate : `${nextDate}T${time || '00:00'}`)}
                         />
@@ -156,11 +157,11 @@ export default class Input extends React.PureComponent<Props, State> {
                                 aria-label='Time'
                                 type='time'
                                 value={time}
-                                disabled={this.props.disabled || !date}
+                                disabled={locked || !date}
                                 onChange={(e) => this.changeValue(`${date}T${e.target.value}`)}
                             />
                         )}
-                        {date && !this.props.disabled && (
+                        {date && !locked && (
                             <WithTooltip label='Clear'>
                                 <IconButton
                                     aria-label={typeof this.props.label === 'string' ? `Clear ${this.props.label}` : 'Clear date'}

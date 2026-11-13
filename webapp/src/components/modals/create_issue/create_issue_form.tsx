@@ -371,7 +371,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                     confirmButtonText='Discard'
                     destructive={true}
                     onCancel={() => this.setState({showDiscardConfirm: false})}
-                    onConfirm={() => this.props.close()}
+                    onConfirm={() => this.setState({showDiscardConfirm: false}, this.props.close)}
                 />
             </Modal>
         );

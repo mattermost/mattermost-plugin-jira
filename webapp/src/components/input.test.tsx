@@ -117,4 +117,19 @@ describe('components/Input', () => {
         );
         expect(screen.queryByRole('button', {name: 'Clear Due Date'})).not.toBeInTheDocument();
     });
+
+    test('should not let a read-only date be changed', () => {
+        render(
+            <Input
+                id='start'
+                label='Start'
+                type='datetime-local'
+                value='2026-03-10T09:30'
+                readOnly={true}
+            />,
+        );
+
+        expect(screen.queryByRole('button', {name: 'Clear Start'})).not.toBeInTheDocument();
+        expect(screen.getByLabelText('Time')).toBeDisabled();
+    });
 });

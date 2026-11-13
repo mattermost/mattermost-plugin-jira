@@ -306,6 +306,7 @@ describe('components/CreateIssue', () => {
             await userEvent.keyboard('{Escape}');
             await userEvent.click(within(await screen.findByRole('dialog', {name: 'Discard changes'})).getByRole('button', {name: 'Discard'}));
             expect(close).toHaveBeenCalled();
+            await waitFor(() => expect(screen.queryByRole('dialog', {name: 'Discard changes'})).not.toBeInTheDocument());
         });
     });
 });
