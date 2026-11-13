@@ -465,6 +465,93 @@ func TestListChannelSubscriptions(t *testing.T) {
 	}
 }
 
+func TestExecuteSubscribeList(t *testing.T) {
+	const userID = "connected_user"
+	subscriptionBytes, err := json.Marshal(withExistingChannelSubscriptions([]ChannelSubscription{
+		{
+			ID:         model.NewId(),
+			ChannelID:  "channel1",
+			Name:       "Sub In This Channel",
+			Filters:    SubscriptionFilters{Projects: NewStringSet("PROJ")},
+			InstanceID: testInstance1.GetID(),
+		},
+		{
+			ID:         model.NewId(),
+			ChannelID:  "channel2",
+			Name:       "Sub In Other Channel",
+			Filters:    SubscriptionFilters{Projects: NewStringSet("EXT")},
+			InstanceID: testInstance1.GetID(),
+		},
+	}))
+	require.NoError(t, err)
+
+	for name, tc := range map[string]struct {
+		userRoles            string
+		rolesAllowed         string
+		hasChannelPermission bool
+		assertMessage        func(t *testing.T, msg string)
+	}{
+		"system admin sees subscriptions across channels": {
+			userRoles: "system_user system_admin",
+			assertMessage: func(t *testing.T, msg string) {
+				assert.Contains(t, msg, "Sub In This Channel")
+				assert.Contains(t, msg, "Sub In Other Channel")
+			},
+		},
+		"channel admin sees only the current channel's subscriptions": {
+			userRoles:            "system_user",
+			rolesAllowed:         "channel_admin",
+			hasChannelPermission: true,
+			assertMessage: func(t *testing.T, msg string) {
+				assert.Equal(t, "This channel has subscribed to the following Jira notifications. To modify a subscription, type `/jira subscribe edit`\n"+
+					"* (1) https://jiraurl1.com\n\t* PROJ - Sub In This Channel", msg)
+			},
+		},
+		"non channel admin is told the configured role is required": {
+			userRoles:    "system_user",
+			rolesAllowed: "channel_admin",
+			assertMessage: func(t *testing.T, msg string) {
+				assert.Equal(t, "You don't have permission to manage subscriptions in this channel: is not channel admin.", msg)
+			},
+		},
+		"non system admin is refused when only system admins are allowed": {
+			userRoles: "system_user",
+			assertMessage: func(t *testing.T, msg string) {
+				assert.Equal(t, "You don't have permission to manage subscriptions in this channel: is not system admin.", msg)
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			api.On("GetUser", userID).Return(&model.User{Id: userID, Roles: tc.userRoles}, nil)
+			api.On("KVGet", testSubKey).Return(subscriptionBytes, nil)
+			api.On("GetChannel", "channel1").Return(&model.Channel{Id: "channel1", TeamId: "team1Id", Name: "channel-1-name", Type: model.ChannelTypeOpen}, nil)
+			api.On("GetChannel", "channel2").Return(&model.Channel{Id: "channel2", TeamId: "team1Id", Name: "channel-2-name", Type: model.ChannelTypeOpen}, nil)
+			api.On("GetTeam", "team1Id").Return(&model.Team{Id: "team1Id", DisplayName: "Team 1 Display Name"}, nil)
+			api.On("HasPermissionTo", userID, model.PermissionManageSystem).Return(false)
+			api.On("HasPermissionToChannel", userID, "channel1", model.PermissionManagePublicChannelProperties).Return(tc.hasChannelPermission)
+
+			var msg string
+			api.On("SendEphemeralPost", userID, mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
+				msg = args.Get(1).(*model.Post).Message
+			}).Return(&model.Post{}).Once()
+
+			p := &Plugin{}
+			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
+			p.updateConfig(func(conf *config) {
+				conf.RolesAllowedToEditJiraSubscriptions = tc.rolesAllowed
+			})
+			p.instanceStore = p.getMockInstanceStoreKV(1)
+			p.userStore = getMockUserStoreKV()
+
+			executeSubscribeList(p, nil, &model.CommandArgs{UserId: userID, ChannelId: "channel1", TeamId: "team1Id"})
+
+			tc.assertMessage(t, msg)
+		})
+	}
+}
+
 func TestGetChannelsSubscribed(t *testing.T) {
 	p := &Plugin{}
 	p.updateConfig(func(conf *config) {
