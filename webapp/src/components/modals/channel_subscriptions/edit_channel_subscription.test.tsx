@@ -884,7 +884,7 @@ describe('components/EditChannelSubscription', () => {
             );
         });
 
-        const dialog = screen.getByRole('dialog', {name: 'Edit Jira Subscription'});
+        const dialog = screen.getByRole('dialog', {name: 'Edit Jira subscription'});
         await userEvent.type(within(dialog).getByRole('textbox', {name: /Subscription Name/}), ' edited');
 
         await userEvent.click(within(dialog).getByRole('button', {name: 'Cancel'}));

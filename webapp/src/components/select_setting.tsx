@@ -52,7 +52,9 @@ const toArray = (value: SelectValue): SelectOption[] => {
 const valueKey = (value: SelectValue) => toArray(value).map((opt) => opt.value).join(',');
 
 export default class SelectSetting extends React.PureComponent<Props, State> {
+    // Unique per instance so repeated selects (one per filter row) never share an id.
     private fallbackId = uniqueId('jira-select-setting');
+    private fieldId = this.props.name ? uniqueId(this.props.name) : this.fallbackId;
 
     state: State = {invalid: false, query: ''};
 
@@ -133,7 +135,7 @@ export default class SelectSetting extends React.PureComponent<Props, State> {
         const error = required && this.state.invalid ? REQUIRED_MESSAGE : null;
         let errorId;
         if (error) {
-            errorId = `${this.props.name || this.fallbackId}-error`;
+            errorId = `${this.fieldId}-error`;
         }
 
         return (
@@ -142,7 +144,7 @@ export default class SelectSetting extends React.PureComponent<Props, State> {
                 errorId={errorId}
             >
                 <Combobox
-                    id={this.props.name}
+                    id={this.fieldId}
                     aria-describedby={errorId}
                     label={label && fieldLabel(label, required && !hideRequiredStar)}
                     aria-label={ariaLabel}

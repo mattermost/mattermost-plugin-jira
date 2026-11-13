@@ -351,7 +351,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             <Modal
                 open={this.props.visible}
                 size='large'
-                title='Create Jira Issue'
+                title='Create Jira issue'
                 onClose={this.requestClose}
                 footer={footer}
             >

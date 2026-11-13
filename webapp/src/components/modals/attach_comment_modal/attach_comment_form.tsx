@@ -180,7 +180,7 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
             <Modal
                 open={this.props.visible}
                 size='large'
-                title='Attach Message to Jira Issue'
+                title='Attach message to Jira issue'
                 onClose={this.handleClose}
                 footer={footer}
             >

@@ -15,8 +15,17 @@ type State = {
     creatingSubscriptionTemplate: boolean;
     selectedSubscriptionTemplate: ChannelSubscription | null;
     activeTab: SubscriptionsTab;
-    viewChanged: boolean;
+    pendingView: View | null;
 }
+
+type View = Pick<State, 'creatingSubscription' | 'selectedSubscription' | 'creatingSubscriptionTemplate' | 'selectedSubscriptionTemplate'>;
+
+const SUBSCRIPTIONS_VIEW: View = {
+    creatingSubscription: false,
+    selectedSubscription: null,
+    creatingSubscriptionTemplate: false,
+    selectedSubscriptionTemplate: null,
+};
 
 type Props = SharedProps & {
     allProjectMetadata: AllProjectMetadata | null;
@@ -30,7 +39,7 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
         creatingSubscriptionTemplate: false,
         selectedSubscriptionTemplate: null,
         activeTab: 'subscriptions',
-        viewChanged: false,
+        pendingView: null,
     };
 
     private edit = React.createRef<EditChannelSubscription>();
@@ -43,34 +52,42 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
         }
     };
 
+    // Switching views plays the current modal's exit, then the next view enters,
+    // so the change reads as a transition instead of a swap in place.
+    private goTo = (view: View): void => {
+        this.setState({pendingView: view});
+    };
+
+    private handleExited = (): void => {
+        if (this.state.pendingView) {
+            this.setState({...this.state.pendingView, pendingView: null});
+        }
+    };
+
     showEditChannelSubscription = (subscription: ChannelSubscription): void => {
-        this.setState({selectedSubscription: subscription, creatingSubscription: false, viewChanged: true});
+        this.goTo({...SUBSCRIPTIONS_VIEW, selectedSubscription: subscription});
     };
 
     showEditSubscriptionTemplate = (subscription: ChannelSubscription): void => {
-        this.setState({selectedSubscriptionTemplate: subscription, creatingSubscriptionTemplate: false, viewChanged: true});
+        this.goTo({...SUBSCRIPTIONS_VIEW, selectedSubscriptionTemplate: subscription});
     };
 
     showCreateChannelSubscription = (): void => {
-        this.setState({selectedSubscription: null, creatingSubscription: true, viewChanged: true});
+        this.goTo({...SUBSCRIPTIONS_VIEW, creatingSubscription: true});
     };
 
     showCreateSubscriptionTemplate = (): void => {
-        this.setState({selectedSubscriptionTemplate: null, creatingSubscriptionTemplate: true, viewChanged: true});
+        this.goTo({...SUBSCRIPTIONS_VIEW, creatingSubscriptionTemplate: true});
     };
 
     finishEditSubscription = (): void => {
-        this.setState({selectedSubscription: null, creatingSubscription: false, selectedSubscriptionTemplate: null, creatingSubscriptionTemplate: false});
+        this.goTo(SUBSCRIPTIONS_VIEW);
     };
 
     render(): JSX.Element {
         const {selectedSubscription, creatingSubscription, creatingSubscriptionTemplate, selectedSubscriptionTemplate} = this.state;
 
-        // Only the first view plays the enter transition; later views swap in place.
-        let open;
-        if (!this.state.viewChanged || !this.props.open) {
-            open = this.props.open;
-        }
+        const open = this.props.open && !this.state.pendingView;
 
         if (selectedSubscription || creatingSubscription || creatingSubscriptionTemplate || selectedSubscriptionTemplate) {
             return (
@@ -78,6 +95,7 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
                     {...this.props}
                     ref={this.edit}
                     open={open}
+                    onExited={this.handleExited}
                     finishEditSubscription={this.finishEditSubscription}
                     selectedSubscription={selectedSubscription}
                     creatingSubscription={creatingSubscription}
@@ -91,6 +109,7 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
             <SelectChannelSubscription
                 {...this.props}
                 open={open}
+                onExited={this.handleExited}
                 activeTab={this.state.activeTab}
                 onTabChange={(activeTab) => this.setState({activeTab})}
                 allProjectMetadata={this.props.allProjectMetadata}

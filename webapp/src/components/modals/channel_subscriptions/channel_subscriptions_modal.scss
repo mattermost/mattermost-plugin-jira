@@ -1,11 +1,3 @@
-.jira-subscriptions__empty {
-    margin: 0;
-    padding: var(--spacing-xl) 0;
-    text-align: center;
-    font-size: var(--font-size-100);
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-}
-
 .jira-subscriptions__table {
     width: 100%;
     border-collapse: collapse;
@@ -84,4 +76,19 @@
 
 .jira-subscription-filter__error {
     margin-bottom: var(--spacing-s);
+}
+
+// Compass pads headerSlot, which insets the tab bar and stops its rule short of
+// the modal edges. There is no prop for this, so zero the padding on the slot
+// that holds our tabs and inset the tab strip itself instead (the rule is drawn
+// on the Tabs root, so it keeps running edge to edge).
+// Keep the gap under the title row; the bottom stays flush so the rule meets the body.
+[class*='modal-header__slot']:has(> .jira-subscriptions__tabs) {
+    padding: var(--spacing-xs) 0 0;
+}
+
+.jira-subscriptions__tabs {
+    // An underlined tab has its own var(--spacing-xs) of side padding, so take
+    // that off the left inset to line the label up with the title.
+    padding: 0 var(--spacing-xxxl) 0 calc(var(--spacing-xxxl) - var(--spacing-xs));
 }

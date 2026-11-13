@@ -176,7 +176,7 @@ test('creates Jira issue from Mattermost and finds it in Jira', {tag: '@jira_plu
     const summary = marker();
     const {page, channelsPage} = await openChannel(pw);
     await runSlashCommand(channelsPage, '/jira create');
-    const modal = page.getByRole('dialog', {name: 'Create Jira Issue'});
+    const modal = page.getByRole('dialog', {name: 'Create Jira issue'});
     await expect(modal).toBeVisible();
     await chooseOption(page, modal, 'Project', project.name);
     await chooseOption(page, modal, 'Issue Type', issueType.name);
@@ -273,7 +273,7 @@ test('attaches Mattermost message to a Jira issue as a comment', {tag: '@jira_pl
     await post.hover();
     await post.postMenu.actionsButton.click();
     await page.getByRole('menuitem', {name: 'Attach to Jira Issue'}).click();
-    const modal = page.getByRole('dialog', {name: 'Attach Message to Jira Issue'});
+    const modal = page.getByRole('dialog', {name: 'Attach message to Jira issue'});
     await expect(modal).toBeVisible();
     await chooseOption(page, modal, 'Jira Issue', summary, `${key}: ${summary}`);
     await modal.getByRole('button', {name: 'Attach'}).click();

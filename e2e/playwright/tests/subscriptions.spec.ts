@@ -77,7 +77,7 @@ test.describe('channel subscriptions', () => {
     test('creates channel subscription with filters', {tag: '@jira_plugin'}, async ({pw, jira}) => {
         // # Start a subscription, name it and choose a project
         const {page, modal} = await openSubscriptions(pw, jira);
-        await modal.getByRole('button', {name: 'Create Subscription'}).click();
+        await modal.getByRole('button', {name: 'Create subscription'}).click();
         await modal.getByPlaceholder('Name').fill('Checkout bugs');
         await pickOption(page, modal.getByRole('combobox', {name: 'Project'}), fakeProject.name);
 
@@ -85,9 +85,9 @@ test.describe('channel subscriptions', () => {
         await pickOption(page, modal.getByRole('combobox', {name: 'Events'}), 'Issue Created');
         await pickOption(page, modal.getByRole('combobox', {name: 'Issue Type'}), 'Bug');
         await modal.getByRole('button', {name: 'Add Filter'}).click();
-        await pickOption(page, modal.locator('#fieldtype'), 'Priority');
-        await pickOption(page, modal.locator('#values'), 'High');
-        await modal.getByRole('button', {name: 'Add Subscription'}).click();
+        await pickOption(page, modal.locator('[id^="fieldtype-"]'), 'Priority');
+        await pickOption(page, modal.locator('[id^="values-"]'), 'High');
+        await modal.getByRole('button', {name: 'Add subscription'}).click();
 
         // * Verify the subscription is listed
         await expect(modal.getByRole('row', {name: /Checkout bugs/})).toContainText(fakeProject.name);
@@ -115,7 +115,7 @@ test.describe('channel subscriptions', () => {
         // # Rename it, add an event and save
         await modal.getByPlaceholder('Name').fill('Assignee and status changes');
         await pickOption(page, modal.getByRole('combobox', {name: 'Events'}), 'Issue Updated: Status');
-        await modal.getByRole('button', {name: 'Save Subscription'}).click();
+        await modal.getByRole('button', {name: 'Save subscription'}).click();
 
         // * Verify the renamed subscription is listed
         await expect(modal.getByRole('row', {name: /Assignee and status changes/})).toBeVisible();
@@ -145,7 +145,7 @@ test.describe('channel subscriptions', () => {
         await confirm.getByRole('button', {name: 'Delete'}).click();
 
         // * Verify the list is empty and nothing is stored
-        await expect(modal.getByRole('tabpanel')).toHaveText('No subscriptions yet');
+        await expect(modal.getByRole('tabpanel')).toContainText('No subscriptions yet');
         expect(await channelSubscriptions(jira, jira.channel.id)).toEqual([]);
 
         // * Verify the channel is told about the removal
@@ -169,7 +169,7 @@ test.describe('channel subscriptions', () => {
 
         // # Reopen it, start a subscription and type a name, then click the backdrop
         await channelsPage.postMessage('/jira subscribe');
-        await modal.getByRole('button', {name: 'Create Subscription'}).click();
+        await modal.getByRole('button', {name: 'Create subscription'}).click();
         await modal.getByPlaceholder('Name').fill('Unsaved');
         await page.mouse.click(5, 5);
 

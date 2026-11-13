@@ -5,6 +5,7 @@ import React from 'react';
 
 import {PlusIcon} from '@mattermost/compass-icons/components';
 import {Button} from '@mattermost/compass-ui/components/button';
+import {EmptyState} from '@mattermost/compass-ui/components/empty-state';
 import {Icon} from '@mattermost/compass-ui/components/icon';
 import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
 import {Tabs} from '@mattermost/compass-ui/components/tabs';
@@ -22,6 +23,7 @@ const TAB_PANEL_ID = 'jira-subscriptions-panel';
 
 type Props = SharedProps & {
     open?: boolean;
+    onExited?: () => void;
     activeTab: SubscriptionsTab;
     onTabChange: (tab: SubscriptionsTab) => void;
     showEditChannelSubscription: (subscription: ChannelSubscription) => void;
@@ -157,7 +159,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                     onCancel={this.handleCancelDelete}
                     onConfirm={this.handleConfirmDelete}
                     show={true}
-                    title={isTemplate ? 'Subscription Template' : 'Subscription'}
+                    title={isTemplate ? 'Subscription template' : 'Subscription'}
                 />
             );
         }
@@ -186,28 +188,35 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         const showTemplates = activeTab === 'templates';
         const subs = showTemplates ? subscriptionTemplates : channelSubscriptions;
         const panel = subs.length ? renderTable(subs, showTemplates) : (
-            <p className='jira-subscriptions__empty'>
-                {showTemplates ? 'No templates yet' : 'No subscriptions yet'}
-            </p>
+            <EmptyState
+                titleLevel={3}
+                title={showTemplates ? 'No templates yet' : 'No subscriptions yet'}
+                description={showTemplates ? 'Create a template to reuse a subscription setup.' : 'Create a subscription to get Jira issue notifications in this channel.'}
+                action={{
+                    children: showTemplates ? 'Create template' : 'Create subscription',
+                    leadingIcon: <Icon glyph={<PlusIcon/>}/>,
+                    onClick: showTemplates ? this.props.showCreateSubscriptionTemplate : this.props.showCreateChannelSubscription,
+                }}
+            />
         );
 
         const createButton = (
             <Button
-                emphasis='secondary'
+                emphasis='tertiary'
                 size='small'
                 leadingIcon={<Icon glyph={<PlusIcon/>}/>}
                 onClick={showTemplates ? this.props.showCreateSubscriptionTemplate : this.props.showCreateChannelSubscription}
             >
-                {showTemplates ? 'Create Template' : 'Create Subscription'}
+                {showTemplates ? 'Create template' : 'Create subscription'}
             </Button>
         );
 
         const tabs = (
             <Tabs
+                className='jira-subscriptions__tabs'
                 appearance='underlined'
                 activeKey={activeTab}
                 onChange={(key) => this.props.onTabChange(key as SubscriptionsTab)}
-                controls={createButton}
                 tabs={[
                     {key: 'subscriptions', label: 'Subscriptions', id: 'jira-subscriptions-tab', panelId: TAB_PANEL_ID},
                     {key: 'templates', label: 'Templates', id: 'jira-templates-tab', panelId: TAB_PANEL_ID},
@@ -218,11 +227,14 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
         return (
             <Modal
                 open={this.props.open}
+                onExited={this.props.onExited}
                 size='medium'
-                title='Jira Subscriptions'
+                title='Jira subscriptions'
                 subtitle={!omitDisplayName && channel && `Channel: ${channel.display_name}`}
                 subtitlePlacement='beside'
+                headerAction={subs.length ? createButton : undefined}
                 headerSlot={tabs}
+                headerDivider={false}
                 onClose={this.props.close}
             >
                 {error && (

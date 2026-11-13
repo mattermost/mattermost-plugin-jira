@@ -116,8 +116,8 @@ test.describe('visual', {tag: '@visual'}, () => {
      */
     test('matches baseline for create issue modal', {tag: '@jira_plugin'}, async ({pw, jira}) => {
         // # Open Create Jira Issue from a post's message actions
-        const page = await openPostAction(pw, jira, 'Create Jira Issue');
-        const dialog = page.getByRole('dialog', {name: 'Create Jira Issue'});
+        const page = await openPostAction(pw, jira, 'Create Jira issue');
+        const dialog = page.getByRole('dialog', {name: 'Create Jira issue'});
         await expect(dialog.getByRole('combobox', {name: 'Project'})).toBeVisible();
         await settle(pw, dialog);
 
@@ -143,7 +143,7 @@ test.describe('visual', {tag: '@visual'}, () => {
     test('matches baseline for attach to issue modal', {tag: '@jira_plugin'}, async ({pw, jira}) => {
         // # Open Attach to Jira Issue from a post's message actions and open the issue search
         const page = await openPostAction(pw, jira, 'Attach to Jira Issue');
-        const dialog = page.getByRole('dialog', {name: 'Attach Message to Jira Issue'});
+        const dialog = page.getByRole('dialog', {name: 'Attach message to Jira issue'});
         await dialog.getByRole('combobox', {name: 'Jira Issue'}).click();
         await expect(page.getByRole('option').first()).toBeVisible();
         await settle(pw, dialog);
@@ -161,14 +161,14 @@ test.describe('visual', {tag: '@visual'}, () => {
     test('matches baseline for subscriptions modal', {tag: '@jira_plugin'}, async ({pw, jira}) => {
         // # Open the subscriptions modal as a system admin
         const {page, modal} = await openSubscriptions(pw, jira);
-        await expect(modal.getByRole('button', {name: 'Create Subscription'})).toBeVisible();
+        await expect(modal.getByRole('button', {name: 'Create subscription'})).toBeVisible();
         await settle(pw, modal);
 
         // * Verify the empty list matches the baseline
         await expect(modal).toHaveScreenshot('subscriptions-empty.png');
 
         // # Start a subscription and choose a project
-        await modal.getByRole('button', {name: 'Create Subscription'}).click();
+        await modal.getByRole('button', {name: 'Create subscription'}).click();
         await pickOption(page, modal.getByRole('combobox', {name: 'Project'}), fakeProject.name);
         await expect(modal.getByRole('combobox', {name: 'Issue Type'})).toBeVisible();
         await settle(pw, modal);
@@ -299,8 +299,8 @@ test.describe('visual', {tag: '@visual'}, () => {
      */
     test('matches baseline for create issue required field error', {tag: '@jira_plugin'}, async ({pw, jira}) => {
         // # Choose a project and issue type, then submit without a summary
-        const page = await openPostAction(pw, jira, 'Create Jira Issue');
-        const dialog = page.getByRole('dialog', {name: 'Create Jira Issue'});
+        const page = await openPostAction(pw, jira, 'Create Jira issue');
+        const dialog = page.getByRole('dialog', {name: 'Create Jira issue'});
         await pickOption(page, dialog.getByRole('combobox', {name: 'Project'}), fakeProject.name);
         await pickOption(page, dialog.getByRole('combobox', {name: 'Issue Type'}), 'Task');
         await dialog.getByRole('button', {name: 'Create'}).click();
@@ -320,7 +320,7 @@ test.describe('visual', {tag: '@visual'}, () => {
     test('matches baseline for subscription form with filters', {tag: '@jira_plugin'}, async ({pw, jira}) => {
         // # Start a subscription, name it and choose a project
         const {page, modal} = await openSubscriptions(pw, jira);
-        await modal.getByRole('button', {name: 'Create Subscription'}).click();
+        await modal.getByRole('button', {name: 'Create subscription'}).click();
         await modal.getByPlaceholder('Name').fill('Checkout bugs');
         await pickOption(page, modal.getByRole('combobox', {name: 'Project'}), fakeProject.name);
 
@@ -328,8 +328,8 @@ test.describe('visual', {tag: '@visual'}, () => {
         await pickOption(page, modal.getByRole('combobox', {name: 'Events'}), 'Issue Created');
         await pickOption(page, modal.getByRole('combobox', {name: 'Issue Type'}), 'Bug');
         await modal.getByRole('button', {name: 'Add Filter'}).click();
-        await pickOption(page, modal.locator('#fieldtype'), 'Priority');
-        await pickOption(page, modal.locator('#values'), 'High');
+        await pickOption(page, modal.locator('[id^="fieldtype-"]'), 'Priority');
+        await pickOption(page, modal.locator('[id^="values-"]'), 'High');
         await settle(pw, modal);
 
         // * Verify the filled form matches the baseline

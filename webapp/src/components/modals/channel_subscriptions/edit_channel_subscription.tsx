@@ -72,6 +72,7 @@ const snapshot = (filters: ChannelSubscriptionFiltersModel, name: string | null)
 
 export type Props = SharedProps & {
     open?: boolean;
+    onExited?: () => void;
     finishEditSubscription: () => void;
     selectedSubscription: ChannelSubscription | null;
     creatingSubscription: boolean;
@@ -566,7 +567,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                         />
                         <div className='jira-subscriptions__jql'>
                             <h4 className='jira-subscriptions__jql-label'>
-                                {'Approximate JQL Output'}
+                                {'Approximate JQL output'}
                             </h4>
                             <code className='jira-subscriptions__jql-code'>
                                 {generateJQLStringFromSubscriptionFilters(this.state.jiraIssueMetadata, filterFields, this.state.filters, this.props.securityLevelEmptyForJiraSubscriptions)}
@@ -588,7 +589,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                                     target='_blank'
                                     rel='noopener noreferrer'
                                 >
-                                    {'Learn More'}
+                                    {'Learn more'}
                                 </a>
                             </Button>
                         </div>
@@ -647,7 +648,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
                 onCancel={this.handleCancelAction}
                 onConfirm={this.handleConfirmAction}
                 show={showConfirmModal}
-                title={isSubscription ? 'Subscription' : 'Subscription Template'}
+                title={isSubscription ? 'Subscription' : 'Subscription template'}
             />
         );
 
@@ -658,14 +659,14 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         let saveSubscriptionButtonText = '';
         let title = '';
         if (isSubscription) {
-            saveSubscriptionButtonText = this.props.creatingSubscription ? 'Add Subscription' : 'Save Subscription';
-            title = this.props.creatingSubscription ? 'New Jira Subscription' : 'Edit Jira Subscription';
+            saveSubscriptionButtonText = this.props.creatingSubscription ? 'Add subscription' : 'Save subscription';
+            title = this.props.creatingSubscription ? 'New Jira subscription' : 'Edit Jira subscription';
         } else {
-            saveSubscriptionButtonText = 'Add Template';
-            title = 'New Jira Subscription Template';
+            saveSubscriptionButtonText = 'Add template';
+            title = 'New Jira subscription template';
             if (this.props.selectedSubscriptionTemplate) {
-                saveSubscriptionButtonText = 'Save Template';
-                title = 'Edit Jira Subscription Template';
+                saveSubscriptionButtonText = 'Save template';
+                title = 'Edit Jira subscription template';
             }
         }
 
@@ -703,6 +704,7 @@ export default class EditChannelSubscription extends PureComponent<Props, State>
         return (
             <Modal
                 open={this.props.open}
+                onExited={this.props.onExited}
                 size='medium'
                 title={title}
                 showBackButton={true}
