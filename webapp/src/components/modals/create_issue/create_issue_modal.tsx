@@ -1,7 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useRef} from 'react';
 
 import {ModalOverlay} from '@mattermost/compass-ui/components/modal';
 
@@ -17,14 +17,16 @@ type Props = {
 
 export default function CreateIssueModal(props: Props) {
     const session = useModalSession(props);
+    const form = useRef<CreateIssueForm>(null);
 
     return (
         <ModalOverlay
             open={props.visible}
-            onClose={props.close}
+            onClose={() => (form.current ? form.current.requestClose() : props.close())}
             zIndex={Z_INDEX_MODAL}
         >
             <CreateIssueForm
+                ref={form}
                 key={session.key}
                 {...session.props}
             />

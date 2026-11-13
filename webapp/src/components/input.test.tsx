@@ -90,4 +90,31 @@ describe('components/Input', () => {
 
         expect(screen.getByRole('group', {name: 'Due Date'})).toHaveAccessibleDescription('This field is required.');
     });
+
+    test('should clear a picked date', async () => {
+        const onChange = jest.fn();
+        const {rerender} = render(
+            <Input
+                id='duedate'
+                label='Due Date'
+                type='date'
+                value='2026-03-10'
+                onChange={onChange}
+            />,
+        );
+
+        await userEvent.click(screen.getByRole('button', {name: 'Clear Due Date'}));
+        expect(onChange).toHaveBeenCalledWith('duedate', '');
+
+        rerender(
+            <Input
+                id='duedate'
+                label='Due Date'
+                type='date'
+                value=''
+                onChange={onChange}
+            />,
+        );
+        expect(screen.queryByRole('button', {name: 'Clear Due Date'})).not.toBeInTheDocument();
+    });
 });

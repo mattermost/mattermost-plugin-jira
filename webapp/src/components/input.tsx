@@ -3,11 +3,15 @@
 
 import React from 'react';
 
+import {CloseCircleIcon} from '@mattermost/compass-icons/components';
 import {DateRangePicker} from '@mattermost/compass-ui/components/date-range-picker';
+import {Icon} from '@mattermost/compass-ui/components/icon';
+import {IconButton} from '@mattermost/compass-ui/components/icon-button';
 import {TextArea} from '@mattermost/compass-ui/components/text-area';
 import {TextInput} from '@mattermost/compass-ui/components/text-input';
 
 import Setting, {REQUIRED_MESSAGE, fieldLabel} from 'components/setting';
+import WithTooltip from 'components/with_tooltip';
 
 import {Z_INDEX_MENU_PORTAL} from 'utils/styles';
 
@@ -155,6 +159,16 @@ export default class Input extends React.PureComponent<Props, State> {
                                 disabled={this.props.disabled || !date}
                                 onChange={(e) => this.changeValue(`${date}T${e.target.value}`)}
                             />
+                        )}
+                        {date && !this.props.disabled && (
+                            <WithTooltip label='Clear'>
+                                <IconButton
+                                    aria-label={typeof this.props.label === 'string' ? `Clear ${this.props.label}` : 'Clear date'}
+                                    size='small'
+                                    icon={<Icon glyph={<CloseCircleIcon/>}/>}
+                                    onClick={() => this.changeValue('')}
+                                />
+                            </WithTooltip>
                         )}
                     </div>
                 </Setting>

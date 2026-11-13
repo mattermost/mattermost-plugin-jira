@@ -10,6 +10,7 @@ import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
 import {Post} from '@mattermost/types/posts';
 import {Team} from '@mattermost/types/teams';
 
+import ConfirmModal from 'components/confirm_modal';
 import Modal from 'components/modal';
 
 import {
@@ -43,6 +44,13 @@ type Props = {
 
 const FORM_ID = 'jira-create-issue-form';
 
+// Project and issue type are prefilled from saved defaults, so only the issue's own fields count as edits.
+const contentSnapshot = (fields: CreateIssueFields): string => JSON.stringify(
+    Object.keys(fields).sort()
+        .filter((key) => key !== 'project' && key !== 'issuetype' && typeof fields[key] !== 'undefined')
+        .map((key) => [key, fields[key]]),
+);
+
 type State = {
     submitting: boolean;
     fields: CreateIssueFields;
@@ -52,10 +60,12 @@ type State = {
     error: string | null;
     jiraIssueMetadata: IssueMetadata | null;
     fetchingIssueMetadata: boolean;
+    showDiscardConfirm: boolean;
 };
 
 export default class CreateIssueForm extends React.PureComponent<Props, State> {
     private validator: Validator = new Validator();
+    private initialContent: string;
     constructor(props: Props) {
         super(props);
 
@@ -72,6 +82,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             fetchingIssueMetadata: false,
             jiraIssueMetadata: null,
             submitting: false,
+            showDiscardConfirm: false,
             fields: {
                 description,
                 project: {
@@ -82,7 +93,16 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                 },
             } as CreateIssueFields,
         };
+        this.initialContent = contentSnapshot(this.state.fields);
     }
+
+    requestClose = () => {
+        if (contentSnapshot(this.state.fields) === this.initialContent) {
+            this.props.close();
+        } else {
+            this.setState({showDiscardConfirm: true});
+        }
+    };
 
     handleClose = (e?: React.SyntheticEvent) => {
         if (e && e.preventDefault) {
@@ -291,7 +311,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             <React.Fragment>
                 <Button
                     emphasis='tertiary'
-                    onClick={this.handleClose}
+                    onClick={this.requestClose}
                 >
                     {'Cancel'}
                 </Button>
@@ -332,7 +352,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                 open={this.props.visible}
                 size='large'
                 title='Create Jira Issue'
-                onClose={this.handleClose}
+                onClose={this.requestClose}
                 footer={footer}
             >
                 <form
@@ -344,6 +364,15 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                     {instanceSelector}
                     {form}
                 </form>
+                <ConfirmModal
+                    show={this.state.showDiscardConfirm}
+                    title='Discard changes'
+                    message='Are you sure you want to discard your changes?'
+                    confirmButtonText='Discard'
+                    destructive={true}
+                    onCancel={() => this.setState({showDiscardConfirm: false})}
+                    onConfirm={() => this.props.close()}
+                />
             </Modal>
         );
     }
