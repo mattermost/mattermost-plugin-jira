@@ -827,13 +827,12 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	return p.response(header, text)
 }
 
+// executeSubscribeList lists subscriptions across all channels for system admins,
+// and only the current channel's subscriptions for users allowed to manage them there.
 func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, header.UserId)
+	isSysAdmin, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
-	}
-	if !authorized {
-		return p.responsef(header, "`/jira subscribe list` can only be run by a system administrator.")
 	}
 
 	_, instance, args, err := p.loadFlagUserInstance(header.UserId, args)
@@ -844,7 +843,15 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 		return p.responsef(header, "No arguments were expected.")
 	}
 
-	msg, err := p.listChannelSubscriptions(instance.GetID(), header.TeamId)
+	var msg string
+	if isSysAdmin {
+		msg, err = p.listChannelSubscriptions(instance.GetID(), header.TeamId)
+	} else {
+		if permErr := p.hasPermissionToManageSubscription(instance.GetID(), header.UserId, header.ChannelId); permErr != nil {
+			return p.responsef(header, "You don't have permission to manage subscriptions in this channel: %v.", permErr)
+		}
+		msg, err = p.listSubscriptionsForChannel(instance.GetID(), header.ChannelId)
+	}
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}
