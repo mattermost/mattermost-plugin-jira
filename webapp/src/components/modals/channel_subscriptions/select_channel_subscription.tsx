@@ -232,7 +232,7 @@ export default class SelectChannelSubscriptionInternal extends React.PureCompone
                 title='Jira subscriptions'
                 subtitle={!omitDisplayName && channel && `Channel: ${channel.display_name}`}
                 subtitlePlacement='beside'
-                headerAction={subs.length ? createButton : undefined}
+                headerAction={subs.length ? createButton : null}
                 headerSlot={tabs}
                 headerDivider={false}
                 onClose={this.props.close}
