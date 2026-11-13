@@ -1,9 +1,12 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-export type ReactSelectOption = {
-    label: string | React.ReactElement;
+export type SelectOption = {
+    label: string;
     value: string;
+    secondaryLabel?: string;
+    leadingVisual?: React.ReactNode;
+    leadingAvatar?: {src: string; alt: string};
 };
 
 export type AllowedValue = {
@@ -44,7 +47,7 @@ export type FilterField = {
     key: string;
     name: string;
     schema: FieldSchema;
-    values?: ReactSelectOption[];
+    values?: SelectOption[];
     userDefined?: boolean;
     issueTypes: IssueTypeIdentifier[];
 };
@@ -85,8 +88,8 @@ export type Status = {
 }
 
 export type ProjectMetadata = {
-    projects: ReactSelectOption[];
-    issues_per_project: {[key: string]: ReactSelectOption[]};
+    projects: SelectOption[];
+    issues_per_project: {[key: string]: SelectOption[]};
     saved_field_values?: SavedFieldValues;
 }
 
@@ -120,6 +123,7 @@ export enum AvatarSize {
 export type JiraUser = {
     self: string;
     accountId: string;
+    name?: string;
     avatarUrls: {[size in AvatarSize]: string};
     displayName: string;
     active: boolean;
@@ -255,25 +259,3 @@ export type CreateIssueFields = {
     project: {key: string};
     issuetype: {id: string};
 } & {[key: string]: JiraField};
-
-export type ProvidedStyle = {
-    zIndex?: number;
-    borderColor?: string;
-    color?: string;
-    background?: string;
-    padding?: string;
-    boxShadow?: string;
-    borderRadius?: string;
-    transform?: string;
-    marginRight?: string;
-    width?: string;
-    height?: string;
-    [key: string]: any;
-};
-
-export type StyleState = {
-    isFocused: boolean;
-    isSelected: boolean;
-    isDisabled: boolean;
-    [key: string]: any;
-};

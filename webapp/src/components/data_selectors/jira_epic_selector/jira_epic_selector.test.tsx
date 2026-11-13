@@ -4,8 +4,6 @@
 import React from 'react';
 import {act} from '@testing-library/react';
 
-import Preferences from 'mattermost-redux/constants/preferences';
-
 import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.json';
 
 import {IssueMetadata} from 'types/model';
@@ -17,7 +15,6 @@ describe('components/JiraEpicSelector', () => {
     const baseProps = {
         searchIssues: jest.fn().mockResolvedValue({}),
         issueMetadata: issueMetadata as IssueMetadata,
-        theme: Preferences.THEMES.denim,
         isMulti: true,
         onChange: jest.fn(),
         value: ['KT-17', 'KT-20'],

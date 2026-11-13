@@ -4,7 +4,7 @@
 import React from 'react';
 
 import {isEpicNameField} from 'utils/jira_issue_metadata';
-import {IssueMetadata, JiraIssue, ReactSelectOption} from 'types/model';
+import {IssueMetadata, JiraIssue, SelectOption} from 'types/model';
 
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 
@@ -20,7 +20,7 @@ type Props = BackendSelectorProps & {
 };
 
 export default class JiraEpicSelector extends React.PureComponent<Props> {
-    fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> => {
+    fetchInitialSelectedValues = async (): Promise<SelectOption[]> => {
         if (!this.props.value || (this.props.isMulti && !this.props.value.length)) {
             return [];
         }
@@ -42,7 +42,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
         });
     };
 
-    searchIssues = async (userInput: string): Promise<ReactSelectOption[]> => {
+    searchIssues = async (userInput: string): Promise<SelectOption[]> => {
         let epicNameTypeId: string | undefined;
         let epicNameTypeName: string | undefined;
 
@@ -69,7 +69,7 @@ export default class JiraEpicSelector extends React.PureComponent<Props> {
         return this.fetchEpicsFromJql(searchStr, userInput);
     };
 
-    fetchEpicsFromJql = async (jqlSearch: string, userInput: string): Promise<ReactSelectOption[]> => {
+    fetchEpicsFromJql = async (jqlSearch: string, userInput: string): Promise<SelectOption[]> => {
         let epicIssueTypeId: string | undefined;
         let epicNameTypeId: string | undefined;
         let projectKey: string | undefined;

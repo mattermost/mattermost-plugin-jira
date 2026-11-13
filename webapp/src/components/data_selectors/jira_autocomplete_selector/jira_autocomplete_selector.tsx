@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import {ReactSelectOption} from 'types/model';
+import {SelectOption} from 'types/model';
 
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 
@@ -24,7 +24,7 @@ type Props = BackendSelectorProps & {
 };
 
 export default class JiraAutoCompleteSelector extends React.PureComponent<Props> {
-    fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> => {
+    fetchInitialSelectedValues = async (): Promise<SelectOption[]> => {
         if (!this.props.value || (this.props.isMulti && !this.props.value.length)) {
             return [];
         }
@@ -32,7 +32,7 @@ export default class JiraAutoCompleteSelector extends React.PureComponent<Props>
         return this.searchAutoCompleteFields('');
     };
 
-    searchAutoCompleteFields = (inputValue: string): Promise<ReactSelectOption[]> => {
+    searchAutoCompleteFields = (inputValue: string): Promise<SelectOption[]> => {
         const {fieldName, instanceID} = this.props;
         const params = {
             fieldValue: inputValue,

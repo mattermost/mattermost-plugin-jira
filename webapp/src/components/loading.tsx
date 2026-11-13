@@ -3,18 +3,14 @@
 
 import React from 'react';
 
+import {Spinner} from '@mattermost/compass-ui/components/spinner';
+
+import './form.scss';
+
 const Loading = () => {
     return (
-        <div
-            className='loading-screen'
-            style={{position: 'relative'}}
-        >
-            <div className='loading__content'>
-                <h3 style={{margin: '20px 0'}}>{'Loading'}</h3>
-                <div className='round round-1'/>
-                <div className='round round-2'/>
-                <div className='round round-3'/>
-            </div>
+        <div className='jira-loading'>
+            <Spinner size='32'/>
         </div>
     );
 };

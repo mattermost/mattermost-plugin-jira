@@ -2,9 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {act} from '@testing-library/react';
+import {
+    act,
+    screen,
+    waitFor,
+    within,
+} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
-import Preferences from 'mattermost-redux/constants/preferences';
 import {Team} from '@mattermost/types/teams';
 
 import projectMetadata from 'testdata/cloud-get-jira-project-metadata.json';
@@ -12,7 +17,7 @@ import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.
 import serverProjectMetadata from 'testdata/server-get-jira-project-metadata.json';
 import serverIssueMetadata from 'testdata/server-get-create-issue-metadata-for-project.json';
 
-import {IssueMetadata} from 'types/model';
+import {CreateIssueFields, IssueMetadata, JiraField} from 'types/model';
 import {renderWithRedux} from 'testlib/test-utils';
 
 import CreateIssueForm from './create_issue_form';
@@ -27,7 +32,6 @@ describe('components/CreateIssue', () => {
 
     const baseProps = {
         ...baseActions,
-        theme: Preferences.THEMES.denim,
         jiraProjectMetadata: projectMetadata,
         jiraIssueMetadata: issueMetadata,
         currentTeam: {name: 'Team1'} as Team,
@@ -253,5 +257,56 @@ describe('components/CreateIssue', () => {
             ref.current?.handleSubmit();
         });
         expect(create).toHaveBeenCalled();
+    });
+
+    describe('closing', () => {
+        const renderForm = async () => {
+            const close = jest.fn();
+            const ref = React.createRef<CreateIssueForm>();
+            await act(async () => {
+                renderWithRedux(
+                    <CreateIssueForm
+                        {...baseProps}
+                        close={close}
+                        ref={ref}
+                    />,
+                );
+            });
+            return {close, ref};
+        };
+
+        test('should close without asking when only the project is picked', async () => {
+            const {close, ref} = await renderForm();
+            await act(async () => {
+                ref.current?.setState({
+                    fields: {...ref.current.state.fields, project: {key: 'KT'}, issuetype: {id: '10001'}} as CreateIssueFields,
+                });
+            });
+
+            await userEvent.click(screen.getByRole('button', {name: 'Cancel'}));
+
+            expect(close).toHaveBeenCalled();
+            expect(screen.queryByRole('dialog', {name: 'Discard changes'})).not.toBeInTheDocument();
+        });
+
+        test('should ask before discarding edited fields', async () => {
+            const {close, ref} = await renderForm();
+            act(() => {
+                ref.current?.handleFieldChange('summary', 'some summary' as unknown as JiraField);
+            });
+
+            await userEvent.click(screen.getByRole('button', {name: 'Cancel'}));
+            const confirm = await screen.findByRole('dialog', {name: 'Discard changes'});
+            expect(close).not.toHaveBeenCalled();
+
+            await userEvent.click(within(confirm).getByRole('button', {name: 'Cancel'}));
+            await waitFor(() => expect(screen.queryByRole('dialog', {name: 'Discard changes'})).not.toBeInTheDocument());
+            expect(close).not.toHaveBeenCalled();
+
+            await userEvent.keyboard('{Escape}');
+            await userEvent.click(within(await screen.findByRole('dialog', {name: 'Discard changes'})).getByRole('button', {name: 'Discard'}));
+            expect(close).toHaveBeenCalled();
+            await waitFor(() => expect(screen.queryByRole('dialog', {name: 'Discard changes'})).not.toBeInTheDocument());
+        });
     });
 });

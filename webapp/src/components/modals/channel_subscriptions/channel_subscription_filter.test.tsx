@@ -3,6 +3,7 @@
 
 import React from 'react';
 import {act, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {Provider} from 'react-redux';
 import {IntlProvider} from 'react-intl';
 import configureStore from 'redux-mock-store';
@@ -12,7 +13,7 @@ import issueMetadata from 'testdata/cloud-get-create-issue-metadata-for-project.
 
 import {FilterField, FilterFieldInclusion, IssueMetadata} from 'types/model';
 import {getCustomFieldFiltersForProjects, isEpicLinkField, isTeamField} from 'utils/jira_issue_metadata';
-import {defaultMockState, mockTheme, renderWithRedux} from 'testlib/test-utils';
+import {defaultMockState, renderWithRedux} from 'testlib/test-utils';
 
 import ChannelSubscriptionFilter, {Props} from './channel_subscription_filter';
 
@@ -29,7 +30,7 @@ jest.mock('components/data_selectors/jira_team_selector', () => ({
 describe('components/ChannelSubscriptionFilter', () => {
     const fields = getCustomFieldFiltersForProjects(issueMetadata, [issueMetadata.projects[0].key], []);
     const baseProps: Props = {
-        theme: mockTheme,
+        projectKey: 'KT',
         fields,
         field: fields.find((f) => f.key === 'priority') as FilterField,
         value: {
@@ -117,39 +118,17 @@ describe('components/ChannelSubscriptionFilter', () => {
         expect(screen.getByTestId('team-selector-value').textContent).toEqual('"team-1"');
     });
 
-    test('should render correct inclusion captions for different include choices', async () => {
-        const props = {...baseProps};
-        const ref = React.createRef<ChannelSubscriptionFilter>();
+    test('should describe each inclusion choice in the open dropdown', async () => {
         await act(async () => {
-            renderWithRedux(
-                <ChannelSubscriptionFilter
-                    {...props}
-                    ref={ref}
-                />,
-            );
+            renderWithRedux(<ChannelSubscriptionFilter {...baseProps}/>);
         });
 
-        expect(ref.current).toBeDefined();
+        await userEvent.click(screen.getByRole('combobox', {name: 'Inclusion'}));
 
-        const formatFunc = ref.current?.renderInclusionDropdownOption;
-        expect(formatFunc).toBeDefined();
-
-        const tests = [
-            ['include_any', 'Includes either of the values (or)'],
-            ['include_all', 'Includes all of the values (and)'],
-            ['exclude_any', 'Excludes all of the values'],
-            ['empty', 'Includes when the value is empty'],
-        ];
-
-        // Select dropdown is open
-        for (const t of tests) {
-            const element = formatFunc?.({value: t[0], label: t[1]}, {context: ''});
-            expect(element).toBeDefined();
-        }
-
-        // Select dropdown is closed - returns the label directly
-        const result = formatFunc?.({value: 'include_any', label: 'Some Option Label'}, {context: 'value'});
-        expect(result).toEqual('Some Option Label');
+        expect(await screen.findByText('Includes either of the values (or)')).toBeInTheDocument();
+        expect(screen.getByText('Excludes all of the values')).toBeInTheDocument();
+        expect(screen.getByText('Includes when the value is empty')).toBeInTheDocument();
+        expect(screen.getByText('Includes the specified values or when the value is empty')).toBeInTheDocument();
     });
 
     test('checkFieldConflictError should return an error string when there is a conflict', async () => {
@@ -222,7 +201,10 @@ describe('components/ChannelSubscriptionFilter', () => {
         );
 
         // With EXCLUDE_ANY for securitylevel, isValid should be false
-        const isValid = ref.current?.isValid();
+        let isValid;
+        act(() => {
+            isValid = ref.current?.isValid();
+        });
         expect(isValid).toBe(false);
 
         // The error is returned by checkInclusionError method

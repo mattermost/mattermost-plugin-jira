@@ -1,0 +1,15 @@
+.jira-attach-comment__message {
+    margin: 0 0 var(--spacing-l);
+
+    blockquote {
+        max-height: 200px;
+        margin: 0;
+        padding: var(--spacing-xs) var(--spacing-m);
+        overflow-y: auto;
+        border-left: 4px solid rgba(var(--center-channel-color-rgb), 0.16);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+        font-size: var(--font-size-100);
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+}

@@ -1,0 +1,9 @@
+.jira-tooltip {
+    position: fixed;
+    transform: translate(-50%, -100%);
+    pointer-events: none;
+}
+
+.jira-tooltip-anchor {
+    display: inline-flex;
+}

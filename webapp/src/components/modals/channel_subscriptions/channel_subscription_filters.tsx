@@ -3,6 +3,10 @@
 
 import React from 'react';
 
+import {PlusIcon} from '@mattermost/compass-icons/components';
+import {Button} from '@mattermost/compass-ui/components/button';
+import {Icon} from '@mattermost/compass-ui/components/icon';
+
 import {
     FilterField,
     FilterFieldInclusion,
@@ -17,7 +21,6 @@ import ChannelSubscriptionFilter, {EmptyChannelSubscriptionFilter} from './chann
 export type Props = {
     fields: FilterField[];
     values: FilterValue[];
-    theme: {};
     chosenIssueTypes: string[];
     issueMetadata: IssueMetadata;
     addValidate: (isValid: () => boolean) => void;
@@ -77,7 +80,6 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
     render(): JSX.Element {
         const {fields, values} = this.props;
         const {showCreateRow} = this.state;
-        const style = getStyle();
 
         const conflictingFields = getConflictingFields(
             this.props.fields,
@@ -89,12 +91,10 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
         });
 
         return (
-            <div className='margin-bottom'>
-                <label
-                    className='control-label margin-bottom'
-                >
+            <div className='jira-subscriptions__filters'>
+                <h4 className='jira-subscriptions__filters-label'>
                     {'Filters'}
-                </label>
+                </h4>
                 <div>
                     {values.map((v, i) => {
                         const field = fields.find((f) => f.key === v.key);
@@ -111,7 +111,6 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
                                     issueMetadata={this.props.issueMetadata}
                                     onChange={this.onConfiguredValueChange}
                                     removeFilter={this.removeFilter}
-                                    theme={this.props.theme}
                                     addValidate={this.props.addValidate}
                                     removeValidate={this.props.removeValidate}
                                     instanceID={this.props.instanceID}
@@ -129,29 +128,21 @@ export default class ChannelSubscriptionFilters extends React.PureComponent<Prop
                                 chosenIssueTypes={this.props.chosenIssueTypes}
                                 issueMetadata={this.props.issueMetadata}
                                 onChange={this.onConfiguredValueChange}
-                                theme={this.props.theme}
                                 cancelAdd={this.hideNewFilter}
                             />
                         </div>
                     )}
-                    <button
+                    <Button
+                        emphasis='tertiary'
+                        size='small'
+                        leadingIcon={<Icon glyph={<PlusIcon/>}/>}
                         onClick={this.addNewFilter}
                         disabled={showCreateRow}
-                        className='btn style--none d-flex align-items-center'
-                        type='button'
                     >
-                        <span style={style.plusIcon}>{'+'}</span>
                         {'Add Filter'}
-                    </button>
+                    </Button>
                 </div>
             </div>
         );
     }
 }
-
-const getStyle = () => ({
-    plusIcon: {
-        fontSize: '24px',
-        margin: '-1px 4px 0 0',
-    },
-});

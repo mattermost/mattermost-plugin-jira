@@ -2,22 +2,22 @@
 // See LICENSE.txt for license information.
 
 import React, {PureComponent} from 'react';
-import {Modal} from 'react-bootstrap';
+
+import {Button} from '@mattermost/compass-ui/components/button';
+import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
 
 import {Post} from '@mattermost/types/posts';
 import {Team} from '@mattermost/types/teams';
-import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {APIResponse, AttachCommentRequest, SavedFieldValues} from 'types/model';
 
-import {getModalStyles} from 'utils/styles';
-
-import FormButton from 'components/form_button';
-import Input from 'components/input';
 import JiraIssueSelector from 'components/jira_issue_selector';
+import Modal from 'components/modal';
 import Validator from 'components/validator';
 
 import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project_selector';
+
+import './attach_comment_form.scss';
 
 function getPostDisplayMessage(post: Post): string {
     if (post.message) {
@@ -51,8 +51,10 @@ type Props = {
     attachComment: (payload: AttachCommentRequest) => Promise<APIResponse<{}>>;
     post: Post;
     currentTeam: Team;
-    theme: Theme;
+    visible: boolean;
 }
+
+const FORM_ID = 'jira-attach-comment-form';
 
 type State = {
     submitting: boolean;
@@ -98,7 +100,7 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
         });
     };
 
-    handleClose = (e?: Event) => {
+    handleClose = (e?: React.SyntheticEvent) => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
@@ -111,9 +113,7 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
     };
 
     render() {
-        const {theme} = this.props;
         const {error, submitting} = this.state;
-        const style = getModalStyles(theme);
 
         const instanceSelector = (
             <JiraInstanceAndProjectSelector
@@ -122,7 +122,6 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
                 hideProjectSelector={true}
                 onInstanceChange={(instanceID: string) => this.setState({instanceID})}
                 onProjectChange={(savedValues: SavedFieldValues) => {}}
-                theme={this.props.theme}
                 addValidate={this.validator.addComponent}
                 removeValidate={this.validator.removeComponent}
                 onError={(err: string) => this.setState({error: err})}
@@ -138,56 +137,70 @@ export default class AttachCommentToIssueForm extends PureComponent<Props, State
                         removeValidate={this.validator.removeComponent}
                         onChange={this.handleIssueKeyChange}
                         required={true}
-                        theme={theme}
-                        error={error}
                         value={this.state.issueKey}
                         instanceID={this.state.instanceID}
                     />
-                    <Input
-                        addValidate={this.validator.addComponent}
-                        removeValidate={this.validator.removeComponent}
-                        label='Message Attached to Jira Issue'
-                        type='textarea'
-                        isDisabled={true}
-                        value={getPostDisplayMessage(this.props.post)}
-                        disabled={false}
-                        readOnly={true}
-                    />
+                    <figure className='jira-setting jira-attach-comment__message'>
+                        <figcaption className='jira-setting__label'>
+                            {'Message Attached to Jira Issue'}
+                        </figcaption>
+                        <blockquote
+                            id='jira-attach-comment-message'
+                            tabIndex={0}
+                        >
+                            {getPostDisplayMessage(this.props.post)}
+                        </blockquote>
+                    </figure>
                 </div>
             );
         }
 
         const disableSubmit = !(this.state.instanceID && this.state.issueKey);
-        return (
-            <form
-                role='form'
-                onSubmit={this.handleSubmit}
-            >
-                <Modal.Body
-                    style={style.modalBody}
+        const footer = (
+            <>
+                <Button
+                    emphasis='tertiary'
+                    onClick={this.handleClose}
                 >
+                    {'Cancel'}
+                </Button>
+                <Button
+                    type='submit'
+                    form={FORM_ID}
+                    emphasis='primary'
+                    loading={submitting}
+                    disabled={disableSubmit}
+                >
+                    {'Attach'}
+                </Button>
+            </>
+        );
+
+        return (
+            <Modal
+                open={this.props.visible}
+                size='large'
+                title='Attach message to Jira issue'
+                onClose={this.handleClose}
+                footer={footer}
+            >
+                <form
+                    id={FORM_ID}
+                    role='form'
+                    onSubmit={this.handleSubmit}
+                >
+                    {error && (
+                        <SectionNotice
+                            className='jira-form-notice'
+                            role='alert'
+                            type='danger'
+                            title={error}
+                        />
+                    )}
                     {instanceSelector}
                     {form}
-                </Modal.Body>
-                <Modal.Footer style={style.modalFooter}>
-                    <FormButton
-                        type='button'
-                        btnClass='btn-link'
-                        defaultMessage='Cancel'
-                        onClick={this.handleClose}
-                    />
-                    <FormButton
-                        type='submit'
-                        btnClass='btn btn-primary'
-                        saving={submitting}
-                        defaultMessage='Attach'
-                        savingMessage='Attaching'
-                        disabled={disableSubmit}
-                    >
-                        {'Attach'}
-                    </FormButton>
-                </Modal.Footer>
-            </form>
+                </form>
+            </Modal>
         );
     }
 }

@@ -1,7 +1,6 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Theme} from 'mattermost-redux/selectors/entities/preferences';
 import {Channel} from '@mattermost/types/channels';
 
 import {
@@ -15,7 +14,6 @@ import {
 
 export type SharedProps = {
     channel: Channel | null;
-    theme: Theme;
     channelSubscriptions: ChannelSubscription[];
     subscriptionTemplates: ChannelSubscription[];
     omitDisplayName: boolean;

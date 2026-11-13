@@ -3,9 +3,11 @@
 
 import React, {PureComponent} from 'react';
 
-import FullScreenModal from '../full_screen_modal/full_screen_modal';
+import {ModalOverlay} from '@mattermost/compass-ui/components/modal';
 
 import {AllProjectMetadata} from 'types/model';
+
+import {Z_INDEX_MODAL} from 'utils/styles';
 
 import ChannelSubscriptionsModalInner from './channel_subscriptions_internal';
 import {SharedProps} from './shared_props';
@@ -24,6 +26,13 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props, Stat
         showModal: false,
         allProjectMetadata: null,
     };
+
+    private inner = React.createRef<ChannelSubscriptionsModalInner>();
+
+    // Keeps the last open view rendered while the overlay plays its exit.
+    private lastOpenProps: Props | null = null;
+    private session = 0;
+    private wasOpen = false;
 
     componentDidUpdate(prevProps: Props) {
         if (prevProps.channel && !this.props.channel) {
@@ -65,39 +74,48 @@ export default class ChannelSubscriptionsModal extends PureComponent<Props, Stat
         this.setState({showModal: true, allProjectMetadata: projectResponses.data});
     };
 
-    handleClose = (e?: Event): void => {
-        if (e && e.preventDefault) {
-            e.preventDefault();
+    handleOverlayClose = () => {
+        if (this.inner.current) {
+            this.inner.current.requestClose();
+        } else {
+            this.props.close();
         }
-
-        this.props.close();
     };
 
     render(): JSX.Element {
         const isModalOpen = Boolean(this.props.channel && this.state.showModal);
+        if (isModalOpen) {
+            if (!this.wasOpen) {
+                this.session += 1;
+            }
+            this.lastOpenProps = this.props;
+        }
+        this.wasOpen = isModalOpen;
 
         let inner;
-        if (isModalOpen) {
+        if (this.lastOpenProps) {
             inner = (
                 <ChannelSubscriptionsModalInner
+                    key={this.session}
+                    ref={this.inner}
                     allProjectMetadata={this.state.allProjectMetadata}
-                    {...this.props}
+                    {...this.lastOpenProps}
+                    open={isModalOpen}
                 />
             );
         }
 
         return (
-            <FullScreenModal
-                show={isModalOpen}
-                onClose={this.handleClose}
-                ariaLabel='Jira Subscriptions'
+            <ModalOverlay
+                open={isModalOpen}
+                onClose={this.handleOverlayClose}
+                onExited={() => {
+                    this.lastOpenProps = null;
+                }}
+                zIndex={Z_INDEX_MODAL}
             >
-                <div className='channel-subscriptions-modal'>
-                    <div className='channel-subscriptions-modal-body'>
-                        {inner}
-                    </div>
-                </div>
-            </FullScreenModal>
+                {inner}
+            </ModalOverlay>
         );
     }
 }

@@ -49,6 +49,13 @@ const config = {
                 ],
             },
             {
+                test: /\.css$/,
+                use: [
+                    'style-loader',
+                    'css-loader',
+                ],
+            },
+            {
                 test: /\.scss$/,
                 use: [
                     'style-loader',
@@ -71,7 +78,6 @@ const config = {
         redux: 'Redux',
         'react-redux': 'ReactRedux',
         'prop-types': 'PropTypes',
-        'react-bootstrap': 'ReactBootstrap',
         'react-router-dom': 'ReactRouterDom',
     },
     output: {

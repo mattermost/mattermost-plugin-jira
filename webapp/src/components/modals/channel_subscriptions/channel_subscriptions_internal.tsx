@@ -5,10 +5,8 @@ import React from 'react';
 
 import {AllProjectMetadata, ChannelSubscription} from 'types/model';
 
-import BackIcon from '../full_screen_modal/back_icon';
-
 import EditChannelSubscription from './edit_channel_subscription';
-import SelectChannelSubscription from './select_channel_subscription';
+import SelectChannelSubscription, {SubscriptionsTab} from './select_channel_subscription';
 import {SharedProps} from './shared_props';
 
 type State = {
@@ -16,58 +14,88 @@ type State = {
     selectedSubscription: ChannelSubscription | null;
     creatingSubscriptionTemplate: boolean;
     selectedSubscriptionTemplate: ChannelSubscription | null;
-
+    activeTab: SubscriptionsTab;
+    pendingView: View | null;
 }
+
+type View = Pick<State, 'creatingSubscription' | 'selectedSubscription' | 'creatingSubscriptionTemplate' | 'selectedSubscriptionTemplate'>;
+
+const SUBSCRIPTIONS_VIEW: View = {
+    creatingSubscription: false,
+    selectedSubscription: null,
+    creatingSubscriptionTemplate: false,
+    selectedSubscriptionTemplate: null,
+};
 
 type Props = SharedProps & {
     allProjectMetadata: AllProjectMetadata | null;
+    open: boolean;
 }
 
 export default class ChannelSubscriptionsModalInner extends React.PureComponent<Props, State> {
-    state = {
+    state: State = {
         creatingSubscription: false,
         selectedSubscription: null,
         creatingSubscriptionTemplate: false,
         selectedSubscriptionTemplate: null,
+        activeTab: 'subscriptions',
+        pendingView: null,
+    };
+
+    private edit = React.createRef<EditChannelSubscription>();
+
+    requestClose = (): void => {
+        if (this.edit.current) {
+            this.edit.current.requestClose();
+        } else {
+            this.props.close();
+        }
+    };
+
+    // Switching views plays the current modal's exit, then the next view enters,
+    // so the change reads as a transition instead of a swap in place.
+    private goTo = (view: View): void => {
+        this.setState({pendingView: view});
+    };
+
+    private handleExited = (): void => {
+        if (this.state.pendingView) {
+            this.setState({...this.state.pendingView, pendingView: null});
+        }
     };
 
     showEditChannelSubscription = (subscription: ChannelSubscription): void => {
-        this.setState({selectedSubscription: subscription, creatingSubscription: false});
+        this.goTo({...SUBSCRIPTIONS_VIEW, selectedSubscription: subscription});
     };
 
     showEditSubscriptionTemplate = (subscription: ChannelSubscription): void => {
-        this.setState({selectedSubscriptionTemplate: subscription, creatingSubscriptionTemplate: false});
+        this.goTo({...SUBSCRIPTIONS_VIEW, selectedSubscriptionTemplate: subscription});
     };
 
     showCreateChannelSubscription = (): void => {
-        this.setState({selectedSubscription: null, creatingSubscription: true});
+        this.goTo({...SUBSCRIPTIONS_VIEW, creatingSubscription: true});
     };
 
     showCreateSubscriptionTemplate = (): void => {
-        this.setState({selectedSubscriptionTemplate: null, creatingSubscriptionTemplate: true});
+        this.goTo({...SUBSCRIPTIONS_VIEW, creatingSubscriptionTemplate: true});
     };
 
     finishEditSubscription = (): void => {
-        this.setState({selectedSubscription: null, creatingSubscription: false, selectedSubscriptionTemplate: null, creatingSubscriptionTemplate: false});
-    };
-
-    handleBack = (): void => {
-        this.setState({
-            creatingSubscription: false,
-            selectedSubscription: null,
-            creatingSubscriptionTemplate: false,
-            selectedSubscriptionTemplate: null,
-        });
+        this.goTo(SUBSCRIPTIONS_VIEW);
     };
 
     render(): JSX.Element {
         const {selectedSubscription, creatingSubscription, creatingSubscriptionTemplate, selectedSubscriptionTemplate} = this.state;
 
-        let form;
+        const open = this.props.open && !this.state.pendingView;
+
         if (selectedSubscription || creatingSubscription || creatingSubscriptionTemplate || selectedSubscriptionTemplate) {
-            form = (
+            return (
                 <EditChannelSubscription
                     {...this.props}
+                    ref={this.edit}
+                    open={open}
+                    onExited={this.handleExited}
                     finishEditSubscription={this.finishEditSubscription}
                     selectedSubscription={selectedSubscription}
                     creatingSubscription={creatingSubscription}
@@ -75,34 +103,21 @@ export default class ChannelSubscriptionsModalInner extends React.PureComponent<
                     selectedSubscriptionTemplate={selectedSubscriptionTemplate}
                 />
             );
-        } else {
-            form = (
-                <SelectChannelSubscription
-                    {...this.props}
-                    allProjectMetadata={this.props.allProjectMetadata}
-                    showEditChannelSubscription={this.showEditChannelSubscription}
-                    showCreateChannelSubscription={this.showCreateChannelSubscription}
-                    showEditSubscriptionTemplate={this.showEditSubscriptionTemplate}
-                    showCreateSubscriptionTemplate={this.showCreateSubscriptionTemplate}
-                />
-            );
-        }
-
-        let backIcon;
-        if (this.state.creatingSubscription || this.state.selectedSubscription || this.state.creatingSubscriptionTemplate || this.state.selectedSubscriptionTemplate) {
-            backIcon = (
-                <BackIcon
-                    className='back'
-                    onClick={this.handleBack}
-                />
-            );
         }
 
         return (
-            <React.Fragment>
-                {backIcon}
-                {form}
-            </React.Fragment>
+            <SelectChannelSubscription
+                {...this.props}
+                open={open}
+                onExited={this.handleExited}
+                activeTab={this.state.activeTab}
+                onTabChange={(activeTab) => this.setState({activeTab})}
+                allProjectMetadata={this.props.allProjectMetadata}
+                showEditChannelSubscription={this.showEditChannelSubscription}
+                showCreateChannelSubscription={this.showCreateChannelSubscription}
+                showEditSubscriptionTemplate={this.showEditSubscriptionTemplate}
+                showCreateSubscriptionTemplate={this.showCreateSubscriptionTemplate}
+            />
         );
     }
 }

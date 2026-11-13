@@ -1,8 +1,12 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-import {Modal} from 'react-bootstrap';
+import React, {useRef} from 'react';
+
+import {ModalOverlay} from '@mattermost/compass-ui/components/modal';
+
+import {Z_INDEX_MODAL} from 'utils/styles';
+import useModalSession from 'utils/use_modal_session';
 
 import CreateIssueForm from './create_issue_form';
 
@@ -12,24 +16,20 @@ type Props = {
 }
 
 export default function CreateIssueModal(props: Props) {
-    if (!props.visible) {
-        return null;
-    }
+    const session = useModalSession(props);
+    const form = useRef<CreateIssueForm>(null);
 
     return (
-        <Modal
-            dialogClassName='modal--scroll'
-            show={props.visible}
-            onHide={props.close}
-            onExited={props.close}
-            bsSize='large'
-            backdrop='static'
-            aria-labelledby='jira-create-issue-modal-title'
+        <ModalOverlay
+            open={props.visible}
+            onClose={() => (form.current ? form.current.requestClose() : props.close())}
+            zIndex={Z_INDEX_MODAL}
         >
-            <Modal.Header closeButton={true}>
-                <Modal.Title id='jira-create-issue-modal-title'>{'Create Jira Issue'}</Modal.Title>
-            </Modal.Header>
-            <CreateIssueForm {...props}/>
-        </Modal>
+            <CreateIssueForm
+                ref={form}
+                key={session.key}
+                {...session.props}
+            />
+        </ModalOverlay>
     );
 }
