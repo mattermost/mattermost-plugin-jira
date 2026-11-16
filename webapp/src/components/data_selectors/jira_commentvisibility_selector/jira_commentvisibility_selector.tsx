@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import {ReactSelectOption} from 'types/model';
+import {SelectOption} from 'types/model';
 
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 
@@ -26,7 +26,7 @@ type Props = BackendSelectorProps & {
 const JiraCommentVisibilitySelector = (props: Props) => {
     const {value, isMulti, instanceID, searchCommentVisibilityFields} = props;
 
-    const commentVisibilityFields = async (inputValue: string): Promise<ReactSelectOption[]> => {
+    const commentVisibilityFields = async (inputValue: string): Promise<SelectOption[]> => {
         const params = {
             fieldValue: inputValue,
             instance_id: instanceID,
@@ -39,7 +39,7 @@ const JiraCommentVisibilitySelector = (props: Props) => {
         });
     };
 
-    const fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> => (value?.length ? commentVisibilityFields('') : []);
+    const fetchInitialSelectedValues = async (): Promise<SelectOption[]> => (value?.length ? commentVisibilityFields('') : []);
 
     return (
         <BackendSelector

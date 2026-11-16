@@ -4,8 +4,6 @@
 import React from 'react';
 import {fireEvent, render, screen} from '@testing-library/react';
 
-import Preferences from 'mattermost-redux/constants/preferences';
-
 import JiraField from './jira_field';
 
 // The selector is connected to redux and fetches on mount, so it is replaced
@@ -40,7 +38,6 @@ describe('components/JiraField team field', () => {
         field: teamField,
         projectKey: 'KT',
         issueMetadata: {projects: []},
-        theme: Preferences.THEMES.denim,
         addValidate: jest.fn(),
         removeValidate: jest.fn(),
     };

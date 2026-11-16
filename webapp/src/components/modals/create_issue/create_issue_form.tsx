@@ -2,11 +2,16 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Modal} from 'react-bootstrap';
 
-import {Theme} from 'mattermost-redux/selectors/entities/preferences';
+import {Button} from '@mattermost/compass-ui/components/button';
+
+import {SectionNotice} from '@mattermost/compass-ui/components/section-notice';
+
 import {Post} from '@mattermost/types/posts';
 import {Team} from '@mattermost/types/teams';
+
+import ConfirmModal from 'components/confirm_modal';
+import Modal from 'components/modal';
 
 import {
     APIResponse,
@@ -18,14 +23,12 @@ import {
 } from 'types/model';
 
 import {getFields, getIssueTypes} from 'utils/jira_issue_metadata';
-import {getModalStyles} from 'utils/styles';
 
 import Validator from 'components/validator';
 import JiraFields from 'components/jira_fields';
 import {isFieldSupported} from 'components/jira_field';
-import FormButton from 'components/form_button';
 import Loading from 'components/loading';
-import ReactSelectSetting from 'components/react_select_setting';
+import SelectSetting from 'components/select_setting';
 import JiraInstanceAndProjectSelector from 'components/jira_instance_and_project_selector';
 
 type Props = {
@@ -35,10 +38,18 @@ type Props = {
     channelId?: string;
     currentTeam: Team;
     post?: Post;
-    theme: Theme;
     visible: boolean;
     fetchJiraIssueMetadataForProjects: (projectKeys: string[], instanceID: string) => Promise<APIResponse<IssueMetadata>>;
 };
+
+const FORM_ID = 'jira-create-issue-form';
+
+// Project and issue type are prefilled from saved defaults, so only the issue's own fields count as edits.
+const contentSnapshot = (fields: CreateIssueFields): string => JSON.stringify(
+    Object.keys(fields).sort()
+        .filter((key) => key !== 'project' && key !== 'issuetype' && typeof fields[key] !== 'undefined')
+        .map((key) => [key, fields[key]]),
+);
 
 type State = {
     submitting: boolean;
@@ -49,10 +60,12 @@ type State = {
     error: string | null;
     jiraIssueMetadata: IssueMetadata | null;
     fetchingIssueMetadata: boolean;
+    showDiscardConfirm: boolean;
 };
 
 export default class CreateIssueForm extends React.PureComponent<Props, State> {
     private validator: Validator = new Validator();
+    private initialContent: string;
     constructor(props: Props) {
         super(props);
 
@@ -69,6 +82,7 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
             fetchingIssueMetadata: false,
             jiraIssueMetadata: null,
             submitting: false,
+            showDiscardConfirm: false,
             fields: {
                 description,
                 project: {
@@ -79,9 +93,18 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                 },
             } as CreateIssueFields,
         };
+        this.initialContent = contentSnapshot(this.state.fields);
     }
 
-    handleClose = (e?: Event) => {
+    requestClose = () => {
+        if (contentSnapshot(this.state.fields) === this.initialContent) {
+            this.props.close();
+        } else {
+            this.setState({showDiscardConfirm: true});
+        }
+    };
+
+    handleClose = (e?: React.SyntheticEvent) => {
         if (e && e.preventDefault) {
             e.preventDefault();
         }
@@ -241,14 +264,13 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
 
         return (
             <div>
-                <ReactSelectSetting
+                <SelectSetting
                     name={'issue_type'}
                     label={'Issue Type'}
                     required={true}
                     onChange={this.handleIssueTypeChange}
                     options={issueOptions}
                     isMulti={false}
-                    theme={this.props.theme}
                     value={issueOptions.find((option) => option.value === this.state.issueType)}
                     addValidate={this.validator.addComponent}
                     removeValidate={this.validator.removeComponent}
@@ -263,7 +285,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                     issueMetadata={this.state.jiraIssueMetadata as IssueMetadata}
                     onChange={this.handleFieldChange}
                     values={this.state.fields}
-                    theme={this.props.theme}
                     addValidate={this.validator.addComponent}
                     removeValidate={this.validator.removeComponent}
                     isFilter={false}
@@ -273,8 +294,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
     };
 
     render() {
-        const style = getModalStyles(this.props.theme);
-
         const instanceSelector = (
             <JiraInstanceAndProjectSelector
                 selectedInstanceID={this.state.instanceID}
@@ -282,8 +301,6 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
                 onInstanceChange={this.handleInstanceChange}
                 onProjectChange={this.handleProjectChange}
                 onError={this.handleProjectFetchError}
-
-                theme={this.props.theme}
                 addValidate={this.validator.addComponent}
                 removeValidate={this.validator.removeComponent}
             />
@@ -292,21 +309,22 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         const disableSubmit = this.state.fetchingIssueMetadata || !(this.state.projectKey && this.state.jiraIssueMetadata);
         const footer = (
             <React.Fragment>
-                <FormButton
-                    type='button'
-                    btnClass='btn-link'
-                    defaultMessage='Cancel'
-                    onClick={this.handleClose}
-                />
-                <FormButton
+                <Button
+                    emphasis='tertiary'
+                    onClick={this.requestClose}
+                >
+                    {'Cancel'}
+                </Button>
+                <Button
                     id='submit-button'
                     type='submit'
-                    btnClass='btn btn-primary'
-                    saving={this.state.submitting}
+                    form={FORM_ID}
+                    emphasis='primary'
+                    loading={this.state.submitting}
                     disabled={disableSubmit}
                 >
                     {'Create'}
-                </FormButton>
+                </Button>
             </React.Fragment>
         );
 
@@ -320,33 +338,42 @@ export default class CreateIssueForm extends React.PureComponent<Props, State> {
         let error;
         if (this.state.error) {
             error = (
-                <p className='alert alert-danger'>
-                    <i
-                        style={{marginRight: '10px'}}
-                        className='fa fa-warning'
-                        title='Warning Icon'
-                    />
-                    <span>{this.state.error}</span>
-                </p>
+                <SectionNotice
+                    className='jira-form-notice'
+                    role='alert'
+                    type='danger'
+                    title={this.state.error}
+                />
             );
         }
 
         return (
-            <form
-                role='form'
-                onSubmit={this.handleSubmit}
+            <Modal
+                open={this.props.visible}
+                size='large'
+                title='Create Jira issue'
+                onClose={this.requestClose}
+                footer={footer}
             >
-                <Modal.Body
-                    style={style.modalBody}
+                <form
+                    id={FORM_ID}
+                    role='form'
+                    onSubmit={this.handleSubmit}
                 >
                     {error}
                     {instanceSelector}
                     {form}
-                </Modal.Body>
-                <Modal.Footer style={style.modalFooter}>
-                    {footer}
-                </Modal.Footer>
-            </form>
+                </form>
+                <ConfirmModal
+                    show={this.state.showDiscardConfirm}
+                    title='Discard changes'
+                    message='Are you sure you want to discard your changes?'
+                    confirmButtonText='Discard'
+                    destructive={true}
+                    onCancel={() => this.setState({showDiscardConfirm: false})}
+                    onConfirm={() => this.setState({showDiscardConfirm: false}, this.props.close)}
+                />
+            </Modal>
         );
     }
 }

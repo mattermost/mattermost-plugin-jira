@@ -14,8 +14,8 @@ import {
     JiraFieldCustomTypeEnums,
     JiraFieldTypeEnums,
     ProjectMetadata,
-    ReactSelectOption,
     SelectField,
+    SelectOption,
     Status,
     StringArrayField,
 } from 'types/model';
@@ -53,7 +53,7 @@ function sortByName<T>(arr: (T & {name: string})[]): T[] {
     });
 }
 
-export function getProjectValues(metadata: ProjectMetadata | null): ReactSelectOption[] {
+export function getProjectValues(metadata: ProjectMetadata | null): SelectOption[] {
     if (!metadata || !metadata.projects) {
         return [];
     }
@@ -78,7 +78,7 @@ export function getIssueTypes(metadata: IssueMetadata | null, projectKey: string
     return project.issuetypes;
 }
 
-export function getIssueValues(metadata: ProjectMetadata, projectKey: string): ReactSelectOption[] {
+export function getIssueValues(metadata: ProjectMetadata, projectKey: string): SelectOption[] {
     if (!metadata || !metadata.issues_per_project || !projectKey) {
         return [];
     }
@@ -86,15 +86,15 @@ export function getIssueValues(metadata: ProjectMetadata, projectKey: string): R
     return metadata.issues_per_project[projectKey];
 }
 
-export function getIssueValuesForMultipleProjects(metadata: ProjectMetadata, projectKeys: string[]): ReactSelectOption[] {
+export function getIssueValuesForMultipleProjects(metadata: ProjectMetadata, projectKeys: string[]): SelectOption[] {
     if (!metadata || !metadata.projects || !projectKeys) {
         return [];
     }
 
     const issueValues = flatten(projectKeys.map((project) => getIssueValues(metadata, project))).filter(Boolean);
 
-    const issueTypeHash: {[key: string]: ReactSelectOption} = {};
-    issueValues.forEach((issueType: ReactSelectOption) => {
+    const issueTypeHash: {[key: string]: SelectOption} = {};
+    issueValues.forEach((issueType: SelectOption) => {
         issueTypeHash[issueType.value] = issueType;
     });
 
@@ -357,14 +357,14 @@ function isValidFieldForEvents(field: JiraField): boolean {
     return !avoidedCustomTypesForEvents.includes(custom);
 }
 
-export function getCustomFieldValuesForEvents(metadata: IssueMetadata | null, projectKeys: string[]): ReactSelectOption[] {
+export function getCustomFieldValuesForEvents(metadata: IssueMetadata | null, projectKeys: string[]): SelectOption[] {
     return getCustomFieldsForProjects(metadata, projectKeys).filter(isValidFieldForEvents).map((field) => ({
         label: `Issue Updated: Custom - ${field.name}`,
         value: `event_updated_${field.changeLogID}`,
     }));
 }
 
-export function getFieldValues(metadata: IssueMetadata, projectKey: string, issueTypeId: string): ReactSelectOption[] {
+export function getFieldValues(metadata: IssueMetadata, projectKey: string, issueTypeId: string): SelectOption[] {
     const fieldsForIssue = getFields(metadata, projectKey, issueTypeId);
     const fieldIds = Object.keys(fieldsForIssue);
     return fieldIds.map((fieldId) => ({value: fieldId, label: fieldsForIssue[fieldId].name}));

@@ -21,7 +21,7 @@ function mapStateToProps(state: GlobalState): {actionText: string} {
             actionText = 'Crear incidencia en Jira';
             break;
         default:
-            actionText = 'Create Jira Issue';
+            actionText = 'Create Jira issue';
         }
     } else if (userCanConnect) {
         actionText = 'Connect to Jira';

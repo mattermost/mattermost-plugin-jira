@@ -3,17 +3,15 @@
 
 import React from 'react';
 
-import {Theme} from 'mattermost-redux/selectors/entities/preferences';
-
 import {
     APIResponse,
     GetConnectedResponse,
     Instance,
     ProjectMetadata,
-    ReactSelectOption,
     SavedFieldValues,
+    SelectOption,
 } from 'types/model';
-import ReactSelectSetting from 'components/react_select_setting';
+import SelectSetting from 'components/select_setting';
 import {getProjectValues} from 'utils/jira_issue_metadata';
 
 export type Props = {
@@ -23,7 +21,6 @@ export type Props = {
     onProjectChange: (fieldValues: SavedFieldValues) => void;
     onError: (err: string) => void;
 
-    theme: Theme;
     addValidate: (isValid: () => boolean) => void;
     removeValidate: (isValid: () => boolean) => void;
 
@@ -128,7 +125,7 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
     };
 
     render() {
-        const instanceOptions: ReactSelectOption[] = this.props.installedInstances.map((instance: Instance) => (
+        const instanceOptions: SelectOption[] = this.props.installedInstances.map((instance: Instance) => (
             {label: instance.alias || instance.instance_id, value: instance.instance_id}
         ));
 
@@ -136,7 +133,7 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
         let instanceSelector;
         if (this.props.connectedInstances.length > 1 && this.props.installedInstances.length > 1) {
             instanceSelector = (
-                <ReactSelectSetting
+                <SelectSetting
                     name={'instance'}
                     label={label}
                     options={instanceOptions}
@@ -144,7 +141,6 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
                     value={instanceOptions.find((opt) => opt.value === this.props.selectedInstanceID)}
                     isDisabled={this.state.disableInstanceSelector}
                     required={!this.state.disableInstanceSelector}
-                    theme={this.props.theme}
                     isLoading={this.state.fetchingInstances}
                 />
             );
@@ -154,7 +150,7 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
         if (this.props.selectedInstanceID && !this.props.hideProjectSelector) {
             const projectOptions = getProjectValues(this.state.jiraProjectMetadata);
             projectSelector = (
-                <ReactSelectSetting
+                <SelectSetting
                     name={'projects'}
                     label={'Project'}
                     limitOptions={true}
@@ -162,7 +158,6 @@ export default class JiraInstanceAndProjectSelector extends React.PureComponent<
                     onChange={this.handleProjectChange}
                     options={projectOptions}
                     isMulti={false}
-                    theme={this.props.theme}
                     value={projectOptions.find((option) => option.value === this.props.selectedProjectID) || null}
                     addValidate={this.props.addValidate}
                     removeValidate={this.props.removeValidate}

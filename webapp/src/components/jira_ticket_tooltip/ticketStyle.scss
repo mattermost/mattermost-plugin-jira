@@ -113,10 +113,10 @@
         font-weight: bold;
     }
 
-    .popover__labels__label {
+    .popover-labels__label {
         display: flex;
-        flex-direction: row;
         flex-wrap: wrap;
+        gap: var(--spacing-xxs);
     }
 
     .popover-body__labels {
@@ -146,25 +146,12 @@
     }
 
     .popover-footer__assignee-profile {
-        width: 20px;
-        height: 20px;
-        border-radius: 50px;
         flex: none;
         margin-right: 6px;
     }
 
     .popover-footer__assignee-name {
         font-weight: 600;
-    }
-
-    .popover-labels__label-list {
-        font-size: 10px;
-        font-weight: 600;
-        margin: 5px 5px 5px 0;
-        padding: 0 4px;
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        border-radius: 2px;
-        line-height: 16px;
     }
 
     .fix-version-label {
@@ -176,36 +163,11 @@
     }
 
     .fix-version-label-value {
-        padding: 1px 8px;
-        font-weight: 600;
-        border-radius: 2px;
+        margin-left: var(--spacing-xxxs);
     }
 
-    .default-style {
-        font-family: 'Open Sans', sans-serif;
-        font-style: normal;
-        font-weight: 600;
-        font-size: 12px;
+    .ticket-status {
         margin: 10px 0 8px 0;
-        padding: 4px 8px;
-        text-align: center;
-        border-radius: 4px;
-    }
-
-    .ticket-status--indeterminate {
-        color: #FFFFFF;
-        background-color: #1C58D9;
-        border-radius: 2px;
-    }
-
-    .ticket-status--done {
-        color: #FFFFFF;
-        background-color: var(--online-indicator);
-    }
-
-    .ticket-status--default {
-        color: var(--center-channel-color-rgb);
-        background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     .jira-ticket-key-icon-loader {
@@ -224,12 +186,7 @@
 
 .jira-issue-tooltip-loading {
     height: 210px;
-    font-size: 28px;
     justify-content: center;
-
-    .jira-issue-spinner {
-        opacity: 0.72;
-    }
 }
 
 .tooltip-ticket-summary {
@@ -238,20 +195,8 @@
 
 .jira-issue-tooltip-error {
     height: 210px;
-    font-size: 28px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 10px;
     padding: 12px;
-
-    .jira-issue-error-message {
-        font-size: 19px;
-        text-align: center;
-    }
-
-    .jira-issue-error-footer {
-        font-size: 13px;
-        font-weight: 100;
-    }
 }

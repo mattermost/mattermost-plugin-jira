@@ -2,21 +2,23 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {act} from '@testing-library/react';
+import {act, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import testChannel from 'testdata/channel.json';
 
 import {InstanceType, IssueMetadata, ProjectMetadata} from 'types/model';
-import {mockTheme, renderWithRedux} from 'testlib/test-utils';
+import {renderWithRedux} from 'testlib/test-utils';
 
 import ChannelSubscriptionsModal, {Props} from './channel_subscriptions';
 
 describe('components/ChannelSettingsModal', () => {
     const baseProps = {
-        theme: mockTheme,
-        fetchJiraProjectMetadataForAllInstances: jest.fn().mockResolvedValue({}),
+        fetchJiraProjectMetadataForAllInstances: jest.fn().mockResolvedValue({data: []}),
         fetchChannelSubscriptions: jest.fn().mockResolvedValue({}),
         fetchAllSubscriptionTemplates: jest.fn().mockResolvedValue({}),
+        fetchJiraProjectMetadata: jest.fn().mockResolvedValue({}),
+        getConnected: jest.fn().mockResolvedValue({}),
         sendEphemeralPost: jest.fn(),
         jiraIssueMetadata: {} as IssueMetadata,
         jiraProjectMetadata: {} as ProjectMetadata,
@@ -75,6 +77,78 @@ describe('components/ChannelSettingsModal', () => {
         });
 
         expect(ref2.current).toBeDefined();
+    });
+
+    const openModal = async (props: Props) => {
+        const ui = (channel: Props['channel']) => (
+            <ChannelSubscriptionsModal
+                {...props}
+                subscriptionTemplates={[]}
+                channel={channel}
+            />
+        );
+        const result = renderWithRedux(ui(null));
+        await act(async () => {
+            result.rerender(ui(testChannel as unknown as Props['channel']));
+        });
+        return result;
+    };
+
+    test('should switch between subscriptions and templates tabs', async () => {
+        await openModal(baseProps);
+
+        expect(screen.getByRole('dialog', {name: 'Jira subscriptions'})).toBeInTheDocument();
+        expect(screen.getByRole('tabpanel')).toHaveTextContent('No subscriptions yet');
+        expect(screen.getByRole('button', {name: 'Create subscription'})).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('tab', {name: 'Templates'}));
+
+        expect(screen.getByRole('tabpanel')).toHaveTextContent('No templates yet');
+        expect(screen.getByRole('button', {name: 'Create template'})).toBeInTheDocument();
+    });
+
+    test('should go back from an untouched new subscription without a discard prompt', async () => {
+        await openModal(baseProps);
+
+        await userEvent.click(screen.getByRole('button', {name: 'Create subscription'}));
+        expect(await screen.findByRole('dialog', {name: 'New Jira subscription'})).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('button', {name: 'Back'}));
+
+        expect(screen.queryByRole('dialog', {name: 'Discard'})).not.toBeInTheDocument();
+        expect(await screen.findByRole('dialog', {name: 'Jira subscriptions'})).toBeInTheDocument();
+    });
+
+    test('should start from the list when reopened before the exit finishes', async () => {
+        const {rerender} = await openModal(baseProps);
+        await userEvent.click(screen.getByRole('button', {name: 'Create subscription'}));
+        expect(await screen.findByRole('dialog', {name: 'New Jira subscription'})).toBeInTheDocument();
+
+        const ui = (channel: Props['channel']) => (
+            <ChannelSubscriptionsModal
+                {...baseProps}
+                subscriptionTemplates={[]}
+                channel={channel}
+            />
+        );
+        await act(async () => {
+            rerender(ui(null));
+        });
+        await act(async () => {
+            rerender(ui(testChannel as unknown as Props['channel']));
+        });
+
+        expect(screen.getByRole('dialog', {name: 'Jira subscriptions'})).toBeInTheDocument();
+        expect(screen.queryByRole('dialog', {name: 'New Jira subscription'})).not.toBeInTheDocument();
+    });
+
+    test('should close when the backdrop is clicked', async () => {
+        const close = jest.fn();
+        await openModal({...baseProps, close});
+
+        await userEvent.click(screen.getByRole('dialog').parentElement!);
+
+        expect(close).toHaveBeenCalledTimes(1);
     });
 
     test('error fetching channel subscriptions, should close modal and show ephemeral message', async () => {

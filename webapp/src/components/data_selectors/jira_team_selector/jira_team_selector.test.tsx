@@ -4,8 +4,6 @@
 import React from 'react';
 import {act, screen} from '@testing-library/react';
 
-import Preferences from 'mattermost-redux/constants/preferences';
-
 import {IssueMetadata} from 'types/model';
 import {renderWithRedux} from 'testlib/test-utils';
 
@@ -24,7 +22,6 @@ describe('components/JiraTeamSelector', () => {
         instanceID: 'https://something.atlassian.net',
         searchTeamFields: jest.fn().mockResolvedValue({data: teams}),
         issueMetadata: {} as IssueMetadata,
-        theme: Preferences.THEMES.denim,
         onChange: jest.fn(),
         addValidate: jest.fn(),
         removeValidate: jest.fn(),
@@ -49,13 +46,13 @@ describe('components/JiraTeamSelector', () => {
     test('should label the selected team using the name returned by the server', async () => {
         await renderSelector({value: 'team-1'});
 
-        expect(screen.getByText('Alpha Team')).toBeTruthy();
+        expect(screen.getByRole('combobox')).toHaveValue('Alpha Team');
     });
 
     test('should strip HTML from team names', async () => {
         await renderSelector({value: 'team-2'});
 
-        expect(screen.getByText('Beta Team')).toBeTruthy();
+        expect(screen.getByRole('combobox')).toHaveValue('Beta Team');
     });
 
     // An unresolved value sends BackendSelector down its recovery path, which
@@ -65,7 +62,7 @@ describe('components/JiraTeamSelector', () => {
 
         await renderSelector({value: 'team-1', searchTeamFields});
 
-        expect(screen.getByText('Alpha Team')).toBeTruthy();
+        expect(screen.getByRole('combobox')).toHaveValue('Alpha Team');
         expect(searchTeamFields).toHaveBeenCalledTimes(1);
     });
 
