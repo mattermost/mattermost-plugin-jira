@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import {ReactSelectOption} from 'types/model';
+import {SelectOption} from 'types/model';
 import BackendSelector, {Props as BackendSelectorProps} from '../backend_selector';
 
 type Sprint = {
@@ -26,7 +26,7 @@ type Props = Omit<BackendSelectorProps, 'fetchInitialSelectedValues' | 'search'>
 const JiraSprintSelector = (props: Props): JSX.Element => {
     const {value, instanceID, projectKey, searchSprints, getSprintByID} = props;
 
-    const fetchSprints = async (query: string): Promise<ReactSelectOption[]> => {
+    const fetchSprints = async (query: string): Promise<SelectOption[]> => {
         if (!instanceID || !projectKey) {
             return [];
         }
@@ -58,7 +58,7 @@ const JiraSprintSelector = (props: Props): JSX.Element => {
         }
     };
 
-    const fetchInitialSelectedValues = async (): Promise<ReactSelectOption[]> => {
+    const fetchInitialSelectedValues = async (): Promise<SelectOption[]> => {
         if (!value || !instanceID) {
             return [];
         }

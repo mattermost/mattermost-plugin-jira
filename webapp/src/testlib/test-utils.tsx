@@ -12,15 +12,6 @@ import {InstanceType} from 'types/model';
 
 const mockStore = configureStore([thunk]);
 
-export const mockTheme = {
-    centerChannelColor: '#333333',
-    centerChannelBg: '#ffffff',
-    buttonBg: '#166de0',
-    buttonColor: '#ffffff',
-    linkColor: '#2389d7',
-    errorTextColor: '#fd5960',
-};
-
 export const defaultMockState = {
     'plugins-jira': {
         installedInstances: [{instance_id: 'instance1', type: InstanceType.CLOUD}],

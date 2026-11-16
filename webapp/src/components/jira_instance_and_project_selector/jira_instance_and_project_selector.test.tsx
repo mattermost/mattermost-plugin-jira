@@ -4,14 +4,10 @@
 import React from 'react';
 import {act} from '@testing-library/react';
 
-import {Theme} from 'mattermost-redux/selectors/entities/preferences';
-
 import {InstanceType} from 'types/model';
-import {mockTheme as baseMockTheme, renderWithRedux} from 'testlib/test-utils';
+import {renderWithRedux} from 'testlib/test-utils';
 
 import JiraInstanceAndProjectSelector, {Props} from './jira_instance_and_project_selector';
-
-const mockTheme = baseMockTheme as Theme;
 
 describe('components/JiraInstanceAndProjectSelector', () => {
     const baseProps: Props = {
@@ -21,7 +17,6 @@ describe('components/JiraInstanceAndProjectSelector', () => {
         onProjectChange: jest.fn(),
         onError: jest.fn(),
 
-        theme: mockTheme,
         addValidate: jest.fn(),
         removeValidate: jest.fn(),
 

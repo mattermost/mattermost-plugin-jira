@@ -24,8 +24,8 @@ test.describe('create issue', () => {
      */
     test('creates issue from the post menu', {tag: '@jira_plugin'}, async ({pw, jira}) => {
         // # Open Create Jira Issue on a post and fill in project, issue type and summary
-        const {page, post} = await openPostAction(pw, jira, postMessage, 'Create Jira Issue');
-        const dialog = page.getByRole('dialog', {name: 'Create Jira Issue'});
+        const {page, post} = await openPostAction(pw, jira, postMessage, 'Create Jira issue');
+        const dialog = page.getByRole('dialog', {name: 'Create Jira issue'});
         await pickOption(page, dialog.getByRole('combobox', {name: 'Project'}), fakeProject.name);
         await pickOption(page, dialog.getByRole('combobox', {name: 'Issue Type'}), 'Task');
         await dialog.getByRole('textbox', {name: 'Summary'}).fill(summary);
@@ -53,8 +53,8 @@ test.describe('create issue', () => {
      */
     test('shows required field error when summary is missing', {tag: '@jira_plugin'}, async ({pw, jira}) => {
         // # Choose project and issue type, then submit without a summary
-        const {page} = await openPostAction(pw, jira, postMessage, 'Create Jira Issue');
-        const dialog = page.getByRole('dialog', {name: 'Create Jira Issue'});
+        const {page} = await openPostAction(pw, jira, postMessage, 'Create Jira issue');
+        const dialog = page.getByRole('dialog', {name: 'Create Jira issue'});
         await pickOption(page, dialog.getByRole('combobox', {name: 'Project'}), fakeProject.name);
         await pickOption(page, dialog.getByRole('combobox', {name: 'Issue Type'}), 'Task');
         await dialog.getByRole('button', {name: 'Create'}).click();
@@ -74,7 +74,7 @@ test.describe('create issue', () => {
         // # Run /jira create with a description
         const {page, channelsPage} = await openChannel(pw, jira);
         await channelsPage.postMessage('/jira create Nightly export stalls on archived channels');
-        const dialog = page.getByRole('dialog', {name: 'Create Jira Issue'});
+        const dialog = page.getByRole('dialog', {name: 'Create Jira issue'});
 
         // # Choose project and issue type
         await pickOption(page, dialog.getByRole('combobox', {name: 'Project'}), fakeProject.name);
@@ -105,8 +105,8 @@ test.describe('create issue', () => {
     test('shows error in modal when Jira fails to create the issue', {tag: '@jira_plugin'}, async ({pw, jira}) => {
         // # Make Jira fail issue creation, then submit a complete issue
         await fakeJira.fault('POST', '/rest/api/2/issue', 500);
-        const {page} = await openPostAction(pw, jira, postMessage, 'Create Jira Issue');
-        const dialog = page.getByRole('dialog', {name: 'Create Jira Issue'});
+        const {page} = await openPostAction(pw, jira, postMessage, 'Create Jira issue');
+        const dialog = page.getByRole('dialog', {name: 'Create Jira issue'});
         await pickOption(page, dialog.getByRole('combobox', {name: 'Project'}), fakeProject.name);
         await pickOption(page, dialog.getByRole('combobox', {name: 'Issue Type'}), 'Task');
         await dialog.getByRole('textbox', {name: 'Summary'}).fill(summary);
@@ -127,7 +127,7 @@ test.describe('create issue', () => {
     test('attaches message to an existing issue', {tag: '@jira_plugin'}, async ({pw, jira}) => {
         // # Open Attach to Jira Issue on a post and pick an issue
         const {page, post} = await openPostAction(pw, jira, postMessage, 'Attach to Jira Issue');
-        const dialog = page.getByRole('dialog', {name: 'Attach Message to Jira Issue'});
+        const dialog = page.getByRole('dialog', {name: 'Attach message to Jira issue'});
         await dialog.getByRole('combobox', {name: 'Jira Issue'}).click();
         await page.getByRole('option', {name: new RegExp(fakeIssues[0].key)}).click();
         await dialog.getByRole('button', {name: 'Attach'}).click();
@@ -159,5 +159,5 @@ test('asks unconnected user to connect on /jira create', {tag: '@jira_plugin'}, 
 
     // * Verify the user is asked to connect and no modal opens
     await expect((await channelsPage.centerView.getLastPost()).body).toContainText('Your Mattermost account is not connected to Jira.');
-    await expect(page.getByRole('dialog', {name: 'Create Jira Issue'})).toBeHidden();
+    await expect(page.getByRole('dialog', {name: 'Create Jira issue'})).toBeHidden();
 });

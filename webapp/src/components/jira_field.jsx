@@ -4,9 +4,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import {components} from 'react-select';
+import './jira_field.scss';
 
-import ReactSelectSetting from 'components/react_select_setting';
+import SelectSetting from 'components/select_setting';
 import Input from 'components/input';
 import {isTeamField} from 'utils/jira_issue_metadata';
 
@@ -29,34 +29,12 @@ export default class JiraField extends React.Component {
         onChange: PropTypes.func.isRequired,
         value: PropTypes.any,
         isFilter: PropTypes.bool,
-        theme: PropTypes.object.isRequired,
         addValidate: PropTypes.func.isRequired,
         removeValidate: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
         obeyRequired: true,
-    };
-
-    static IconOption = (props) => {
-        let img = null;
-        if (props.data.allowedValue.iconUrl) {
-            img = (
-                <img
-                    style={getStyle().jiraIcon}
-                    src={props.data.allowedValue.iconUrl}
-                />
-            );
-        }
-        return (
-            <components.Option
-                {...props}
-                style={getStyle().selectComponent}
-            >
-                {img}
-                {props.data.label}
-            </components.Option>
-        );
     };
 
     render() {
@@ -95,7 +73,6 @@ export default class JiraField extends React.Component {
 
         const selectProps = {
             instanceID: this.props.instanceID,
-            theme: this.props.theme,
             addValidate: this.props.addValidate,
             removeValidate: this.props.removeValidate,
             label: field.name,
@@ -250,9 +227,14 @@ export default class JiraField extends React.Component {
         if (field.allowedValues && field.allowedValues.length) {
             const options = field.allowedValues.map((allowedValue) => {
                 const label = allowedValue.name ? allowedValue.name : allowedValue.value;
-                return (
-                    {value: allowedValue.id, label, allowedValue}
-                );
+                const leadingVisual = allowedValue.iconUrl ? (
+                    <img
+                        className='jira-field__option-icon'
+                        src={allowedValue.iconUrl}
+                        alt=''
+                    />
+                ) : null;
+                return {value: allowedValue.id, label, leadingVisual};
             });
 
             if (field.schema.type === 'array') {
@@ -268,26 +250,24 @@ export default class JiraField extends React.Component {
                 };
 
                 return (
-                    <ReactSelectSetting
+                    <SelectSetting
                         {...selectProps}
                         name={this.props.id}
                         options={options}
                         onChange={onChange}
                         isMulti={true}
                         value={selectedOptions}
-                        components={{Option: JiraField.IconOption}}
                     />
                 );
             }
             return (
-                <ReactSelectSetting
+                <SelectSetting
                     {...selectProps}
                     name={this.props.id}
                     options={options}
                     onChange={(id, val) => this.props.onChange(id, {id: val})}
                     isMulti={false}
                     value={options.find((option) => option.value === (this.props.value && this.props.value.id))}
-                    components={{Option: JiraField.IconOption}}
                 />
             );
         }
@@ -342,10 +322,3 @@ export function isFieldSupported(field) {
 
     return false;
 }
-
-const getStyle = () => ({
-    jiraIcon: {
-        height: '16px',
-        marginRight: '5px',
-    },
-});

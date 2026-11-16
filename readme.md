@@ -118,6 +118,10 @@ At this point you can edit plugin code, let `make watch` redeploy, and immediate
 
 Notify your team of the latest updates by sending notifications from your Jira projects to Mattermost channels. You can specify which events trigger a notification - and you can filter out certain types of notifications to keep down the noise.
 
+![The Jira Subscriptions modal lists the channel's subscriptions and templates](./assets/channel-subscriptions-modal.png)
+
+![A subscription filters Jira events by project, event, issue type and field values](./assets/channel-subscription-form.png)
+
 #### Personal notifications: JiraBot
 
 Each user in Mattermost is connected with their own personal Jira account and notifications for issues where someone is mentioned or assigned an issue is mentioned in your own personal Jira notification bot to help everyone stay on top of their assigned issues.
@@ -131,15 +135,15 @@ Each user in Mattermost is connected with their own personal Jira account and no
 - Create Jira issues from scratch or based off of a Mattermost message easily.
 - Without leaving Mattermost's UI, quickly select the project, issue type and enter other fields to create the issue.
 
-  ![image](https://user-images.githubusercontent.com/13119842/59113188-985a9280-8912-11e9-9def-9a7382b4137e.png)
+  ![The Create Jira Issue modal](./assets/create-issue-modal.png)
 
 #### Attach messages to Jira issues
 
 Keep all information in one place by attaching parts of Mattermost conversations in Jira issues as comments.  Then, on the resulting dialog, select the Jira issue you want to attach it to. You may search for issues containing specific text.
 
-![image](./assets/attach-from-post.png)
+![The post menu's Jira actions](./assets/attach-from-post.png)
 
-![image](https://user-images.githubusercontent.com/13119842/59113267-b627f780-8912-11e9-90ec-417d430de7e6.png)
+![The Attach Message to Jira Issue modal](./assets/attach-message-modal.png)
 
 #### Transition Jira issues
 
@@ -147,7 +151,7 @@ Transition issues without the need to switch to your Jira project. To transition
 
 For instance, `/jira transition EXT-20 done` transitions the issue key **EXT-20** to **Done**.
 
-![image](https://user-images.githubusercontent.com/13119842/59113377-dfe11e80-8912-11e9-8971-f869fa123366.png)
+![The reply to /jira transition](./assets/transition-issue.png)
 
 #### Assign Jira issues
 
