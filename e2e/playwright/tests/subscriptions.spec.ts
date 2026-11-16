@@ -7,7 +7,8 @@ import {fakeCloudUser, fakeProject} from '../fake-jira/state';
 import {jiraFlavor, jiraInstanceURL, mattermostURL, pluginId} from '../support/constants';
 import {expect, test, type JiraFixture} from '../support/fixture';
 import {connectUserViaKV, loadWebhookFixture, sendSubscriptionWebhook} from '../support/jira';
-import {openChannel, pickOption} from '../support/ui';
+import {patchPluginSettings} from '../support/plugin';
+import {openChannel, pickOption, runSlashCommand} from '../support/ui';
 
 type SubscriptionFilters = {
     events: string[];
@@ -61,6 +62,25 @@ async function assignedWebhook(issueTypeId: string) {
     payload.issue.fields.project.key = fakeProject.key;
     payload.issue.fields.issuetype.id = issueTypeId;
     return JSON.stringify(payload);
+}
+
+const managePublicChannelProperties = 'manage_public_channel_properties';
+
+// Every channel member can manage channel settings by default, so the setting alone would let them all in.
+// This mirrors limiting that permission to channel admins in System Console > Permissions.
+async function limitSubscriptionsToChannelAdmins(jira: JiraFixture) {
+    const {adminClient} = jira;
+    const channelUser = await adminClient.getRoleByName('channel_user');
+    const channelAdmin = await adminClient.getRoleByName('channel_admin');
+    const previous = await patchPluginSettings(adminClient, {rolesallowedtoeditjirasubscriptions: 'channel_admin'});
+    await adminClient.patchRole(channelUser.id, {permissions: channelUser.permissions.filter((p) => p !== managePublicChannelProperties)});
+    await adminClient.patchRole(channelAdmin.id, {permissions: [...channelAdmin.permissions, managePublicChannelProperties]});
+
+    return async () => {
+        await adminClient.patchRole(channelUser.id, {permissions: channelUser.permissions});
+        await adminClient.patchRole(channelAdmin.id, {permissions: channelAdmin.permissions});
+        await patchPluginSettings(adminClient, {rolesallowedtoeditjirasubscriptions: previous.rolesallowedtoeditjirasubscriptions ?? 'system_admin'});
+    };
 }
 
 test.describe('channel subscriptions', () => {
@@ -151,6 +171,40 @@ test.describe('channel subscriptions', () => {
         // * Verify the channel is told about the removal
         await expect.poll(() => channelMessages(jira, jira.channel.id)).
             toContain(`Jira subscription, "Assignee changes", was removed from this channel by ${fakeCloudUser.displayName}`);
+    });
+
+    /**
+     * @objective Verify /jira subscribe list shows a channel admin only the current channel's subscriptions when subscriptions are limited to channel admins, and refuses a regular member.
+     */
+    test('lists current channel subscriptions for channel admins', {tag: '@jira_plugin'}, async ({pw, jira}) => {
+        // # As a system admin, subscribe this channel and a second one
+        const other = await jira.adminClient.createChannel(pw.random.channel({teamId: jira.team.id, name: 'other-subs', displayName: 'Other subs'}));
+        await jira.adminClient.addToChannel(jira.user.id, other.id);
+        await createSubscription(jira, jira.channel.id, 'This channel changes', {});
+        await createSubscription(jira, other.id, 'Other channel changes', {});
+
+        const restore = await limitSubscriptionsToChannelAdmins(jira);
+        try {
+            // # Demote the user and make them an admin of this channel only
+            await jira.adminClient.updateUserRoles(jira.user.id, 'system_user');
+            await jira.adminClient.updateChannelMemberSchemeRoles(jira.channel.id, jira.user.id, true, true);
+
+            // # List subscriptions
+            const {reply, channelsPage} = await runSlashCommand(pw, jira, '/jira subscribe list');
+
+            // * Verify only this channel's subscription is listed
+            await expect(reply).toContainText('This channel changes');
+            await expect(reply).not.toContainText('Other channel changes');
+
+            // # Remove the channel admin role and list again
+            await jira.adminClient.updateChannelMemberSchemeRoles(jira.channel.id, jira.user.id, true, false);
+            await channelsPage.postMessage('/jira subscribe list');
+
+            // * Verify the command is refused
+            await expect(reply).toContainText('You don\'t have permission to manage subscriptions in this channel (is not channel admin).');
+        } finally {
+            await restore();
+        }
     });
 });
 

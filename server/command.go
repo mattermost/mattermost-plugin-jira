@@ -79,6 +79,7 @@ const commonHelpText = "\n" +
 	"* `/jira me` - Display information about the current user\n" +
 	"* `/jira about` - Display build info\n" +
 	"* `/jira instance list` - List installed Jira instances\n" +
+	"* `/jira subscribe list` - Display the subscription rules set up in this channel, if you are allowed to manage its subscriptions\n" +
 	"* `/jira instance settings [setting] [role] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
 	"  * [role] can be `assignee` , `mention` , `reporter` or `watching`\n" +
@@ -97,7 +98,7 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira instance uninstall cloud-oauth [jiraURL]` - Disconnect Mattermost from a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
 	"Manage channel subscriptions:\n" +
 	"* `/jira subscribe ` - Configure the Jira notifications sent to this channel\n" +
-	"* `/jira subscribe list` - Display all the the subscription rules setup across all the channels and teams on your Mattermost instance\n" +
+	"* `/jira subscribe list` - Display the subscription rules set up across all channels and teams on your Mattermost instance\n" +
 	"Other:\n" +
 	"* `/jira instance alias [URL] [alias-name]` - assign an alias to an instance\n" +
 	"* `/jira instance unalias [alias-name]` - remve an alias from an instance\n" +
@@ -848,7 +849,7 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 		msg, err = p.listChannelSubscriptions(instance.GetID(), header.TeamId)
 	} else {
 		if permErr := p.hasPermissionToManageSubscription(instance.GetID(), header.UserId, header.ChannelId); permErr != nil {
-			return p.responsef(header, "You don't have permission to manage subscriptions in this channel: %v.", permErr)
+			return p.responsef(header, "You don't have permission to manage subscriptions in this channel (%v).", permErr)
 		}
 		msg, err = p.listSubscriptionsForChannel(instance.GetID(), header.ChannelId)
 	}

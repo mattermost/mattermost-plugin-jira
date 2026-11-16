@@ -511,13 +511,13 @@ func TestExecuteSubscribeList(t *testing.T) {
 			userRoles:    "system_user",
 			rolesAllowed: "channel_admin",
 			assertMessage: func(t *testing.T, msg string) {
-				assert.Equal(t, "You don't have permission to manage subscriptions in this channel: is not channel admin.", msg)
+				assert.Equal(t, "You don't have permission to manage subscriptions in this channel (is not channel admin).", msg)
 			},
 		},
 		"non system admin is refused when only system admins are allowed": {
 			userRoles: "system_user",
 			assertMessage: func(t *testing.T, msg string) {
-				assert.Equal(t, "You don't have permission to manage subscriptions in this channel: is not system admin.", msg)
+				assert.Equal(t, "You don't have permission to manage subscriptions in this channel (is not system admin).", msg)
 			},
 		},
 	} {
