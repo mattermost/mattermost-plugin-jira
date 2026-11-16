@@ -79,6 +79,7 @@ const commonHelpText = "\n" +
 	"* `/jira me` - Display information about the current user\n" +
 	"* `/jira about` - Display build info\n" +
 	"* `/jira instance list` - List installed Jira instances\n" +
+	"* `/jira subscribe list` - Display the subscription rules set up in this channel, if you are allowed to manage its subscriptions\n" +
 	"* `/jira instance settings [setting] [role] [value]` - Update your user settings\n" +
 	"  * [setting] can be `notifications`\n" +
 	"  * [role] can be `assignee` , `mention` , `reporter` or `watching`\n" +
@@ -97,7 +98,7 @@ const sysAdminHelpText = "\n###### For System Administrators:\n" +
 	"* `/jira instance uninstall cloud-oauth [jiraURL]` - Disconnect Mattermost from a Jira Cloud instance using OAuth 2.0 located at <jiraURL>\n" +
 	"Manage channel subscriptions:\n" +
 	"* `/jira subscribe ` - Configure the Jira notifications sent to this channel\n" +
-	"* `/jira subscribe list` - Display all the the subscription rules setup across all the channels and teams on your Mattermost instance\n" +
+	"* `/jira subscribe list` - Display the subscription rules set up across all channels and teams on your Mattermost instance\n" +
 	"Other:\n" +
 	"* `/jira instance alias [URL] [alias-name]` - assign an alias to an instance\n" +
 	"* `/jira instance unalias [alias-name]` - remve an alias from an instance\n" +
@@ -827,13 +828,12 @@ func executeInstanceList(p *Plugin, c *plugin.Context, header *model.CommandArgs
 	return p.response(header, text)
 }
 
+// executeSubscribeList lists subscriptions across all channels for system admins,
+// and only the current channel's subscriptions for users allowed to manage them there.
 func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArgs, args ...string) *model.CommandResponse {
-	authorized, err := authorizedSysAdmin(p, header.UserId)
+	isSysAdmin, err := authorizedSysAdmin(p, header.UserId)
 	if err != nil {
 		return p.responsef(header, "%v", err)
-	}
-	if !authorized {
-		return p.responsef(header, "`/jira subscribe list` can only be run by a system administrator.")
 	}
 
 	_, instance, args, err := p.loadFlagUserInstance(header.UserId, args)
@@ -844,7 +844,15 @@ func executeSubscribeList(p *Plugin, c *plugin.Context, header *model.CommandArg
 		return p.responsef(header, "No arguments were expected.")
 	}
 
-	msg, err := p.listChannelSubscriptions(instance.GetID(), header.TeamId)
+	var msg string
+	if isSysAdmin {
+		msg, err = p.listChannelSubscriptions(instance.GetID(), header.TeamId)
+	} else {
+		if permErr := p.hasPermissionToManageSubscription(instance.GetID(), header.UserId, header.ChannelId); permErr != nil {
+			return p.responsef(header, "You don't have permission to manage subscriptions in this channel (%v).", permErr)
+		}
+		msg, err = p.listSubscriptionsForChannel(instance.GetID(), header.ChannelId)
+	}
 	if err != nil {
 		return p.responsef(header, "%v", err)
 	}

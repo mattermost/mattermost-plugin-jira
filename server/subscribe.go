@@ -1049,6 +1049,31 @@ func (p *Plugin) listChannelSubscriptions(instanceID types.ID, teamID string) (s
 	return strings.Join(rows, "\n"), nil
 }
 
+func (p *Plugin) listSubscriptionsForChannel(instanceID types.ID, channelID string) (string, error) {
+	channelSubscriptions, err := p.getSubscriptionsForChannel(instanceID, channelID)
+	if err != nil {
+		return "", err
+	}
+
+	if len(channelSubscriptions) == 0 {
+		return "There are currently no subscriptions to Jira notifications in this channel. To add a subscription, type `/jira subscribe edit`\n", nil
+	}
+
+	rows := []string{
+		"This channel has subscribed to the following Jira notifications. To modify a subscription, type `/jira subscribe edit`",
+		fmt.Sprintf("* (%d) %s", len(channelSubscriptions), instanceID),
+	}
+	for _, channelSubscription := range channelSubscriptions {
+		name := channelSubscription.Name
+		if name == "" {
+			name = "(No Name)"
+		}
+		rows = append(rows, fmt.Sprintf("\t* %s - %s", channelSubscription.Filters.Projects.Elems()[0], name))
+	}
+
+	return strings.Join(rows, "\n"), nil
+}
+
 func (p *Plugin) getNumSubsForChannel(channelGroup InstanceSubMap) int {
 	totalSubs := 0
 	for _, subsIDs := range channelGroup {

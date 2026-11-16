@@ -41,26 +41,34 @@ export async function installPlugin(adminClient: Client4, kind: BundleKind, plug
 }
 
 async function configureServer(adminClient: Client4, pluginSettings: Record<string, unknown>) {
-    const config = await adminClient.getConfig();
     await adminClient.patchConfig({
         ServiceSettings: {EnableTutorial: false, EnableOnboardingFlow: false},
 
         // playwright-lib's random users use a short password that only passes these relaxed rules.
         PasswordSettings: {MinimumLength: 5, Lowercase: false, Number: false, Uppercase: false, Symbol: false},
+    });
+    await patchPluginSettings(adminClient, {
+        enablejiraui: true,
+        enableautocomplete: true,
+        secret: webhookSecret,
+        encryptionkey: encryptionKey,
+        ...pluginSettings,
+    });
+}
+
+// Returns the plugin's settings from before the patch. Masked secrets in them are restored by the server when patched back.
+export async function patchPluginSettings(adminClient: Client4, pluginSettings: Record<string, unknown>) {
+    const config = await adminClient.getConfig();
+    const previous = config.PluginSettings.Plugins[pluginId] ?? {};
+    await adminClient.patchConfig({
         PluginSettings: {
             Plugins: {
                 ...config.PluginSettings.Plugins,
-                [pluginId]: {
-                    ...config.PluginSettings.Plugins[pluginId],
-                    enablejiraui: true,
-                    enableautocomplete: true,
-                    secret: webhookSecret,
-                    encryptionkey: encryptionKey,
-                    ...pluginSettings,
-                },
+                [pluginId]: {...previous, ...pluginSettings},
             },
         },
     });
+    return previous;
 }
 
 export async function waitForPluginRunning(adminClient: Client4, timeoutMs = 60_000) {
