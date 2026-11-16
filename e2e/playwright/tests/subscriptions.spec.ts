@@ -52,7 +52,7 @@ async function channelMessages(jira: JiraFixture, channelId: string) {
 async function openSubscriptions(pw: PlaywrightExtended, jira: JiraFixture) {
     const {page, channelsPage} = await openChannel(pw, jira);
     await channelsPage.postMessage('/jira subscribe');
-    return {page, modal: page.getByRole('dialog', {name: /Jira Subscription/})};
+    return {page, modal: page.getByRole('dialog', {name: /Jira subscription/})};
 }
 
 // The fixtures belong to project TES, which fake-jira doesn't serve, so the issue is moved into its project.
@@ -159,7 +159,7 @@ test.describe('channel subscriptions', () => {
     test('closes subscriptions modal with Escape and backdrop', {tag: '@jira_plugin'}, async ({pw, jira}) => {
         // # Open the modal and press Escape
         const {page, channelsPage} = await openChannel(pw, jira);
-        const modal = page.getByRole('dialog', {name: /Jira Subscription/});
+        const modal = page.getByRole('dialog', {name: /Jira subscription/});
         await channelsPage.postMessage('/jira subscribe');
         await expect(modal).toBeVisible();
         await page.keyboard.press('Escape');
