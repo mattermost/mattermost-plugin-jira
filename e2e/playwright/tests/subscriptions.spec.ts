@@ -73,14 +73,29 @@ async function limitSubscriptionsToChannelAdmins(jira: JiraFixture) {
     const channelUser = await adminClient.getRoleByName('channel_user');
     const channelAdmin = await adminClient.getRoleByName('channel_admin');
     const previous = await patchPluginSettings(adminClient, {rolesallowedtoeditjirasubscriptions: 'channel_admin'});
-    await adminClient.patchRole(channelUser.id, {permissions: channelUser.permissions.filter((p) => p !== managePublicChannelProperties)});
-    await adminClient.patchRole(channelAdmin.id, {permissions: [...channelAdmin.permissions, managePublicChannelProperties]});
 
-    return async () => {
-        await adminClient.patchRole(channelUser.id, {permissions: channelUser.permissions});
-        await adminClient.patchRole(channelAdmin.id, {permissions: channelAdmin.permissions});
-        await patchPluginSettings(adminClient, {rolesallowedtoeditjirasubscriptions: previous.rolesallowedtoeditjirasubscriptions ?? 'system_admin'});
+    // Every step is attempted so one failure doesn't leave the rest changed for later tests.
+    const restore = async () => {
+        const results = await Promise.allSettled([
+            adminClient.patchRole(channelUser.id, {permissions: channelUser.permissions}),
+            adminClient.patchRole(channelAdmin.id, {permissions: channelAdmin.permissions}),
+            patchPluginSettings(adminClient, {rolesallowedtoeditjirasubscriptions: previous.rolesallowedtoeditjirasubscriptions ?? 'system_admin'}),
+        ]);
+        const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
+        if (failure) {
+            throw failure.reason;
+        }
     };
+
+    try {
+        await adminClient.patchRole(channelUser.id, {permissions: channelUser.permissions.filter((p) => p !== managePublicChannelProperties)});
+        await adminClient.patchRole(channelAdmin.id, {permissions: [...channelAdmin.permissions, managePublicChannelProperties]});
+    } catch (err) {
+        await restore().catch(() => undefined);
+        throw err;
+    }
+
+    return restore;
 }
 
 test.describe('channel subscriptions', () => {
