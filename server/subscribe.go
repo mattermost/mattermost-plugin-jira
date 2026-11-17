@@ -36,13 +36,14 @@ const (
 
 	MaxSubscriptionTemplateNameLength = 100
 
-	QueryParamProjectKey       = "project_key"
-	QueryParamChannelID        = "channel_id"
-	MaxSubscriptionNameLength  = 100
-	CommentVisibility          = "commentVisibility"
-	TeamFilter                 = "teamField"
-	CommentVisibilityGroupType = "group"
-	maxDMGMChannelMembers      = 200
+	QueryParamProjectKey        = "project_key"
+	QueryParamChannelID         = "channel_id"
+	MaxSubscriptionNameLength   = 100
+	CommentVisibility           = "commentVisibility"
+	TeamFilter                  = "teamField"
+	CommentVisibilityGroupType  = "group"
+	maxDMGMChannelMembers       = 200
+	emptyChannelMemberScanLimit = 20
 )
 
 type FieldFilter struct {
@@ -555,18 +556,22 @@ func subscriptionIDsForChannel(subs *ChannelSubscriptions, channelID string) []s
 	return subIDs
 }
 
-func (p *Plugin) removeSubscriptionsForChannel(instanceID types.ID, channelID string) error {
+// removeSubscriptionsForChannel removes all subscriptions targeting channelID and returns
+// the ones it removed. Concurrent callers will not both report the same subscription.
+func (p *Plugin) removeSubscriptionsForChannel(instanceID types.ID, channelID string) ([]ChannelSubscription, error) {
 	subs, err := p.getSubscriptions(instanceID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(subscriptionIDsForChannel(subs.Channel, channelID)) == 0 {
-		return nil
+		return nil, nil
 	}
 
+	var removed []ChannelSubscription
 	subKey := keyWithInstanceID(instanceID, JiraSubscriptionsKey)
-	return p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
+	err = p.client.KV.SetAtomicWithRetries(subKey, func(initialBytes []byte) (interface{}, error) {
+		removed = nil
 		subs, err := SubscriptionsFromJSON(initialBytes, instanceID)
 		if err != nil {
 			return nil, err
@@ -575,6 +580,7 @@ func (p *Plugin) removeSubscriptionsForChannel(instanceID types.ID, channelID st
 		for _, subID := range subscriptionIDsForChannel(subs.Channel, channelID) {
 			if sub, ok := subs.Channel.ByID[subID]; ok {
 				subs.Channel.remove(&sub)
+				removed = append(removed, sub)
 			}
 		}
 
@@ -585,6 +591,118 @@ func (p *Plugin) removeSubscriptionsForChannel(instanceID types.ID, channelID st
 
 		return modifiedBytes, nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return removed, nil
+}
+
+// channelHasActiveHumanMember reports whether channelID has at least one active, non-bot
+// member. Channels larger than emptyChannelMemberScanLimit are assumed to have one, keeping
+// the check cheap on the webhook delivery path.
+func (p *Plugin) channelHasActiveHumanMember(channelID string) (bool, error) {
+	stats, err := p.client.Channel.GetChannelStats(channelID)
+	if err != nil {
+		return false, err
+	}
+	if stats.MemberCount == 0 {
+		return false, nil
+	}
+	if stats.MemberCount > emptyChannelMemberScanLimit {
+		return true, nil
+	}
+
+	users, err := p.client.User.ListInChannel(channelID, model.ChannelSortByUsername, 0, emptyChannelMemberScanLimit)
+	if err != nil {
+		return false, err
+	}
+	for _, user := range users {
+		if !user.IsBot && user.DeleteAt == 0 {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// removeSubscriptionsForEmptyChannel removes all subscriptions targeting channelID and
+// posts a closing message explaining why notifications have stopped.
+func (p *Plugin) removeSubscriptionsForEmptyChannel(instanceID types.ID, channelID string) error {
+	removed, err := p.removeSubscriptionsForChannel(instanceID, channelID)
+	if err != nil {
+		return err
+	}
+	if len(removed) == 0 {
+		return nil
+	}
+
+	names := make([]string, 0, len(removed))
+	for _, sub := range removed {
+		names = append(names, fmt.Sprintf("* %q", sub.Name))
+	}
+	sort.Strings(names)
+
+	return p.client.Post.CreatePost(&model.Post{
+		UserId:    p.getConfig().botUserID,
+		ChannelId: channelID,
+		Message: "The following Jira subscriptions were removed from this channel because it no longer has any members:\n" +
+			strings.Join(names, "\n"),
+	})
+}
+
+// cleanupSubscriptionsInEmptiedChannel removes subscriptions, across all instances, that
+// target channelID once it has no active human members left.
+func (p *Plugin) cleanupSubscriptionsInEmptiedChannel(channelID string) {
+	instances, err := p.instanceStore.LoadInstances()
+	if err != nil {
+		p.client.Log.Warn("Failed to load instances for empty channel subscription cleanup",
+			"channelID", channelID, "error", err.Error())
+		return
+	}
+
+	var subscribedInstanceIDs []types.ID
+	for _, instanceID := range instances.IDs() {
+		subs, err := p.getSubscriptions(instanceID)
+		if err != nil {
+			p.client.Log.Warn("Failed to load subscriptions for empty channel subscription cleanup",
+				"channelID", channelID, "instanceID", string(instanceID), "error", err.Error())
+			continue
+		}
+		if len(subscriptionIDsForChannel(subs.Channel, channelID)) > 0 {
+			subscribedInstanceIDs = append(subscribedInstanceIDs, instanceID)
+		}
+	}
+	if len(subscribedInstanceIDs) == 0 {
+		return
+	}
+
+	channel, err := p.client.Channel.Get(channelID)
+	if err != nil {
+		p.client.Log.Warn("Failed to get channel for empty channel subscription cleanup",
+			"channelID", channelID, "error", err.Error())
+		return
+	}
+	if isDirectOrGroupChannel(channel) || channel.DeleteAt > 0 {
+		return
+	}
+
+	hasMember, err := p.channelHasActiveHumanMember(channelID)
+	if err != nil {
+		p.client.Log.Warn("Failed to check channel members for empty channel subscription cleanup",
+			"channelID", channelID, "error", err.Error())
+		return
+	}
+	if hasMember {
+		return
+	}
+
+	for _, instanceID := range subscribedInstanceIDs {
+		if err := p.removeSubscriptionsForEmptyChannel(instanceID, channelID); err != nil {
+			p.client.Log.Warn("Failed to remove subscriptions from empty channel",
+				"channelID", channelID, "instanceID", string(instanceID), "error", err.Error())
+		}
+	}
 }
 
 // cleanupDMSubscriptionsOnDisconnect removes channel subscriptions targeting any DM or
@@ -636,7 +754,7 @@ func (p *Plugin) cleanupDMSubscriptionsOnDisconnect(instanceID types.ID, matterm
 			continue
 		}
 
-		if err := p.removeSubscriptionsForChannel(instanceID, channelID); err != nil {
+		if _, err := p.removeSubscriptionsForChannel(instanceID, channelID); err != nil {
 			p.client.Log.Warn("Failed to clean up DM/GM subscriptions on disconnect",
 				"mattermostUserID", mattermostUserID,
 				"channelID", channelID,

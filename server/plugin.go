@@ -699,3 +699,7 @@ func (p *Plugin) OnInstall(c *plugin.Context, event model.OnInstallEvent) error 
 
 	return nil
 }
+
+func (p *Plugin) UserHasLeftChannel(_ *plugin.Context, channelMember *model.ChannelMember, _ *model.User) {
+	p.cleanupSubscriptionsInEmptiedChannel(channelMember.ChannelId)
+}

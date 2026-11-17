@@ -123,11 +123,12 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 		api.AssertNotCalled(t, "KVSetWithOptions", testSubKey, mock.Anything, mock.Anything)
 	})
 
-	t.Run("delivers to regular channels without checking membership", func(t *testing.T) {
+	t.Run("delivers to regular channels without checking connections", func(t *testing.T) {
 		channelID := "openchannelaaaaaaaaaaaaaa"
 		api, p := setup(t, newSub("sub3______________________", channelID))
 
 		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypeOpen}, nil)
+		api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: emptyChannelMemberScanLimit + 1}, nil)
 		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{Id: "createdpost2"}, nil)
 		api.On("KVSetWithOptions", fmt.Sprintf(ticketRootPostIDKey, fixtureIssueID, channelID), mock.Anything, mock.Anything).Return(true, nil)
 
@@ -137,6 +138,54 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 
 		api.AssertCalled(t, "CreatePost", mock.AnythingOfType("*model.Post"))
 		api.AssertNotCalled(t, "GetChannelMembers", mock.Anything, mock.Anything, mock.Anything)
+	})
+
+	t.Run("skips delivery to an emptied channel and posts a closing message", func(t *testing.T) {
+		channelID := "openchannelcccccccccccccc"
+		sub := newSub("sub6______________________", channelID)
+		sub.Name = "Bugs"
+		api, p := setup(t, sub)
+
+		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypeOpen}, nil)
+		api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: 1}, nil)
+		api.On("GetUsersInChannel", channelID, model.ChannelSortByUsername, 0, emptyChannelMemberScanLimit).
+			Return([]*model.User{{Id: "otherbot", IsBot: true}}, nil)
+		api.On("LogInfo", mockAnythingOfTypeBatch("string", 5)...).Return()
+		api.On("KVSetWithOptions", testSubKey, mock.MatchedBy(func(data []byte) bool {
+			var savedSubs Subscriptions
+			if err := json.Unmarshal(data, &savedSubs); err != nil {
+				return false
+			}
+			return len(savedSubs.Channel.ByID) == 0
+		}), mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil)
+		api.On("CreatePost", mock.MatchedBy(func(post *model.Post) bool {
+			return post.ChannelId == channelID && strings.Contains(post.Message, `* "Bugs"`)
+		})).Return(&model.Post{Id: "closingpost"}, nil).Once()
+
+		ww := webhookWorker{id: 1, p: p}
+		err := ww.process(&webhookMessage{InstanceID: testInstance1.GetID(), Data: loadWebhookData(t)})
+		require.NoError(t, err)
+
+		api.AssertExpectations(t)
+		api.AssertNumberOfCalls(t, "CreatePost", 1)
+	})
+
+	t.Run("still delivers to a regular channel when the member check fails", func(t *testing.T) {
+		channelID := "openchannelddddddddddddddd"
+		api, p := setup(t, newSub("sub7______________________", channelID))
+
+		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypeOpen}, nil)
+		api.On("GetChannelStats", channelID).Return(nil, &model.AppError{Message: "db unavailable"})
+		api.On("LogWarn", mockAnythingOfTypeBatch("string", 7)...).Return()
+		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{Id: "createdpost4"}, nil)
+		api.On("KVSetWithOptions", fmt.Sprintf(ticketRootPostIDKey, fixtureIssueID, channelID), mock.Anything, mock.Anything).Return(true, nil)
+
+		ww := webhookWorker{id: 1, p: p}
+		err := ww.process(&webhookMessage{InstanceID: testInstance1.GetID(), Data: loadWebhookData(t)})
+		require.NoError(t, err)
+
+		api.AssertCalled(t, "CreatePost", mock.AnythingOfType("*model.Post"))
+		api.AssertNotCalled(t, "KVSetWithOptions", testSubKey, mock.Anything, mock.Anything)
 	})
 
 	t.Run("keeps the subscription when the connection lookup fails", func(t *testing.T) {
@@ -229,6 +278,7 @@ func TestWebhookWorkerContinuesAfterPanic(t *testing.T) {
 	t.Run("work keeps processing the queue after a panic", func(t *testing.T) {
 		api, p := setup(t)
 		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypeOpen}, nil)
+		api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: emptyChannelMemberScanLimit + 1}, nil)
 		api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(&model.Post{Id: "createdpost3"}, nil)
 		api.On("KVSetWithOptions", fmt.Sprintf(ticketRootPostIDKey, fixtureIssueID, channelID), mock.Anything, mock.Anything).Return(true, nil)
 
