@@ -616,9 +616,10 @@ func (p *Plugin) channelHasActiveHumanMember(channelID string) (bool, error) {
 		return true, nil
 	}
 
-	// MemberCount excludes deactivated users but ListInChannel does not, so keep paging
-	// until every active member has been seen.
-	var activeSeen int64
+	// ListInChannel includes deactivated users and pages with live offsets, so members can
+	// shift between pages mid-scan. Only report empty when the distinct active bots seen
+	// account for every active member, both before and after the scan.
+	activeBotIDs := map[string]bool{}
 	for page := 0; page < emptyChannelMaxScanPages; page++ {
 		users, err := p.client.User.ListInChannel(channelID, model.ChannelSortByUsername, page, emptyChannelScanPageSize)
 		if err != nil {
@@ -631,14 +632,22 @@ func (p *Plugin) channelHasActiveHumanMember(channelID string) (bool, error) {
 			if !user.IsBot {
 				return true, nil
 			}
-			activeSeen++
+			activeBotIDs[user.Id] = true
 		}
-		if activeSeen >= stats.MemberCount || len(users) < emptyChannelScanPageSize {
-			return false, nil
+		if len(users) < emptyChannelScanPageSize {
+			break
+		}
+		if page == emptyChannelMaxScanPages-1 {
+			return true, nil
 		}
 	}
 
-	return true, nil
+	statsAfter, err := p.client.Channel.GetChannelStats(channelID)
+	if err != nil {
+		return false, err
+	}
+	activeBots := int64(len(activeBotIDs))
+	return activeBots != stats.MemberCount || statsAfter.MemberCount != stats.MemberCount, nil
 }
 
 // removeSubscriptionsForEmptyChannel removes all subscriptions targeting channelID and

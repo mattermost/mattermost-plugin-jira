@@ -2039,10 +2039,30 @@ func TestChannelHasActiveHumanMember(t *testing.T) {
 	}
 
 	for name, tc := range map[string]struct {
-		memberCount int64
-		pages       [][]*model.User
-		expected    bool
+		memberCount      int64
+		memberCountAfter *int64
+		pages            [][]*model.User
+		expected         bool
 	}{
+		"member joins during the scan": {
+			memberCount:      1,
+			memberCountAfter: model.NewPointer(int64(2)),
+			pages:            [][]*model.User{{{Id: "bot1", IsBot: true}}},
+			expected:         true,
+		},
+		"human skipped by a page shift": {
+			memberCount: 2,
+			pages:       [][]*model.User{deactivatedPage(), {{Id: "bot1", IsBot: true}}},
+			expected:    true,
+		},
+		"bot seen twice across a page shift is counted once": {
+			memberCount: 2,
+			pages: [][]*model.User{
+				append(deactivatedPage()[:emptyChannelScanPageSize-1], &model.User{Id: "bot1", IsBot: true}),
+				{{Id: "bot1", IsBot: true}},
+			},
+			expected: true,
+		},
 		"no members": {
 			memberCount: 0,
 			expected:    false,
@@ -2089,7 +2109,12 @@ func TestChannelHasActiveHumanMember(t *testing.T) {
 			p.SetAPI(api)
 			p.client = pluginapi.NewClient(api, p.Driver)
 
-			api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: tc.memberCount}, nil)
+			api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: tc.memberCount}, nil).Once()
+			memberCountAfter := tc.memberCount
+			if tc.memberCountAfter != nil {
+				memberCountAfter = *tc.memberCountAfter
+			}
+			api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: memberCountAfter}, nil).Maybe()
 			for page, users := range tc.pages {
 				api.On("GetUsersInChannel", channelID, model.ChannelSortByUsername, page, emptyChannelScanPageSize).Return(users, nil)
 			}
