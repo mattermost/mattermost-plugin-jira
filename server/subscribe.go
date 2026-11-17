@@ -44,6 +44,8 @@ const (
 	CommentVisibilityGroupType  = "group"
 	maxDMGMChannelMembers       = 200
 	emptyChannelMemberScanLimit = 20
+	emptyChannelScanPageSize    = 100
+	emptyChannelMaxScanPages    = 10
 )
 
 type FieldFilter struct {
@@ -599,8 +601,9 @@ func (p *Plugin) removeSubscriptionsForChannel(instanceID types.ID, channelID st
 }
 
 // channelHasActiveHumanMember reports whether channelID has at least one active, non-bot
-// member. Channels larger than emptyChannelMemberScanLimit are assumed to have one, keeping
-// the check cheap on the webhook delivery path.
+// member. Channels with more than emptyChannelMemberScanLimit active members, or whose scan
+// exceeds emptyChannelMaxScanPages, are assumed to have one, keeping the check cheap on the
+// webhook delivery path and never removing subscriptions on an incomplete scan.
 func (p *Plugin) channelHasActiveHumanMember(channelID string) (bool, error) {
 	stats, err := p.client.Channel.GetChannelStats(channelID)
 	if err != nil {
@@ -613,17 +616,29 @@ func (p *Plugin) channelHasActiveHumanMember(channelID string) (bool, error) {
 		return true, nil
 	}
 
-	users, err := p.client.User.ListInChannel(channelID, model.ChannelSortByUsername, 0, emptyChannelMemberScanLimit)
-	if err != nil {
-		return false, err
-	}
-	for _, user := range users {
-		if !user.IsBot && user.DeleteAt == 0 {
-			return true, nil
+	// MemberCount excludes deactivated users but ListInChannel does not, so keep paging
+	// until every active member has been seen.
+	var activeSeen int64
+	for page := 0; page < emptyChannelMaxScanPages; page++ {
+		users, err := p.client.User.ListInChannel(channelID, model.ChannelSortByUsername, page, emptyChannelScanPageSize)
+		if err != nil {
+			return false, err
+		}
+		for _, user := range users {
+			if user.DeleteAt != 0 {
+				continue
+			}
+			if !user.IsBot {
+				return true, nil
+			}
+			activeSeen++
+		}
+		if activeSeen >= stats.MemberCount || len(users) < emptyChannelScanPageSize {
+			return false, nil
 		}
 	}
 
-	return false, nil
+	return true, nil
 }
 
 // removeSubscriptionsForEmptyChannel removes all subscriptions targeting channelID and

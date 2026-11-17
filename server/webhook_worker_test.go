@@ -148,7 +148,7 @@ func TestWebhookWorkerDeliveryGuard(t *testing.T) {
 
 		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypeOpen}, nil)
 		api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: 1}, nil)
-		api.On("GetUsersInChannel", channelID, model.ChannelSortByUsername, 0, emptyChannelMemberScanLimit).
+		api.On("GetUsersInChannel", channelID, model.ChannelSortByUsername, 0, emptyChannelScanPageSize).
 			Return([]*model.User{{Id: "otherbot", IsBot: true}}, nil)
 		api.On("LogInfo", mockAnythingOfTypeBatch("string", 5)...).Return()
 		api.On("KVSetWithOptions", testSubKey, mock.MatchedBy(func(data []byte) bool {

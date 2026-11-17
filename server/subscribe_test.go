@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -2029,9 +2030,17 @@ func TestRemoveSubscriptionsForChannel(t *testing.T) {
 func TestChannelHasActiveHumanMember(t *testing.T) {
 	const channelID = "openchannelaaaaaaaaaaaaaa"
 
+	deactivatedPage := func() []*model.User {
+		users := make([]*model.User, emptyChannelScanPageSize)
+		for i := range users {
+			users[i] = &model.User{Id: "inactive" + strconv.Itoa(i), DeleteAt: 1}
+		}
+		return users
+	}
+
 	for name, tc := range map[string]struct {
 		memberCount int64
-		users       []*model.User
+		pages       [][]*model.User
 		expected    bool
 	}{
 		"no members": {
@@ -2040,18 +2049,34 @@ func TestChannelHasActiveHumanMember(t *testing.T) {
 		},
 		"only bots": {
 			memberCount: 2,
-			users:       []*model.User{{Id: "bot1", IsBot: true}, {Id: "bot2", IsBot: true}},
+			pages:       [][]*model.User{{{Id: "bot1", IsBot: true}, {Id: "bot2", IsBot: true}}},
 			expected:    false,
 		},
 		"bot and deactivated user": {
-			memberCount: 2,
-			users:       []*model.User{{Id: "bot1", IsBot: true}, {Id: "user1", DeleteAt: 1}},
+			memberCount: 1,
+			pages:       [][]*model.User{{{Id: "bot1", IsBot: true}, {Id: "user1", DeleteAt: 1}}},
 			expected:    false,
 		},
 		"bot and active user": {
 			memberCount: 2,
-			users:       []*model.User{{Id: "bot1", IsBot: true}, {Id: "user1"}},
+			pages:       [][]*model.User{{{Id: "bot1", IsBot: true}, {Id: "user1"}}},
 			expected:    true,
+		},
+		"active user after a full page of deactivated users": {
+			memberCount: 1,
+			pages:       [][]*model.User{deactivatedPage(), {{Id: "zoe"}}},
+			expected:    true,
+		},
+		"assumes occupied when the scan limit is reached": {
+			memberCount: 1,
+			pages: func() [][]*model.User {
+				pages := make([][]*model.User, emptyChannelMaxScanPages)
+				for i := range pages {
+					pages[i] = deactivatedPage()
+				}
+				return pages
+			}(),
+			expected: true,
 		},
 		"large channel skips the member scan": {
 			memberCount: emptyChannelMemberScanLimit + 1,
@@ -2065,16 +2090,14 @@ func TestChannelHasActiveHumanMember(t *testing.T) {
 			p.client = pluginapi.NewClient(api, p.Driver)
 
 			api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: tc.memberCount}, nil)
-			if tc.users != nil {
-				api.On("GetUsersInChannel", channelID, model.ChannelSortByUsername, 0, emptyChannelMemberScanLimit).Return(tc.users, nil)
+			for page, users := range tc.pages {
+				api.On("GetUsersInChannel", channelID, model.ChannelSortByUsername, page, emptyChannelScanPageSize).Return(users, nil)
 			}
 
 			hasMember, err := p.channelHasActiveHumanMember(channelID)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, hasMember)
-			if tc.users == nil {
-				api.AssertNotCalled(t, "GetUsersInChannel", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-			}
+			api.AssertNumberOfCalls(t, "GetUsersInChannel", len(tc.pages))
 		})
 	}
 }
@@ -2147,7 +2170,7 @@ func TestCleanupSubscriptionsInEmptiedChannel(t *testing.T) {
 
 		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypePrivate}, nil)
 		api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: 1}, nil)
-		api.On("GetUsersInChannel", channelID, model.ChannelSortByUsername, 0, emptyChannelMemberScanLimit).
+		api.On("GetUsersInChannel", channelID, model.ChannelSortByUsername, 0, emptyChannelScanPageSize).
 			Return([]*model.User{{Id: "user1"}}, nil)
 
 		p.cleanupSubscriptionsInEmptiedChannel(channelID)
