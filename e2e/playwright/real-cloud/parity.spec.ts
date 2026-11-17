@@ -24,7 +24,12 @@ const projectKey = process.env.JIRA_CLOUD_PROJECT_KEY || 'IT';
 const cases: Array<{path: string; query?: Record<string, string>; specGap?: RegExp; fake: () => unknown}> = [
     {path: '/rest/api/2/myself', fake: () => cloudUser(fakeCloudSite)},
     {path: '/rest/api/3/myself', fake: () => cloudUser(fakeCloudSite)},
-    {path: '/rest/api/3/project/search', query: {expand: 'issueTypes', maxResults: '1'}, fake: () => projectSearch(fakeCloudSite, true)},
+    {
+        path: '/rest/api/3/project/search',
+        query: {expand: 'issueTypes', maxResults: '1'},
+        specGap: /values\/\d+ must NOT have additional properties \{"additionalProperty":"entityId"\}/,
+        fake: () => projectSearch(fakeCloudSite, true),
+    },
     {path: `/rest/api/3/project/${projectKey}/statuses`, fake: () => projectStatuses(fakeCloudSite)},
     {
         path: '/rest/api/2/issue/createmeta',
