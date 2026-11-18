@@ -110,11 +110,27 @@ func (ww webhookWorker) process(msg *webhookMessage) (err error) {
 		if !hasConnectedMember {
 			ww.p.client.Log.Info("Skipping subscription post to DM/GM channel with no connected members; removing orphaned subscriptions",
 				"ChannelID", channelSubscribed.ChannelID, "InstanceID", string(msg.InstanceID))
-			if removeErr := ww.p.removeSubscriptionsForChannel(msg.InstanceID, channelSubscribed.ChannelID); removeErr != nil {
+			if _, removeErr := ww.p.removeSubscriptionsForChannel(msg.InstanceID, channelSubscribed.ChannelID); removeErr != nil {
 				ww.p.client.Log.Warn("Failed to remove orphaned DM/GM subscriptions",
 					"ChannelID", channelSubscribed.ChannelID, "InstanceID", string(msg.InstanceID), "Error", removeErr.Error())
 			}
 			continue
+		}
+
+		if !isDirectOrGroupChannel(channel) {
+			hasMember, err := ww.p.channelHasActiveHumanMember(channel.Id)
+			if err != nil {
+				ww.p.client.Log.Warn("Failed to check channel members before posting subscription notification",
+					"ChannelID", channelSubscribed.ChannelID, "InstanceID", string(msg.InstanceID), "Error", err.Error())
+			} else if !hasMember {
+				ww.p.client.Log.Info("Skipping subscription post to channel with no members; removing its subscriptions",
+					"ChannelID", channelSubscribed.ChannelID, "InstanceID", string(msg.InstanceID))
+				if removeErr := ww.p.removeSubscriptionsForEmptyChannel(msg.InstanceID, channel.Id); removeErr != nil {
+					ww.p.client.Log.Warn("Failed to remove subscriptions from empty channel",
+						"ChannelID", channelSubscribed.ChannelID, "InstanceID", string(msg.InstanceID), "Error", removeErr.Error())
+				}
+				continue
+			}
 		}
 
 		if _, _, err1 := wh.PostToChannel(ww.p, msg.InstanceID, channelSubscribed.ChannelID, botUserID, channelSubscribed.Name); err1 != nil {

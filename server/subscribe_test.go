@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -1893,8 +1894,9 @@ func TestRemoveSubscriptionsForChannelIndexDrift(t *testing.T) {
 		return len(savedSubs.Channel.ByID) == 0
 	}), mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil)
 
-	err = p.removeSubscriptionsForChannel(testInstance1.GetID(), dmChannelID)
+	removed, err := p.removeSubscriptionsForChannel(testInstance1.GetID(), dmChannelID)
 	assert.NoError(t, err)
+	assert.Len(t, removed, 1)
 	api.AssertExpectations(t)
 }
 
@@ -2018,10 +2020,209 @@ func TestRemoveSubscriptionsForChannel(t *testing.T) {
 				}), mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil)
 			}
 
-			err = p.removeSubscriptionsForChannel(testInstance1.GetID(), dmChannelID)
+			removed, err := p.removeSubscriptionsForChannel(testInstance1.GetID(), dmChannelID)
 			assert.NoError(t, err)
+			assert.Len(t, removed, len(tc.existingSubs)-len(tc.expectedRemainingByID))
 		})
 	}
+}
+
+func TestChannelHasActiveHumanMember(t *testing.T) {
+	const channelID = "openchannelaaaaaaaaaaaaaa"
+
+	deactivatedPage := func() []*model.User {
+		users := make([]*model.User, emptyChannelScanPageSize)
+		for i := range users {
+			users[i] = &model.User{Id: "inactive" + strconv.Itoa(i), DeleteAt: 1}
+		}
+		return users
+	}
+
+	for name, tc := range map[string]struct {
+		memberCount      int64
+		memberCountAfter *int64
+		pages            [][]*model.User
+		expected         bool
+	}{
+		"member joins during the scan": {
+			memberCount:      1,
+			memberCountAfter: model.NewPointer(int64(2)),
+			pages:            [][]*model.User{{{Id: "bot1", IsBot: true}}},
+			expected:         true,
+		},
+		"human skipped by a page shift": {
+			memberCount: 2,
+			pages:       [][]*model.User{deactivatedPage(), {{Id: "bot1", IsBot: true}}},
+			expected:    true,
+		},
+		"bot seen twice across a page shift is counted once": {
+			memberCount: 2,
+			pages: [][]*model.User{
+				append(deactivatedPage()[:emptyChannelScanPageSize-1], &model.User{Id: "bot1", IsBot: true}),
+				{{Id: "bot1", IsBot: true}},
+			},
+			expected: true,
+		},
+		"no members": {
+			memberCount: 0,
+			expected:    false,
+		},
+		"only bots": {
+			memberCount: 2,
+			pages:       [][]*model.User{{{Id: "bot1", IsBot: true}, {Id: "bot2", IsBot: true}}},
+			expected:    false,
+		},
+		"bot and deactivated user": {
+			memberCount: 1,
+			pages:       [][]*model.User{{{Id: "bot1", IsBot: true}, {Id: "user1", DeleteAt: 1}}},
+			expected:    false,
+		},
+		"bot and active user": {
+			memberCount: 2,
+			pages:       [][]*model.User{{{Id: "bot1", IsBot: true}, {Id: "user1"}}},
+			expected:    true,
+		},
+		"active user after a full page of deactivated users": {
+			memberCount: 1,
+			pages:       [][]*model.User{deactivatedPage(), {{Id: "zoe"}}},
+			expected:    true,
+		},
+		"assumes occupied when the scan limit is reached": {
+			memberCount: 1,
+			pages: func() [][]*model.User {
+				pages := make([][]*model.User, emptyChannelMaxScanPages)
+				for i := range pages {
+					pages[i] = deactivatedPage()
+				}
+				return pages
+			}(),
+			expected: true,
+		},
+		"large channel skips the member scan": {
+			memberCount: emptyChannelMemberScanLimit + 1,
+			expected:    true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api := &plugintest.API{}
+			p := Plugin{}
+			p.SetAPI(api)
+			p.client = pluginapi.NewClient(api, p.Driver)
+
+			api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: tc.memberCount}, nil).Once()
+			memberCountAfter := tc.memberCount
+			if tc.memberCountAfter != nil {
+				memberCountAfter = *tc.memberCountAfter
+			}
+			api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: memberCountAfter}, nil).Maybe()
+			for page, users := range tc.pages {
+				api.On("GetUsersInChannel", channelID, model.ChannelSortByUsername, page, emptyChannelScanPageSize).Return(users, nil)
+			}
+
+			hasMember, err := p.channelHasActiveHumanMember(channelID)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected, hasMember)
+			api.AssertNumberOfCalls(t, "GetUsersInChannel", len(tc.pages))
+		})
+	}
+}
+
+func TestCleanupSubscriptionsInEmptiedChannel(t *testing.T) {
+	const (
+		botUserID      = "botuser___________________"
+		channelID      = "openchannelaaaaaaaaaaaaaa"
+		otherChannelID = "otherchannelbbbbbbbbbbbbbb"
+	)
+
+	newSub := func(id, name, channelID string) ChannelSubscription {
+		return ChannelSubscription{
+			ID:        id,
+			Name:      name,
+			ChannelID: channelID,
+			Filters:   SubscriptionFilters{Events: NewStringSet("jira:issue_created")},
+		}
+	}
+
+	setup := func(t *testing.T, subs []ChannelSubscription) (*plugintest.API, *Plugin) {
+		api := &plugintest.API{}
+		p := &Plugin{}
+		p.updateConfig(func(conf *config) {
+			conf.Secret = someSecret
+			conf.botUserID = botUserID
+		})
+		p.SetAPI(api)
+		p.client = pluginapi.NewClient(api, p.Driver)
+		p.instanceStore = p.getMockInstanceStoreKV(1)
+
+		existingBytes, err := json.Marshal(withExistingChannelSubscriptions(subs))
+		require.NoError(t, err)
+		api.On("KVGet", testSubKey).Return(existingBytes, nil)
+		return api, p
+	}
+
+	t.Run("removes subscriptions and posts a closing message when the last member leaves", func(t *testing.T) {
+		api, p := setup(t, []ChannelSubscription{
+			newSub("sub1______________________", "Bugs", channelID),
+			newSub("sub2______________________", "Tasks", channelID),
+			newSub("sub3______________________", "Other", otherChannelID),
+		})
+
+		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypeOpen}, nil)
+		api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: 0}, nil)
+		api.On("KVSetWithOptions", testSubKey, mock.MatchedBy(func(data []byte) bool {
+			var savedSubs Subscriptions
+			if unmarshalErr := json.Unmarshal(data, &savedSubs); unmarshalErr != nil {
+				return false
+			}
+			_, hasOther := savedSubs.Channel.ByID["sub3______________________"]
+			return hasOther && len(savedSubs.Channel.ByID) == 1
+		}), mock.AnythingOfType("model.PluginKVSetOptions")).Return(true, nil)
+		api.On("CreatePost", mock.MatchedBy(func(post *model.Post) bool {
+			return post.ChannelId == channelID &&
+				post.UserId == botUserID &&
+				strings.Contains(post.Message, `* "Bugs"`) &&
+				strings.Contains(post.Message, `* "Tasks"`) &&
+				!strings.Contains(post.Message, "Other")
+		})).Return(&model.Post{Id: "closingpost"}, nil)
+
+		p.cleanupSubscriptionsInEmptiedChannel(channelID)
+
+		api.AssertExpectations(t)
+	})
+
+	t.Run("keeps subscriptions while a human member remains", func(t *testing.T) {
+		api, p := setup(t, []ChannelSubscription{newSub("sub1______________________", "Bugs", channelID)})
+
+		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypePrivate}, nil)
+		api.On("GetChannelStats", channelID).Return(&model.ChannelStats{ChannelId: channelID, MemberCount: 1}, nil)
+		api.On("GetUsersInChannel", channelID, model.ChannelSortByUsername, 0, emptyChannelScanPageSize).
+			Return([]*model.User{{Id: "user1"}}, nil)
+
+		p.cleanupSubscriptionsInEmptiedChannel(channelID)
+
+		api.AssertNotCalled(t, "KVSetWithOptions", mock.Anything, mock.Anything, mock.Anything)
+		api.AssertNotCalled(t, "CreatePost", mock.Anything)
+	})
+
+	t.Run("does nothing for channels without subscriptions", func(t *testing.T) {
+		api, p := setup(t, []ChannelSubscription{newSub("sub1______________________", "Bugs", otherChannelID)})
+
+		p.cleanupSubscriptionsInEmptiedChannel(channelID)
+
+		api.AssertNotCalled(t, "GetChannel", mock.Anything)
+		api.AssertNotCalled(t, "GetChannelStats", mock.Anything)
+	})
+
+	t.Run("leaves DM/GM channels to the connection-based cleanup", func(t *testing.T) {
+		api, p := setup(t, []ChannelSubscription{newSub("sub1______________________", "Bugs", channelID)})
+
+		api.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Type: model.ChannelTypeGroup}, nil)
+
+		p.cleanupSubscriptionsInEmptiedChannel(channelID)
+
+		api.AssertNotCalled(t, "GetChannelStats", mock.Anything)
+		api.AssertNotCalled(t, "KVSetWithOptions", mock.Anything, mock.Anything, mock.Anything)
+	})
 }
 
 func TestCleanupDMSubscriptionsOnDisconnect(t *testing.T) {
