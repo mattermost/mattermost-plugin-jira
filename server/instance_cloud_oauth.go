@@ -79,12 +79,16 @@ const (
 )
 
 func (p *Plugin) installCloudOAuthInstance(rawURL string) (string, *cloudOAuthInstance, error) {
-	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
+	jiraURL, err := utils.NormalizeJiraURL(rawURL)
 	if err != nil {
 		return "", nil, err
 	}
 	if !utils.IsJiraCloudURL(jiraURL) {
 		return "", nil, errors.Errorf("`%s` is a Jira server URL instead of a Jira Cloud URL", jiraURL)
+	}
+	jiraURL, err = p.checkJiraURL(jiraURL)
+	if err != nil {
+		return "", nil, err
 	}
 
 	params, err := getS256PKCEParams()

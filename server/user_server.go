@@ -78,8 +78,9 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 	// We perform the check above for reuse so this is irrelevant to the security from our end.
 	accessToken, accessSecret, err := si.getOAuth1Config().AccessToken(requestToken, oauthTmpCredentials.Secret, verifier)
 	if err != nil {
+		p.client.Log.Warn("Failed to obtain an OAuth1 access token from Jira", "instance", redactURLForLog(si.GetURL()), "error", err.Error())
 		return http.StatusInternalServerError,
-			errors.WithMessage(err, "failed to obtain oauth1 access token")
+			errors.WithMessage(errJiraServerRequestFailed, "failed to obtain oauth1 access token")
 	}
 
 	connection := &Connection{
@@ -95,7 +96,9 @@ func (p *Plugin) httpOAuth1aComplete(w http.ResponseWriter, r *http.Request, ins
 
 	juser, err := client.GetSelf()
 	if err != nil {
-		return http.StatusInternalServerError, err
+		p.client.Log.Warn("Failed to load the connected Jira user", "instance", redactURLForLog(si.GetURL()), "error", err.Error())
+		return http.StatusInternalServerError,
+			errors.WithMessage(errJiraServerRequestFailed, "failed to load your Jira user")
 	}
 	connection.User = *juser
 

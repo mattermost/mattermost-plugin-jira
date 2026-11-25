@@ -11,6 +11,7 @@ import (
 	"fmt"
 	htmlTemplate "html/template"
 	"math"
+	"net/http"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -159,6 +160,14 @@ type Plugin struct {
 	// service that determines if this Mattermost instance has access to
 	// enterprise features
 	enterpriseChecker enterprise.Checker
+
+	// Only tests set this, to replace the client used to check a Jira URL
+	// before installing an instance.
+	jiraURLCheckClientOverride *http.Client
+
+	// Restricted transports for requests to installed instances, keyed by
+	// host. See makeInstanceHTTPClient.
+	instanceTransports sync.Map
 
 	// Telemetry package copied inside repository, should be changed
 	// to pluginapi's one (0.1.3+) when min_server_version is safe to point at 7.x

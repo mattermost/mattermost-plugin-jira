@@ -117,6 +117,7 @@ func (client testClient) AddComment(issueKey string, comment *jira.Comment) (*ji
 func setupTestPlugin(api *plugintest.API) *Plugin {
 	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return()
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return()
+	api.On("GetConfig").Return(&model.Config{}).Maybe()
 
 	p := &Plugin{}
 	p.SetAPI(api)

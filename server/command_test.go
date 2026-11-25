@@ -6,6 +6,7 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"net/http"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -25,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -482,17 +484,17 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		"install inaccessible server instance": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://inaccessible-jira-server.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: `we couldn't validate the connection to your Jira server. This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly: Jira server returned http status code "404" when checking for availability: "https://inaccessible-jira-server.com"`,
+			expectedMsgPrefix: (&utils.JiraURLCheckError{}).Error(),
 		},
 		"install valid server instance in wrong state": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://starting-jira-server.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: `we couldn't validate the connection to your Jira server. This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly: Jira server is not in correct state, it should be up and running: "https://starting-jira-server.com"`,
+			expectedMsgPrefix: (&utils.JiraURLCheckError{}).Error(),
 		},
 		"install valid server instance with broken json response": {
 			numInstances:      0,
 			commandArgs:       &model.CommandArgs{Command: "/jira install server https://broken-json-response.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "we couldn't validate the connection to your Jira server. This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly: invalid character '}' looking for beginning of value",
+			expectedMsgPrefix: (&utils.JiraURLCheckError{}).Error(),
 		},
 	}
 	for name, tt := range tests {
@@ -512,6 +514,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			api.On("GetConfig").Return(&model.Config{})
 			api.On("RegisterCommand", mock.Anything).Return(nil)
 			api.On("GetBundlePath").Return("", nil)
+			api.On("LogWarn", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
 				isSendEphemeralPostCalled = true
 
@@ -537,6 +540,7 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			p.secretsStore = store
 			p.userStore = getMockUserStoreKV()
 			p.enterpriseChecker = enterprise.NewEnterpriseChecker(api)
+			p.jiraURLCheckClientOverride = http.DefaultClient
 
 			cmdResponse, err := p.ExecuteCommand(&plugin.Context{}, tt.commandArgs)
 			require.Nil(t, err)

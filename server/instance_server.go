@@ -4,8 +4,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
@@ -26,8 +28,14 @@ type serverInstance struct {
 
 var _ Instance = (*serverInstance)(nil)
 
+const oauth1TokenRequestTimeout = 30 * time.Second
+
+// errJiraServerRequestFailed is shown to users in place of transport and
+// upstream errors, which are logged instead.
+var errJiraServerRequestFailed = errors.New("we couldn't complete the request to the Jira server. Please try again later or contact your system administrator")
+
 func (p *Plugin) installServerInstance(rawURL string) (string, *serverInstance, error) {
-	jiraURL, err := utils.CheckJiraURL(p.GetSiteURL(), rawURL, false)
+	jiraURL, err := p.checkJiraURL(rawURL)
 	if err != nil {
 		return "", nil, err
 	}
@@ -85,7 +93,8 @@ func (si *serverInstance) GetUserConnectURL(mattermostUserID string) (returnURL 
 	oauth1Config := si.getOAuth1Config()
 	token, secret, err := oauth1Config.RequestToken()
 	if err != nil {
-		return "", nil, err
+		si.Plugin.client.Log.Warn("Failed to obtain an OAuth1 request token from Jira", "instance", redactURLForLog(si.GetURL()), "error", err.Error())
+		return "", nil, errJiraServerRequestFailed
 	}
 
 	err = si.Plugin.otsStore.StoreOauth1aTemporaryCredentials(mattermostUserID,
@@ -117,7 +126,8 @@ func (si *serverInstance) GetClient(connection *Connection) (client Client, retu
 	token := oauth1.NewToken(connection.Oauth1AccessToken, connection.Oauth1AccessSecret)
 	conf := si.getConfig()
 
-	httpClient := si.getOAuth1Config().Client(oauth1.NoContext, token)
+	ctx := context.WithValue(context.Background(), oauth1.HTTPClient, si.Plugin.makeInstanceHTTPClient(si.GetURL(), 0))
+	httpClient := si.getOAuth1Config().Client(ctx, token)
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
 		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
@@ -144,5 +154,6 @@ func (si *serverInstance) getOAuth1Config() *oauth1.Config {
 		Signer: &oauth1.RSASigner{
 			PrivateKey: p.getConfig().rsaKey,
 		},
+		HTTPClient: p.makeInstanceHTTPClient(si.GetURL(), oauth1TokenRequestTimeout),
 	}
 }

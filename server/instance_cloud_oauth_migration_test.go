@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest/mock"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
@@ -224,6 +225,9 @@ func TestCloudOAuthMigration(t *testing.T) {
 			require.NoError(t, err)
 
 			api.On("GetBundlePath").Return(tempDir, nil)
+			mmConfig := &model.Config{}
+			mmConfig.ServiceSettings.AllowedUntrustedInternalConnections = model.NewPointer("127.0.0.0/8")
+			api.On("GetConfig").Return(mmConfig).Maybe()
 			api.On("LogDebug", mock.AnythingOfType("string")).Return()
 			api.On("UnregisterCommand", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
 			api.On("RegisterCommand", mock.Anything).Return(nil)

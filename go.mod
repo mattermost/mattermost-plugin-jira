@@ -5,7 +5,7 @@ go 1.25.8
 require (
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/blang/semver/v4 v4.0.0
-	github.com/dghubble/oauth1 v0.5.0
+	github.com/dghubble/oauth1 v0.7.3
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jarcoal/httpmock v1.0.8

@@ -53,6 +53,7 @@ func newConnectTestPlugin(api *plugintest.API, userStore UserStore, instanceStor
 	}
 	p.SetAPI(api)
 	p.client = pluginapi.NewClient(api, p.Driver)
+	api.On("GetConfig").Return(&model.Config{}).Maybe()
 	p.updateConfig(func(conf *config) {
 		conf.botUserID = connectTestBotUserID
 	})
