@@ -212,6 +212,7 @@ func TestInstallServerInstanceDoesNotFollowRedirectToInternalAddress(t *testing.
 	_, _, err := p.installServerInstance(redirectorURL)
 
 	assert.Error(t, err)
+	assert.Positive(t, atomic.LoadInt32(&firstHopHits), "the first hop must be reached for this test to be meaningful")
 	assert.Equal(t, int32(0), atomic.LoadInt32(&targetHits), "redirect to an untrusted internal address must not be followed")
 	instancesStored, listsStored := store.writes()
 	assert.Equal(t, 0, instancesStored)

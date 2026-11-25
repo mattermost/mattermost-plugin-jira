@@ -90,6 +90,13 @@ func (p *Plugin) makeUntrustedHTTPClient() *http.Client {
 	}
 }
 
+// instanceTransport is a cached transport together with the allow-list it
+// was created under.
+type instanceTransport struct {
+	http.RoundTripper
+	allowList string
+}
+
 // makeInstanceHTTPClient returns a client for requests to an installed
 // instance. The instance's own host was chosen by an admin and is trusted even
 // if it is internal; any other host, such as a redirect target, gets the same
@@ -97,15 +104,34 @@ func (p *Plugin) makeUntrustedHTTPClient() *http.Client {
 func (p *Plugin) makeInstanceHTTPClient(instanceURL string, timeout time.Duration) *http.Client {
 	host := jiraURLHost(instanceURL)
 	insecure := p.insecureOutgoingConnectionsEnabled()
+	allowList := strings.Join(p.allowedUntrustedInternalConnections(), " ")
 	// Transports are cached so that connections to an instance are reused
-	// across clients.
+	// across clients. A changed allow-list replaces the transport, because
+	// pooled idle connections would otherwise bypass the dial-time checks.
 	key := strconv.FormatBool(insecure) + "|" + host
-	transport, ok := p.instanceTransports.Load(key)
-	if !ok {
-		transport, _ = p.instanceTransports.LoadOrStore(key, p.makeRestrictedTransport(insecure, host))
+	var transport http.RoundTripper
+	for transport == nil {
+		cached, ok := p.instanceTransports.Load(key)
+		if ok && cached.(*instanceTransport).allowList == allowList {
+			transport = cached.(*instanceTransport).RoundTripper
+			break
+		}
+		fresh := &instanceTransport{allowList: allowList, RoundTripper: p.makeRestrictedTransport(insecure, host)}
+		if !ok {
+			if _, loaded := p.instanceTransports.LoadOrStore(key, fresh); !loaded {
+				transport = fresh.RoundTripper
+			}
+			continue
+		}
+		if p.instanceTransports.CompareAndSwap(key, cached, fresh) {
+			if closer, ok := cached.(*instanceTransport).RoundTripper.(interface{ CloseIdleConnections() }); ok {
+				closer.CloseIdleConnections()
+			}
+			transport = fresh.RoundTripper
+		}
 	}
 	return &http.Client{
-		Transport: transport.(http.RoundTripper),
+		Transport: transport,
 		Timeout:   timeout,
 	}
 }
