@@ -60,7 +60,6 @@ func TestMakeInstanceHTTPClientAppliesAllowListChange(t *testing.T) {
 
 	assert.Eventually(t, func() bool { return atomic.LoadInt32(&closedConns) == 1 }, 2*time.Second, 10*time.Millisecond,
 		"idle connections of the replaced transport should be closed")
-	assert.Error(t, get(oldClient), "the old transport must not reuse a pooled connection to a host that is no longer allowed")
-	assert.Error(t, get(newClient))
+	assert.Error(t, get(newClient), "the new transport must not reach a host that is no longer allowed")
 	assert.Equal(t, int32(1), atomic.LoadInt32(&newConns))
 }

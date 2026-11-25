@@ -24,9 +24,8 @@ func splitAllowedConnections(c rune) bool {
 	return unicode.IsSpace(c) || c == ','
 }
 
-// allowedUntrustedInternalConnections is read on every call so that changes to
-// the server config apply without a plugin restart. A missing config yields an
-// empty list, so internal destinations stay blocked.
+// allowedUntrustedInternalConnections reads the current server config. A
+// missing config yields an empty list, so internal destinations stay blocked.
 func (p *Plugin) allowedUntrustedInternalConnections() []string {
 	mmConfig := p.API.GetConfig()
 	if mmConfig == nil || mmConfig.ServiceSettings.AllowedUntrustedInternalConnections == nil {
@@ -42,17 +41,18 @@ func (p *Plugin) insecureOutgoingConnectionsEnabled() bool {
 }
 
 // makeRestrictedTransport rejects reserved and own IPs at dial time, which
-// also covers every redirect hop, unless they are allowed by the server's
-// AllowedUntrustedInternalConnections setting. Hosts in trustedHosts are
-// dialed without the IP check.
-func (p *Plugin) makeRestrictedTransport(insecure bool, trustedHosts ...string) http.RoundTripper {
+// also covers every redirect hop, unless they are allowed by
+// allowedConnections, a snapshot of the server's
+// AllowedUntrustedInternalConnections setting taken when the transport is
+// created. Hosts in trustedHosts are dialed without the IP check.
+func (p *Plugin) makeRestrictedTransport(insecure bool, allowedConnections []string, trustedHosts ...string) http.RoundTripper {
 	allowHost := func(host string) bool {
 		for _, trusted := range trustedHosts {
 			if trusted != "" && strings.EqualFold(host, trusted) {
 				return true
 			}
 		}
-		for _, allowed := range p.allowedUntrustedInternalConnections() {
+		for _, allowed := range allowedConnections {
 			if host == allowed {
 				return true
 			}
@@ -68,7 +68,7 @@ func (p *Plugin) makeRestrictedTransport(insecure bool, trustedHosts ...string) 
 		if !httpservice.IsReservedIP(ip) && !ownIP {
 			return nil
 		}
-		for _, allowed := range p.allowedUntrustedInternalConnections() {
+		for _, allowed := range allowedConnections {
 			if _, ipRange, err := net.ParseCIDR(allowed); err == nil && ipRange.Contains(ip) {
 				return nil
 			}
@@ -85,7 +85,7 @@ func (p *Plugin) makeRestrictedTransport(insecure bool, trustedHosts ...string) 
 // user-supplied URLs that have not been installed as an instance yet.
 func (p *Plugin) makeUntrustedHTTPClient() *http.Client {
 	return &http.Client{
-		Transport: p.makeRestrictedTransport(p.insecureOutgoingConnectionsEnabled()),
+		Transport: p.makeRestrictedTransport(p.insecureOutgoingConnectionsEnabled(), p.allowedUntrustedInternalConnections()),
 		Timeout:   untrustedHTTPClientTimeout,
 	}
 }
@@ -104,7 +104,8 @@ type instanceTransport struct {
 func (p *Plugin) makeInstanceHTTPClient(instanceURL string, timeout time.Duration) *http.Client {
 	host := jiraURLHost(instanceURL)
 	insecure := p.insecureOutgoingConnectionsEnabled()
-	allowList := strings.Join(p.allowedUntrustedInternalConnections(), " ")
+	allowedConnections := p.allowedUntrustedInternalConnections()
+	allowList := strings.Join(allowedConnections, " ")
 	// Transports are cached so that connections to an instance are reused
 	// across clients. A changed allow-list replaces the transport, because
 	// pooled idle connections would otherwise bypass the dial-time checks.
@@ -116,7 +117,7 @@ func (p *Plugin) makeInstanceHTTPClient(instanceURL string, timeout time.Duratio
 			transport = cached.(*instanceTransport).RoundTripper
 			break
 		}
-		fresh := &instanceTransport{allowList: allowList, RoundTripper: p.makeRestrictedTransport(insecure, host)}
+		fresh := &instanceTransport{allowList: allowList, RoundTripper: p.makeRestrictedTransport(insecure, allowedConnections, host)}
 		if !ok {
 			if _, loaded := p.instanceTransports.LoadOrStore(key, fresh); !loaded {
 				transport = fresh.RoundTripper
