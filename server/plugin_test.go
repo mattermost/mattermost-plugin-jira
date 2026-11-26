@@ -256,8 +256,6 @@ func TestSetupAutolink(t *testing.T) {
 			client:        mockPluginClient,
 			instanceStore: dummyInstanceStore,
 		}
-		p.SetAPI(mockAPI)
-		mockAPI.On("GetConfig").Return(&model.Config{}).Maybe()
 
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(p, mockAPI, dummyInstanceStore)

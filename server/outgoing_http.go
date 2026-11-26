@@ -7,11 +7,13 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strconv"
+	"slices"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/httpservice"
 	"github.com/pkg/errors"
 
@@ -20,44 +22,49 @@ import (
 
 const untrustedHTTPClientTimeout = 30 * time.Second
 
-func splitAllowedConnections(c rune) bool {
-	return unicode.IsSpace(c) || c == ','
+// outgoingHTTP holds the server's outgoing connection settings and the
+// transports built from them. It is replaced as a whole when the settings
+// change, so pooled connections never outlive the settings they were made
+// under.
+type outgoingHTTP struct {
+	insecure           bool
+	allowedConnections []string
+
+	mu sync.Mutex
+	// Transports for installed instances, keyed by instance host.
+	transports map[string]*http.Transport
 }
 
-// allowedUntrustedInternalConnections reads the current server config. A
-// missing config yields an empty list, so internal destinations stay blocked.
-func (p *Plugin) allowedUntrustedInternalConnections() []string {
-	mmConfig := p.API.GetConfig()
-	if mmConfig == nil || mmConfig.ServiceSettings.AllowedUntrustedInternalConnections == nil {
-		return nil
+// newOutgoingHTTP reads the settings from mmConfig. A nil config yields an
+// empty allow list, so internal destinations stay blocked.
+func newOutgoingHTTP(mmConfig *model.Config) *outgoingHTTP {
+	o := &outgoingHTTP{transports: map[string]*http.Transport{}}
+	if mmConfig == nil {
+		return o
 	}
-	return strings.FieldsFunc(*mmConfig.ServiceSettings.AllowedUntrustedInternalConnections, splitAllowedConnections)
+	settings := mmConfig.ServiceSettings
+	o.insecure = settings.EnableInsecureOutgoingConnections != nil && *settings.EnableInsecureOutgoingConnections
+	if settings.AllowedUntrustedInternalConnections != nil {
+		o.allowedConnections = strings.FieldsFunc(*settings.AllowedUntrustedInternalConnections, func(c rune) bool {
+			return unicode.IsSpace(c) || c == ','
+		})
+	}
+	return o
 }
 
-func (p *Plugin) insecureOutgoingConnectionsEnabled() bool {
-	mmConfig := p.API.GetConfig()
-	return mmConfig != nil && mmConfig.ServiceSettings.EnableInsecureOutgoingConnections != nil &&
-		*mmConfig.ServiceSettings.EnableInsecureOutgoingConnections
+func (o *outgoingHTTP) sameSettings(other *outgoingHTTP) bool {
+	return o.insecure == other.insecure && slices.Equal(o.allowedConnections, other.allowedConnections)
 }
 
-// makeRestrictedTransport rejects reserved and own IPs at dial time, which
-// also covers every redirect hop, unless they are allowed by
-// allowedConnections, a snapshot of the server's
-// AllowedUntrustedInternalConnections setting taken when the transport is
-// created. Hosts in trustedHosts are dialed without the IP check.
-func (p *Plugin) makeRestrictedTransport(insecure bool, allowedConnections []string, trustedHosts ...string) http.RoundTripper {
+// restrictedTransport rejects reserved and own IPs at dial time, which also
+// covers every redirect hop, unless they are in allowedConnections. trustedHost
+// is dialed without the IP check.
+func (o *outgoingHTTP) restrictedTransport(trustedHost string) *http.Transport {
 	allowHost := func(host string) bool {
-		for _, trusted := range trustedHosts {
-			if trusted != "" && strings.EqualFold(host, trusted) {
-				return true
-			}
+		if trustedHost != "" && strings.EqualFold(host, trustedHost) {
+			return true
 		}
-		for _, allowed := range allowedConnections {
-			if host == allowed {
-				return true
-			}
-		}
-		return false
+		return slices.Contains(o.allowedConnections, host)
 	}
 
 	allowIP := func(ip net.IP) error {
@@ -68,7 +75,7 @@ func (p *Plugin) makeRestrictedTransport(insecure bool, allowedConnections []str
 		if !httpservice.IsReservedIP(ip) && !ownIP {
 			return nil
 		}
-		for _, allowed := range allowedConnections {
+		for _, allowed := range o.allowedConnections {
 			if _, ipRange, err := net.ParseCIDR(allowed); err == nil && ipRange.Contains(ip) {
 				return nil
 			}
@@ -78,23 +85,52 @@ func (p *Plugin) makeRestrictedTransport(insecure bool, allowedConnections []str
 
 	// The underlying transport is used directly so that the User-Agent set by
 	// callers is not replaced.
-	return httpservice.NewTransport(insecure, allowHost, allowIP).Transport
+	return httpservice.NewTransport(o.insecure, allowHost, allowIP).Transport.(*http.Transport)
+}
+
+func (o *outgoingHTTP) instanceTransport(host string) *http.Transport {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	t, ok := o.transports[host]
+	if !ok {
+		t = o.restrictedTransport(host)
+		o.transports[host] = t
+	}
+	return t
+}
+
+func (o *outgoingHTTP) closeIdleConnections() {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	for _, t := range o.transports {
+		t.CloseIdleConnections()
+	}
+}
+
+func (p *Plugin) updateOutgoingHTTP(mmConfig *model.Config) {
+	next := newOutgoingHTTP(mmConfig)
+	if prev := p.outgoingHTTP.Load(); prev != nil && prev.sameSettings(next) {
+		return
+	}
+	if prev := p.outgoingHTTP.Swap(next); prev != nil {
+		prev.closeIdleConnections()
+	}
+}
+
+func (p *Plugin) getOutgoingHTTP() *outgoingHTTP {
+	if o := p.outgoingHTTP.Load(); o != nil {
+		return o
+	}
+	return newOutgoingHTTP(nil)
 }
 
 // makeUntrustedHTTPClient returns a client for requests to admin- or
 // user-supplied URLs that have not been installed as an instance yet.
 func (p *Plugin) makeUntrustedHTTPClient() *http.Client {
 	return &http.Client{
-		Transport: p.makeRestrictedTransport(p.insecureOutgoingConnectionsEnabled(), p.allowedUntrustedInternalConnections()),
+		Transport: p.getOutgoingHTTP().restrictedTransport(""),
 		Timeout:   untrustedHTTPClientTimeout,
 	}
-}
-
-// instanceTransport is a cached transport together with the allow-list it
-// was created under.
-type instanceTransport struct {
-	http.RoundTripper
-	allowList string
 }
 
 // makeInstanceHTTPClient returns a client for requests to an installed
@@ -102,37 +138,8 @@ type instanceTransport struct {
 // if it is internal; any other host, such as a redirect target, gets the same
 // checks as makeUntrustedHTTPClient. A zero timeout means no timeout.
 func (p *Plugin) makeInstanceHTTPClient(instanceURL string, timeout time.Duration) *http.Client {
-	host := jiraURLHost(instanceURL)
-	insecure := p.insecureOutgoingConnectionsEnabled()
-	allowedConnections := p.allowedUntrustedInternalConnections()
-	allowList := strings.Join(allowedConnections, " ")
-	// Transports are cached so that connections to an instance are reused
-	// across clients. A changed allow-list replaces the transport, because
-	// pooled idle connections would otherwise bypass the dial-time checks.
-	key := strconv.FormatBool(insecure) + "|" + host
-	var transport http.RoundTripper
-	for transport == nil {
-		cached, ok := p.instanceTransports.Load(key)
-		if ok && cached.(*instanceTransport).allowList == allowList {
-			transport = cached.(*instanceTransport).RoundTripper
-			break
-		}
-		fresh := &instanceTransport{allowList: allowList, RoundTripper: p.makeRestrictedTransport(insecure, allowedConnections, host)}
-		if !ok {
-			if _, loaded := p.instanceTransports.LoadOrStore(key, fresh); !loaded {
-				transport = fresh.RoundTripper
-			}
-			continue
-		}
-		if p.instanceTransports.CompareAndSwap(key, cached, fresh) {
-			if closer, ok := cached.(*instanceTransport).RoundTripper.(interface{ CloseIdleConnections() }); ok {
-				closer.CloseIdleConnections()
-			}
-			transport = fresh.RoundTripper
-		}
-	}
 	return &http.Client{
-		Transport: transport,
+		Transport: p.getOutgoingHTTP().instanceTransport(jiraURLHost(instanceURL)),
 		Timeout:   timeout,
 	}
 }

@@ -13,7 +13,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/assert"
@@ -171,8 +170,6 @@ func TestInstallCloudOAuthInstanceDoesNotProbeNonCloudURL(t *testing.T) {
 	assert.Equal(t, 0, instancesStored)
 }
 
-// Regression coverage for address forms the dial-time filter already rejects.
-// Expected to pass.
 func TestCheckJiraURLBlocksReservedAddressForms(t *testing.T) {
 	for name, rawURL := range map[string]string{ //nolint:gosec // test fixture: fake userinfo checks that credentials in the URL don't bypass the IP filter
 		"IPv6 loopback":           "http://[::1]:8065",
@@ -198,8 +195,7 @@ func TestCheckJiraURLBlocksReservedAddressForms(t *testing.T) {
 	}
 }
 
-// A missing server config must not open internal destinations. Expected to pass.
-func TestCheckJiraURLNilServerConfigBlocksInternal(t *testing.T) {
+func TestCheckJiraURLWithoutServerSettingsBlocksInternal(t *testing.T) {
 	var hits int32
 	srv := newStatusServer(t, http.StatusOK, `{"state":"RUNNING"}`, &hits)
 
@@ -207,7 +203,6 @@ func TestCheckJiraURLNilServerConfigBlocksInternal(t *testing.T) {
 	p := &Plugin{}
 	p.SetAPI(api)
 	p.client = pluginapi.NewClient(api, p.Driver)
-	api.On("GetConfig").Return((*model.Config)(nil))
 	api.On("LogWarn", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
 	_, err := p.checkJiraURL(srv.URL)

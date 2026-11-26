@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMakeInstanceHTTPClientAppliesAllowListChange(t *testing.T) {
+func TestUpdateOutgoingHTTPAppliesAllowListChange(t *testing.T) {
 	var newConns, closedConns int32
 	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("ok"))
@@ -50,9 +50,14 @@ func TestMakeInstanceHTTPClientAppliesAllowListChange(t *testing.T) {
 	require.NoError(t, get(oldClient))
 	require.NoError(t, get(oldClient))
 	assert.Equal(t, int32(1), atomic.LoadInt32(&newConns), "the second request should reuse the pooled connection")
-	assert.Same(t, oldClient.Transport, p.makeInstanceHTTPClient(instanceURL, 0).Transport, "an unchanged allow-list keeps the cached transport")
+	assert.Same(t, oldClient.Transport, p.makeInstanceHTTPClient(instanceURL, 0).Transport)
 
-	*p.API.GetConfig().ServiceSettings.AllowedUntrustedInternalConnections = ""
+	mmConfig := p.API.GetConfig()
+	p.updateOutgoingHTTP(mmConfig)
+	assert.Same(t, oldClient.Transport, p.makeInstanceHTTPClient(instanceURL, 0).Transport, "unchanged settings keep the cached transport")
+
+	*mmConfig.ServiceSettings.AllowedUntrustedInternalConnections = ""
+	p.updateOutgoingHTTP(mmConfig)
 
 	newClient := p.makeInstanceHTTPClient(instanceURL, 0)
 	assert.NotSame(t, oldClient.Transport, newClient.Transport)

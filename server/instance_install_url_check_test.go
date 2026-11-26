@@ -77,6 +77,7 @@ func setupInstallURLCheckPlugin(t *testing.T, allowedInternal string) (*Plugin, 
 	mmConfig := &model.Config{}
 	mmConfig.SetDefaults()
 	mmConfig.ServiceSettings.AllowedUntrustedInternalConnections = model.NewPointer(allowedInternal)
+	p.updateOutgoingHTTP(mmConfig)
 
 	bundlePath, err := filepath.Abs("..")
 	require.NoError(t, err)
