@@ -15,8 +15,25 @@ import (
 const (
 	prefixAdminNotice          = "admin_notice_"
 	adminNoticeMissingAPIToken = "missing_api_token_"
+	adminNoticeBlockedInstance = "blocked_instance_"
 	adminListPerPage           = 100
 )
+
+// blockedInstanceNotice must only name the installed URL: on Cloud the admin
+// is untrusted, so it must not reveal resolved addresses or what was reached.
+const blockedInstanceNotice = ":warning: **Jira %s is being blocked**\n\n" +
+	"The Jira plugin only connects to internal network addresses that are allowed in " +
+	"**System Console > Environment > Developer > Allow untrusted internal connections to**. " +
+	"Requests to this Jira instance are being refused, so users can't connect their accounts, " +
+	"and commands and notifications for it won't work.\n\n" +
+	"To fix it, add `%s` or its IP range to that setting. " +
+	"If it is already allowed, Jira is redirecting requests to another internal address: " +
+	"check Jira's base URL and any proxy in front of it, and the Mattermost server logs for details."
+
+func (p *Plugin) notifyAdminsIfInstanceBlocked(instance Instance) {
+	p.notifyAdminsOnce(adminNoticeBlockedInstance, instance.GetID(),
+		fmt.Sprintf(blockedInstanceNotice, instance.GetJiraBaseURL(), jiraURLHost(instance.GetJiraBaseURL())))
+}
 
 const missingAPITokenNotice = ":information_source: **Jira Cloud %s: set an Admin API Token**\n\n" +
 	"Without it, channel subscriptions miss comments and new issues from Jira users who haven't connected their account to Mattermost, " +

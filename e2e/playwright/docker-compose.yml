@@ -36,6 +36,8 @@ services:
       MM_SERVICESETTINGS_SITEURL: http://127.0.0.1:${MM_PORT:-8065}
       MM_SERVICESETTINGS_LISTENADDRESS: ":${MM_PORT:-8065}"
       MM_SERVICESETTINGS_ENABLELOCALMODE: "true"
+      # The plugin's Jira requests refuse private IPs unless allowlisted; keep in sync with extra_hosts.
+      MM_SERVICESETTINGS_ALLOWEDUNTRUSTEDINTERNALCONNECTIONS: "fake-jira e2e.atlassian.net"
       MM_PLUGINSETTINGS_ENABLE: "true"
       MM_PLUGINSETTINGS_ENABLEUPLOADS: "true"
       MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: "false"

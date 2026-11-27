@@ -6,6 +6,8 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -13,7 +15,6 @@ import (
 	"testing"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/jarcoal/httpmock"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
@@ -25,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
@@ -415,25 +417,28 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 	}
 	api.On("GetUser", mockUserIDNonSysAdmin).Return(nonSysAdminUser, nil)
 
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
+	statusResponses := map[string]struct {
+		code int
+		body string
+	}{
+		"/jiralink/status":     {http.StatusOK, `{"state": "RUNNING"}`},
+		"/inaccessible/status": {http.StatusNotFound, ``},
+		"/starting/status":     {http.StatusOK, `{"state": "STARTING"}`},
+		"/broken-json/status":  {http.StatusOK, `{"invalid-json": }`},
+	}
+	jiraServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp, ok := statusResponses[r.URL.Path]
+		if !ok {
+			resp.code = http.StatusNotFound
+		}
+		w.WriteHeader(resp.code)
+		_, _ = w.Write([]byte(resp.body))
+	}))
+	defer jiraServer.Close()
 
-	httpmock.RegisterResponder("GET", "https://jiralink.com/status",
-		httpmock.NewStringResponder(200, `{"state": "RUNNING"}`))
-	httpmock.RegisterResponder("GET", "https://mmtest.atlassian.net/status",
-		httpmock.NewStringResponder(200, `{"state": "RUNNING"}`))
-	httpmock.RegisterResponder("GET", "http://mmtest.atlassian.net/status",
-		httpmock.NewStringResponder(200, `{"state": "RUNNING"}`))
-	httpmock.RegisterResponder("GET", "https://non-existing-jira-page.atlassian.net/status",
-		httpmock.NewStringResponder(404, ``))
-	httpmock.RegisterResponder("GET", "https://valid-jira-page.atlassian.net/status",
-		httpmock.NewStringResponder(200, ``))
-	httpmock.RegisterResponder("GET", "https://inaccessible-jira-server.com/status",
-		httpmock.NewStringResponder(404, ``))
-	httpmock.RegisterResponder("GET", "https://starting-jira-server.com/status",
-		httpmock.NewStringResponder(200, `{"state": "STARTING"}`))
-	httpmock.RegisterResponder("GET", "https://broken-json-response.com/status",
-		httpmock.NewStringResponder(200, `{"invalid-json": }`))
+	mmConfig := &model.Config{}
+	mmConfig.ServiceSettings.AllowedUntrustedInternalConnections = model.NewPointer("127.0.0.1/32")
+	api.On("GetConfig").Return(mmConfig)
 
 	tests := map[string]struct {
 		commandArgs       *model.CommandArgs
@@ -471,28 +476,28 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 		},
 		"install valid server instance 1 preinstalled": {
 			numInstances:      1,
-			commandArgs:       &model.CommandArgs{Command: "/jira install server https://jiralink.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "https://jiralink.com has been successfully added",
+			commandArgs:       &model.CommandArgs{Command: "/jira install server " + jiraServer.URL + "/jiralink", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: jiraServer.URL + "/jiralink has been successfully added",
 		},
 		"install valid server instance 2 preinstalled": {
 			numInstances:      2,
-			commandArgs:       &model.CommandArgs{Command: "/jira install server https://jiralink.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "https://jiralink.com has been successfully added",
+			commandArgs:       &model.CommandArgs{Command: "/jira install server " + jiraServer.URL + "/jiralink", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: jiraServer.URL + "/jiralink has been successfully added",
 		},
 		"install inaccessible server instance": {
 			numInstances:      0,
-			commandArgs:       &model.CommandArgs{Command: "/jira install server https://inaccessible-jira-server.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: `we couldn't validate the connection to your Jira server. This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly: Jira server returned http status code "404" when checking for availability: "https://inaccessible-jira-server.com"`,
+			commandArgs:       &model.CommandArgs{Command: "/jira install server " + jiraServer.URL + "/inaccessible", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: (&utils.JiraURLCheckError{}).Error(),
 		},
 		"install valid server instance in wrong state": {
 			numInstances:      0,
-			commandArgs:       &model.CommandArgs{Command: "/jira install server https://starting-jira-server.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: `we couldn't validate the connection to your Jira server. This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly: Jira server is not in correct state, it should be up and running: "https://starting-jira-server.com"`,
+			commandArgs:       &model.CommandArgs{Command: "/jira install server " + jiraServer.URL + "/starting", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: (&utils.JiraURLCheckError{}).Error(),
 		},
 		"install valid server instance with broken json response": {
 			numInstances:      0,
-			commandArgs:       &model.CommandArgs{Command: "/jira install server https://broken-json-response.com", UserId: mockUserIDSysAdmin},
-			expectedMsgPrefix: "we couldn't validate the connection to your Jira server. This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly: invalid character '}' looking for beginning of value",
+			commandArgs:       &model.CommandArgs{Command: "/jira install server " + jiraServer.URL + "/broken-json", UserId: mockUserIDSysAdmin},
+			expectedMsgPrefix: (&utils.JiraURLCheckError{}).Error(),
 		},
 	}
 	for name, tt := range tests {
@@ -509,9 +514,9 @@ func TestPlugin_ExecuteCommand_Installation(t *testing.T) {
 			license.SkuShortName = "professional"
 
 			api.On("GetLicense").Return(&license)
-			api.On("GetConfig").Return(&model.Config{})
 			api.On("RegisterCommand", mock.Anything).Return(nil)
 			api.On("GetBundlePath").Return("", nil)
+			api.On("LogWarn", mock.Anything, mock.Anything, mock.Anything).Maybe()
 			api.On("SendEphemeralPost", mock.AnythingOfType("string"), mock.AnythingOfType("*model.Post")).Run(func(args mock.Arguments) {
 				isSendEphemeralPostCalled = true
 

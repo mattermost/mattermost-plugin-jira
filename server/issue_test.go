@@ -118,6 +118,8 @@ func setupTestPlugin(api *plugintest.API) *Plugin {
 	api.On("LogError", mockAnythingOfTypeBatch("string", 13)...).Return()
 	api.On("LogDebug", mockAnythingOfTypeBatch("string", 11)...).Return()
 
+	allowLoopbackConnections(api)
+
 	p := &Plugin{}
 	p.SetAPI(api)
 	p.initializeRouter()

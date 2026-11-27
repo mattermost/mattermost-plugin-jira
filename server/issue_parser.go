@@ -87,7 +87,7 @@ func getActions(p *Plugin, instanceID types.ID, client Client, issue *jira.Issue
 	return actions, nil
 }
 
-func asSlackAttachment(instance Instance, client Client, issue *jira.Issue, showActions bool) ([]*model.SlackAttachment, error) {
+func asSlackAttachment(instance Instance, client Client, issue *jira.Issue, showActions bool) ([]*model.MessageAttachment, error) {
 	text := mdKeySummaryLink(issue, instance)
 	desc := truncate(issue.Fields.Description, 3000)
 	desc = parseJiraLinksToMarkdown(desc)
@@ -95,16 +95,16 @@ func asSlackAttachment(instance Instance, client Client, issue *jira.Issue, show
 		text += "\n\n" + desc + "\n"
 	}
 
-	var fields []*model.SlackAttachmentField
+	var fields []*model.MessageAttachmentField
 	if issue.Fields.Assignee != nil {
-		fields = append(fields, &model.SlackAttachmentField{
+		fields = append(fields, &model.MessageAttachmentField{
 			Title: "Assignee",
 			Value: issue.Fields.Assignee.DisplayName,
 			Short: true,
 		})
 	}
 	if issue.Fields.Priority != nil {
-		fields = append(fields, &model.SlackAttachmentField{
+		fields = append(fields, &model.MessageAttachmentField{
 			Title: "Priority",
 			Value: issue.Fields.Priority.Name,
 			Short: true,
@@ -112,7 +112,7 @@ func asSlackAttachment(instance Instance, client Client, issue *jira.Issue, show
 	}
 
 	if issue.Fields.Reporter != nil {
-		fields = append(fields, &model.SlackAttachmentField{
+		fields = append(fields, &model.MessageAttachmentField{
 			Title: "Reporter",
 			Value: reporterSummary(issue.Fields.Reporter),
 			Short: true,
@@ -124,11 +124,11 @@ func asSlackAttachment(instance Instance, client Client, issue *jira.Issue, show
 	if showActions {
 		actions, err = getActions(instance.Common().Plugin, instance.GetID(), client, issue)
 		if err != nil {
-			return []*model.SlackAttachment{}, err
+			return []*model.MessageAttachment{}, err
 		}
 	}
 
-	return []*model.SlackAttachment{
+	return []*model.MessageAttachment{
 		{
 			// TODO is this supposed to be themed?
 			Color:   "#95b7d0",

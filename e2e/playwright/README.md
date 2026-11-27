@@ -58,4 +58,6 @@ match on any machine and in CI (a non-blocking job). After an intended UI change
 ## Gotchas
 
 - The plugin rejects a `localhost` SiteURL, so everything uses `127.0.0.1`.
+- The plugin blocks requests to private IPs unless the host is in `ServiceSettings.AllowedUntrustedInternalConnections`;
+  `docker-compose.yml` sets it to `fake-jira e2e.atlassian.net`, so add any new fake hostname there too.
 - Don't use `pw.initSetup()`: it resets server config and disables the plugin. Use the `jira` fixture instead.

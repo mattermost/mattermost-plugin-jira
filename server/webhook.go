@@ -58,7 +58,7 @@ type webhook struct {
 	eventTypes    StringSet
 	headline      string
 	text          string
-	fields        []*model.SlackAttachmentField
+	fields        []*model.MessageAttachmentField
 	notifications []webhookUserNotification
 	fieldInfo     webhookField
 }
@@ -123,7 +123,7 @@ func (wh webhook) PostToChannel(p *Plugin, instanceID types.ID, channelID, fromU
 	}
 
 	if text != "" || len(wh.fields) != 0 {
-		model.ParseSlackAttachment(post, []*model.SlackAttachment{
+		model.ParseMessageAttachment(post, []*model.MessageAttachment{
 			{
 				// TODO is this supposed to be themed?
 				Color:    "#95b7d0",

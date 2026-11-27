@@ -28,7 +28,7 @@ func TestAsSlackAttachment(t *testing.T) {
 	for name, tc := range map[string]struct {
 		issue              *jira.Issue
 		showActions        bool
-		expectedAttachment *model.SlackAttachment
+		expectedAttachment *model.MessageAttachment
 	}{
 		"minimum data": {
 			issue: &jira.Issue{
@@ -40,7 +40,7 @@ func TestAsSlackAttachment(t *testing.T) {
 					},
 				},
 			},
-			expectedAttachment: &model.SlackAttachment{
+			expectedAttachment: &model.MessageAttachment{
 				Text:  "[MM-57208:  (Open)](https://jiraurl2.com/browse/MM-57208)",
 				Color: "#95b7d0",
 			},
@@ -55,7 +55,7 @@ func TestAsSlackAttachment(t *testing.T) {
 					},
 				},
 			},
-			expectedAttachment: &model.SlackAttachment{
+			expectedAttachment: &model.MessageAttachment{
 				Text:  "[MM-57208: A Summary (Open)](https://jiraurl2.com/browse/MM-57208)",
 				Color: "#95b7d0",
 			},
@@ -83,10 +83,10 @@ func TestAsSlackAttachment(t *testing.T) {
 					},
 				},
 			},
-			expectedAttachment: &model.SlackAttachment{
+			expectedAttachment: &model.MessageAttachment{
 				Text:  "[MM-57208: A Summary (Open)](https://jiraurl2.com/browse/MM-57208)\n\nA Description\n",
 				Color: "#95b7d0",
-				Fields: []*model.SlackAttachmentField{
+				Fields: []*model.MessageAttachmentField{
 					{
 						Title: "Assignee",
 						Value: "The Assignee",
@@ -117,7 +117,7 @@ func TestAsSlackAttachment(t *testing.T) {
 				},
 			},
 			showActions: true,
-			expectedAttachment: &model.SlackAttachment{
+			expectedAttachment: &model.MessageAttachment{
 				Text:  "[MM-57208:  (Open)](https://jiraurl2.com/browse/MM-57208)",
 				Color: "#95b7d0",
 				Actions: []*model.PostAction{

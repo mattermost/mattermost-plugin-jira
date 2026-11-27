@@ -69,10 +69,29 @@ type JiraStatus struct {
 	State string `json:"state"`
 }
 
+const maxJiraStatusResponseSize = 1 << 20
+
+// JiraURLCheckError reports a failed availability check. Error() is safe to
+// show to the user; Cause is only meant for server logs.
+type JiraURLCheckError struct {
+	Cause error
+}
+
+func (e *JiraURLCheckError) Error() string {
+	return "we couldn't validate the connection to your Jira server. " +
+		"This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly. " +
+		"If your Jira server is on an internal network, make sure its address is allowed by the " +
+		"AllowedUntrustedInternalConnections setting of your Mattermost server"
+}
+
+func (e *JiraURLCheckError) Unwrap() error {
+	return e.Cause
+}
+
 // CheckJiraURL checks if `/status` endpoint of the Jira URL is accessible
 // and responding with the correct state which is "RUNNING"
-func CheckJiraURL(mattermostSiteURL, jiraURL string, requireHTTPS bool) (_ string, err error) {
-	jiraURL, err = NormalizeJiraURL(jiraURL)
+func CheckJiraURL(client *http.Client, mattermostSiteURL, jiraURL string, requireHTTPS bool) (string, error) {
+	jiraURL, err := NormalizeJiraURL(jiraURL)
 	if err != nil {
 		return "", err
 	}
@@ -80,34 +99,33 @@ func CheckJiraURL(mattermostSiteURL, jiraURL string, requireHTTPS bool) (_ strin
 		return "", errors.Errorf("%s is the Mattermost site URL. Please use your Jira URL", jiraURL)
 	}
 
-	defer func() {
-		if err != nil {
-			err = errors.Wrap(err, "we couldn't validate the connection to your Jira server. "+
-				"This could be because of existing firewall or proxy rules, or because the URL was entered incorrectly")
-		}
-	}()
+	if err := checkJiraStatus(client, jiraURL); err != nil {
+		return "", &JiraURLCheckError{Cause: err}
+	}
+	return jiraURL, nil
+}
 
-	resp, err := http.Get(jiraURL + "/status")
+func checkJiraStatus(client *http.Client, jiraURL string) error {
+	resp, err := client.Get(jiraURL + "/status")
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("Jira server returned http status code %q when checking for availability: %q", resp.Status, jiraURL)
+		return errors.Errorf("Jira server returned http status code %q when checking for availability", resp.Status)
 	}
 
-	resBody, err := io.ReadAll(resp.Body)
+	resBody, err := io.ReadAll(io.LimitReader(resp.Body, maxJiraStatusResponseSize))
 	if err != nil {
-		return "", err
+		return err
 	}
 	var status JiraStatus
-	err = json.Unmarshal(resBody, &status)
-	if err != nil {
-		return "", err
+	if err := json.Unmarshal(resBody, &status); err != nil {
+		return err
 	}
 	if status.State != "RUNNING" {
-		return "", errors.Errorf("Jira server is not in correct state, it should be up and running: %q", jiraURL)
+		return errors.Errorf("Jira server is not in correct state, it should be up and running: %q", status.State)
 	}
-	return jiraURL, nil
+	return nil
 }

@@ -169,13 +169,13 @@ func TestIsJiraAccessible(t *testing.T) {
 			httpmock.RegisterResponder("GET", dummyURL+"/status",
 				httpmock.NewStringResponder(tt.status, tt.resBody))
 
-			_, err := CheckJiraURL("", dummyURL, false)
+			_, err := CheckJiraURL(http.DefaultClient, "", dummyURL, false)
 			assert.Equal(t, tt.accessible, err == nil)
 		})
 	}
 
 	t.Run("site URL", func(t *testing.T) {
-		_, err := CheckJiraURL(dummyURL, dummyURL, false)
+		_, err := CheckJiraURL(http.DefaultClient, dummyURL, dummyURL, false)
 		assert.Error(t, err)
 		assert.Equal(t, "https://dummy-url.com is the Mattermost site URL. Please use your Jira URL", err.Error())
 	})
