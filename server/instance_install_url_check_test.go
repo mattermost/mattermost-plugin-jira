@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -354,6 +355,7 @@ func TestServerInstanceRequestsBlockInternalAddresses(t *testing.T) {
 				t.Cleanup(target.Close)
 
 				p, _ := setupInstallURLCheckPlugin(t, "localhost")
+				markAdminNoticeSent(p)
 				instanceURL := target.URL
 				if via == "redirect from allowed host" {
 					instanceURL = newLocalhostRedirector(t, target.URL)
@@ -417,6 +419,7 @@ func TestUserConnectErrorDoesNotLeakInternalTargetDetails(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			p, _ := setupInstallURLCheckPlugin(t, tc.allowedInternal)
+			markAdminNoticeSent(p)
 			si := newServerInstanceForURLTest(t, p, newLocalhostRedirector(t, tc.target))
 			p.instanceStore = &singleInstanceStore{instance: si}
 			p.userStore = mockUserStore{}
@@ -436,4 +439,31 @@ func TestUserConnectErrorDoesNotLeakInternalTargetDetails(t *testing.T) {
 			}
 		})
 	}
+}
+
+// markAdminNoticeSent makes one-time admin notices look already sent.
+func markAdminNoticeSent(p *Plugin) {
+	p.API.(*plugintest.API).On("KVSetWithOptions", mock.Anything, mock.Anything, mock.Anything).Return(false, (*model.AppError)(nil)).Maybe()
+}
+
+func TestBlockedInstanceNotifiesAdminsWithoutTargetDetails(t *testing.T) {
+	target := httptest.NewServer(http.NotFoundHandler())
+	t.Cleanup(target.Close)
+
+	p, _ := setupInstallURLCheckPlugin(t, "localhost")
+	p.updateConfig(func(conf *config) {
+		conf.botUserID = connectTestBotUserID
+	})
+	instanceURL := newLocalhostRedirector(t, target.URL)
+	si := newServerInstanceForURLTest(t, p, instanceURL)
+
+	api := p.API.(*plugintest.API)
+	api.On("KVSetWithOptions", mock.Anything, mock.Anything, mock.Anything).Return(true, (*model.AppError)(nil)).Once()
+	// The exact match also checks that the redirect target's address isn't named.
+	expectAdminDM(api, fmt.Sprintf(blockedInstanceNotice, instanceURL, "localhost"))
+
+	_, _, err := si.GetUserConnectURL("user1")
+
+	require.Error(t, err)
+	api.AssertExpectations(t)
 }

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/andygrunwald/go-jira"
@@ -61,6 +62,32 @@ func (p *Plugin) getRestrictedTransport() http.RoundTripper {
 // A zero timeout means no timeout.
 func (p *Plugin) restrictedHTTPClient(timeout time.Duration) *http.Client {
 	return &http.Client{Transport: p.getRestrictedTransport(), Timeout: timeout}
+}
+
+// instanceHTTPClient is restrictedHTTPClient for an installed instance; it
+// tells the admins when the instance's requests are being blocked.
+func (p *Plugin) instanceHTTPClient(instance Instance, timeout time.Duration) *http.Client {
+	return &http.Client{
+		Transport: &blockedNoticeTransport{
+			rt:        p.getRestrictedTransport(),
+			onBlocked: func() { p.notifyAdminsIfInstanceBlocked(instance) },
+		},
+		Timeout: timeout,
+	}
+}
+
+type blockedNoticeTransport struct {
+	rt        http.RoundTripper
+	onBlocked func()
+}
+
+func (t *blockedNoticeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := t.rt.RoundTrip(req)
+	// httpservice adds detail to ErrAddressForbidden without wrapping it.
+	if err != nil && strings.Contains(err.Error(), httpservice.ErrAddressForbidden.Error()) {
+		t.onBlocked()
+	}
+	return resp, err
 }
 
 func (p *Plugin) checkJiraURL(rawURL string) (string, error) {
@@ -169,7 +196,7 @@ func (si *serverInstance) GetClient(connection *Connection) (client Client, retu
 	token := oauth1.NewToken(connection.Oauth1AccessToken, connection.Oauth1AccessSecret)
 	conf := si.getConfig()
 
-	ctx := context.WithValue(context.Background(), oauth1.HTTPClient, si.Plugin.restrictedHTTPClient(0))
+	ctx := context.WithValue(context.Background(), oauth1.HTTPClient, si.Plugin.instanceHTTPClient(si, 0))
 	httpClient := si.getOAuth1Config().Client(ctx, token)
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
@@ -197,6 +224,6 @@ func (si *serverInstance) getOAuth1Config() *oauth1.Config {
 		Signer: &oauth1.RSASigner{
 			PrivateKey: p.getConfig().rsaKey,
 		},
-		HTTPClient: p.restrictedHTTPClient(jiraRequestTimeout),
+		HTTPClient: p.instanceHTTPClient(si, jiraRequestTimeout),
 	}
 }
