@@ -160,6 +160,8 @@ type Plugin struct {
 	// enterprise features
 	enterpriseChecker enterprise.Checker
 
+	restrictedTransport atomic.Pointer[restrictedTransport]
+
 	// Telemetry package copied inside repository, should be changed
 	// to pluginapi's one (0.1.3+) when min_server_version is safe to point at 7.x
 

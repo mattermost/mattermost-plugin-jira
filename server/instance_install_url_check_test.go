@@ -4,6 +4,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -90,6 +92,7 @@ func setupInstallURLCheckPlugin(t *testing.T, allowedInternal string) (*Plugin, 
 	api.On("RegisterCommand", mock.Anything).Return(nil).Maybe()
 	api.On("PublishWebSocketEvent", mock.Anything, mock.Anything, mock.Anything).Maybe()
 	api.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+	api.On("LogWarn", mock.Anything, mock.Anything, mock.Anything).Maybe()
 	api.On("LogWarn", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 	api.On("LogDebug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
@@ -281,6 +284,156 @@ func TestInstallServerInstanceAllowedInternalJiraURL(t *testing.T) {
 			instancesStored, listsStored := store.writes()
 			assert.Equal(t, 1, instancesStored)
 			assert.Equal(t, 1, listsStored)
+		})
+	}
+}
+
+type singleInstanceStore struct {
+	recordingInstanceStore
+	instance Instance
+}
+
+func (s *singleInstanceStore) LoadInstance(types.ID) (Instance, error) {
+	return s.instance, nil
+}
+
+// newLocalhostRedirector stands in for an installed host that passed the
+// install check: "localhost" is allowed by name, and every request is
+// redirected to target, keeping the method and path.
+func newLocalhostRedirector(t *testing.T, target string) string {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target+r.URL.Path, http.StatusTemporaryRedirect) //nolint:gosec // test fixture: the redirect target is a local test server
+	}))
+	t.Cleanup(srv.Close)
+	return strings.Replace(srv.URL, "127.0.0.1", "localhost", 1)
+}
+
+func newServerInstanceForURLTest(t *testing.T, p *Plugin, jiraURL string) *serverInstance {
+	t.Helper()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	p.updateConfig(func(conf *config) {
+		conf.rsaKey = key
+		conf.maxAttachmentSize = defaultMaxAttachmentSize
+	})
+	return &serverInstance{
+		InstanceCommon: newInstanceCommon(p, ServerInstanceType, types.ID(jiraURL)),
+		MattermostKey:  "mattermost-key",
+	}
+}
+
+func TestServerInstanceRequestsBlockInternalAddresses(t *testing.T) {
+	entryPoints := map[string]func(si *serverInstance) error{
+		"OAuth1 request token": func(si *serverInstance) error {
+			_, _, err := si.GetUserConnectURL("user1")
+			return err
+		},
+		"OAuth1 access token": func(si *serverInstance) error {
+			_, _, err := si.getOAuth1Config().AccessToken("token", "secret", "verifier")
+			return err
+		},
+		"Jira REST client": func(si *serverInstance) error {
+			client, err := si.GetClient(&Connection{Oauth1AccessToken: "token", Oauth1AccessSecret: "secret"})
+			if err != nil {
+				return err
+			}
+			_, err = client.GetSelf()
+			return err
+		},
+	}
+
+	for _, via := range []string{"redirect from allowed host", "instance host resolves to an internal address"} {
+		for name, call := range entryPoints {
+			t.Run(via+"/"+name, func(t *testing.T) {
+				var hits int32
+				target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					atomic.AddInt32(&hits, 1)
+					w.WriteHeader(http.StatusOK)
+				}))
+				t.Cleanup(target.Close)
+
+				p, _ := setupInstallURLCheckPlugin(t, "localhost")
+				instanceURL := target.URL
+				if via == "redirect from allowed host" {
+					instanceURL = newLocalhostRedirector(t, target.URL)
+				}
+				si := newServerInstanceForURLTest(t, p, instanceURL)
+
+				err := call(si)
+
+				assert.Error(t, err)
+				assert.Equal(t, int32(0), atomic.LoadInt32(&hits), "request to an internal address must be blocked")
+			})
+		}
+	}
+}
+
+func TestServerInstanceAllowedInternalAddress(t *testing.T) {
+	var hits int32
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&hits, 1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"name":"jira-user"}`))
+	}))
+	t.Cleanup(target.Close)
+
+	p, _ := setupInstallURLCheckPlugin(t, "127.0.0.1/32")
+	si := newServerInstanceForURLTest(t, p, target.URL)
+
+	client, err := si.GetClient(&Connection{Oauth1AccessToken: "token", Oauth1AccessSecret: "secret"})
+	require.NoError(t, err)
+	_, err = client.GetSelf()
+
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), atomic.LoadInt32(&hits))
+}
+
+func TestUserConnectErrorDoesNotLeakInternalTargetDetails(t *testing.T) {
+	closedSrv := httptest.NewServer(http.NotFoundHandler())
+	closedURL := closedSrv.URL
+	closedSrv.Close()
+	closedPort := closedURL[strings.LastIndex(closedURL, ":")+1:]
+
+	notFoundSrv := httptest.NewServer(http.NotFoundHandler())
+	t.Cleanup(notFoundSrv.Close)
+	notFoundPort := notFoundSrv.URL[strings.LastIndex(notFoundSrv.URL, ":")+1:]
+
+	for name, tc := range map[string]struct {
+		target          string
+		allowedInternal string
+		forbidden       []string
+	}{
+		"redirect to closed internal port": {
+			target:          closedURL,
+			allowedInternal: "localhost",
+			forbidden:       []string{"refused", "dial", "forbidden", "127.0.0.1", closedPort},
+		},
+		"redirect to allowed internal port answering 404": {
+			target:          notFoundSrv.URL,
+			allowedInternal: "localhost 127.0.0.1/32",
+			forbidden:       []string{"404", "127.0.0.1", notFoundPort},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			p, _ := setupInstallURLCheckPlugin(t, tc.allowedInternal)
+			si := newServerInstanceForURLTest(t, p, newLocalhostRedirector(t, tc.target))
+			p.instanceStore = &singleInstanceStore{instance: si}
+			p.userStore = mockUserStore{}
+
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, "/instance/x/user/connect", nil)
+			r.Header.Set("Mattermost-User-Id", "user1")
+
+			status, err := p.httpUserConnect(w, r, si.GetID())
+
+			require.Error(t, err)
+			assert.NotEqual(t, http.StatusFound, status)
+			body := strings.ToLower(w.Body.String())
+			assert.Contains(t, body, strings.ToLower(errJiraServerRequestFailed.Error()))
+			for _, s := range tc.forbidden {
+				assert.NotContains(t, body, strings.ToLower(s))
+			}
 		})
 	}
 }

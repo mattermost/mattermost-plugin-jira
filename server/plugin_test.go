@@ -250,12 +250,14 @@ func TestSetupAutolink(t *testing.T) {
 	}
 	for _, tt := range tests {
 		mockAPI := &plugintest.API{}
+		mockAPI.On("GetConfig").Return(&model.Config{}).Maybe()
 		dummyInstanceStore := new(mockInstanceStore)
 		mockPluginClient := pluginapi.NewClient(mockAPI, nil)
 		p := &Plugin{
 			client:        mockPluginClient,
 			instanceStore: dummyInstanceStore,
 		}
+		p.SetAPI(mockAPI)
 
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(p, mockAPI, dummyInstanceStore)

@@ -51,12 +51,20 @@ func newConnectTestPlugin(api *plugintest.API, userStore UserStore, instanceStor
 		instanceStore: instanceStore,
 		tracker:       &mockTelemetryTracker{},
 	}
+	allowLoopbackConnections(api)
 	p.SetAPI(api)
 	p.client = pluginapi.NewClient(api, p.Driver)
 	p.updateConfig(func(conf *config) {
 		conf.botUserID = connectTestBotUserID
 	})
 	return p
+}
+
+// allowLoopbackConnections lets restricted Jira clients reach httptest servers.
+func allowLoopbackConnections(api *plugintest.API) {
+	mmConfig := &model.Config{}
+	mmConfig.ServiceSettings.AllowedUntrustedInternalConnections = model.NewPointer("127.0.0.1/32")
+	api.On("GetConfig").Return(mmConfig).Maybe()
 }
 
 func expectAdminDM(api *plugintest.API, message string) {

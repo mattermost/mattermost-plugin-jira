@@ -4,11 +4,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
+	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/httpservice"
 	"github.com/pkg/errors"
 
@@ -27,12 +30,41 @@ type serverInstance struct {
 
 var _ Instance = (*serverInstance)(nil)
 
-// checkJiraURL sends the availability check through a client that blocks
-// internal addresses unless they are in AllowedUntrustedInternalConnections.
-func (p *Plugin) checkJiraURL(rawURL string) (string, error) {
-	client := httpservice.MakeHTTPServicePlugin(p.API).MakeClient(false)
-	defer client.CloseIdleConnections()
+const jiraRequestTimeout = 30 * time.Second
 
+// errJiraServerRequestFailed is shown to users in place of transport and
+// upstream errors, which are logged instead.
+var errJiraServerRequestFailed = errors.New("we couldn't complete the request to the Jira server. Please try again later or contact your system administrator")
+
+type restrictedTransport struct {
+	insecure bool
+	rt       http.RoundTripper
+}
+
+// getRestrictedTransport returns a transport that blocks internal addresses,
+// on every redirect hop and whatever the host resolves to at request time,
+// unless they are in AllowedUntrustedInternalConnections. The allow list is
+// read on every dial; EnableInsecureOutgoingConnections is fixed per
+// transport, so the transport is rebuilt when it changes.
+func (p *Plugin) getRestrictedTransport() http.RoundTripper {
+	insecure := model.SafeDereference(p.API.GetConfig().ServiceSettings.EnableInsecureOutgoingConnections)
+	if t := p.restrictedTransport.Load(); t != nil && t.insecure == insecure {
+		return t.rt
+	}
+	// The wrapped transport is used directly so the plugin's User-Agent is kept.
+	t := &restrictedTransport{insecure: insecure, rt: httpservice.MakeHTTPServicePlugin(p.API).MakeTransport(false).Transport}
+	p.restrictedTransport.Store(t)
+	return t.rt
+}
+
+// restrictedHTTPClient returns a client for requests to Jira.
+// A zero timeout means no timeout.
+func (p *Plugin) restrictedHTTPClient(timeout time.Duration) *http.Client {
+	return &http.Client{Transport: p.getRestrictedTransport(), Timeout: timeout}
+}
+
+func (p *Plugin) checkJiraURL(rawURL string) (string, error) {
+	client := p.restrictedHTTPClient(jiraRequestTimeout)
 	jiraURL, err := utils.CheckJiraURL(client, p.GetSiteURL(), rawURL, false)
 	var checkErr *utils.JiraURLCheckError
 	if errors.As(err, &checkErr) {
@@ -104,7 +136,8 @@ func (si *serverInstance) GetUserConnectURL(mattermostUserID string) (returnURL 
 	oauth1Config := si.getOAuth1Config()
 	token, secret, err := oauth1Config.RequestToken()
 	if err != nil {
-		return "", nil, err
+		si.Plugin.client.Log.Warn("Failed to obtain an OAuth1 request token from Jira", "error", err.Error())
+		return "", nil, errJiraServerRequestFailed
 	}
 
 	err = si.Plugin.otsStore.StoreOauth1aTemporaryCredentials(mattermostUserID,
@@ -136,7 +169,8 @@ func (si *serverInstance) GetClient(connection *Connection) (client Client, retu
 	token := oauth1.NewToken(connection.Oauth1AccessToken, connection.Oauth1AccessSecret)
 	conf := si.getConfig()
 
-	httpClient := si.getOAuth1Config().Client(oauth1.NoContext, token)
+	ctx := context.WithValue(context.Background(), oauth1.HTTPClient, si.Plugin.restrictedHTTPClient(0))
+	httpClient := si.getOAuth1Config().Client(ctx, token)
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
 		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
@@ -163,5 +197,6 @@ func (si *serverInstance) getOAuth1Config() *oauth1.Config {
 		Signer: &oauth1.RSASigner{
 			PrivateKey: p.getConfig().rsaKey,
 		},
+		HTTPClient: p.restrictedHTTPClient(jiraRequestTimeout),
 	}
 }
