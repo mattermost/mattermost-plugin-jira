@@ -26,7 +26,9 @@ const blockedInstanceNotice = ":warning: **Jira %s is being blocked**\n\n" +
 	"**System Console > Environment > Developer > Allow untrusted internal connections to**. " +
 	"Requests to this Jira instance are being refused, so users can't connect their accounts, " +
 	"and commands and notifications for it won't work.\n\n" +
-	"To fix it, add `%s` or its IP range to that setting."
+	"To fix it, add `%s` or its IP range to that setting. " +
+	"If it is already allowed, Jira is redirecting requests to another internal address: " +
+	"check Jira's base URL and any proxy in front of it, and the Mattermost server logs for details."
 
 func (p *Plugin) notifyAdminsIfInstanceBlocked(instance Instance) {
 	p.notifyAdminsOnce(adminNoticeBlockedInstance, instance.GetID(),

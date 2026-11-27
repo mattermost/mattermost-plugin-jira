@@ -64,30 +64,34 @@ func (p *Plugin) restrictedHTTPClient(timeout time.Duration) *http.Client {
 	return &http.Client{Transport: p.getRestrictedTransport(), Timeout: timeout}
 }
 
-// instanceHTTPClient is restrictedHTTPClient for an installed instance; it
+// instanceHTTPClient is restrictedHTTPClient for an installed instance. It
 // tells the admins when the instance's requests are being blocked.
 func (p *Plugin) instanceHTTPClient(instance Instance, timeout time.Duration) *http.Client {
 	return &http.Client{
-		Transport: &blockedNoticeTransport{
-			rt:        p.getRestrictedTransport(),
-			onBlocked: func() { p.notifyAdminsIfInstanceBlocked(instance) },
-		},
-		Timeout: timeout,
+		Transport: &instanceTransport{rt: p.getRestrictedTransport(), plugin: p, instance: instance},
+		Timeout:   timeout,
 	}
 }
 
-type blockedNoticeTransport struct {
-	rt        http.RoundTripper
-	onBlocked func()
+// instanceTransport replaces connection errors with errJiraServerRequestFailed,
+// since they can name internal addresses or reveal which hostnames resolve.
+type instanceTransport struct {
+	rt       http.RoundTripper
+	plugin   *Plugin
+	instance Instance
 }
 
-func (t *blockedNoticeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *instanceTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := t.rt.RoundTrip(req)
-	// httpservice adds detail to ErrAddressForbidden without wrapping it.
-	if err != nil && strings.Contains(err.Error(), httpservice.ErrAddressForbidden.Error()) {
-		t.onBlocked()
+	if err == nil {
+		return resp, nil
 	}
-	return resp, err
+	t.plugin.client.Log.Warn("Request to Jira failed", "instance", t.instance.GetID().String(), "error", err.Error())
+	// httpservice adds detail to ErrAddressForbidden without wrapping it.
+	if strings.Contains(err.Error(), httpservice.ErrAddressForbidden.Error()) {
+		t.plugin.notifyAdminsIfInstanceBlocked(t.instance)
+	}
+	return nil, errJiraServerRequestFailed
 }
 
 func (p *Plugin) checkJiraURL(rawURL string) (string, error) {

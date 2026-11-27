@@ -467,3 +467,23 @@ func TestBlockedInstanceNotifiesAdminsWithoutTargetDetails(t *testing.T) {
 	require.Error(t, err)
 	api.AssertExpectations(t)
 }
+
+func TestInstanceRequestErrorsDoNotNameResolvedAddress(t *testing.T) {
+	target := httptest.NewServer(http.NotFoundHandler())
+	t.Cleanup(target.Close)
+	// "localhost." is not in the allow list, so its resolved address is checked and blocked.
+	targetByName := strings.Replace(target.URL, "127.0.0.1", "localhost.", 1)
+
+	p, _ := setupInstallURLCheckPlugin(t, "localhost")
+	markAdminNoticeSent(p)
+	si := newServerInstanceForURLTest(t, p, newLocalhostRedirector(t, targetByName))
+
+	client, err := si.GetClient(&Connection{Oauth1AccessToken: "token", Oauth1AccessSecret: "secret"})
+	require.NoError(t, err)
+	_, err = client.GetSelf()
+
+	require.Error(t, err)
+	for _, s := range []string{"127.0.0.1", "reserved", "forbidden"} {
+		assert.NotContains(t, strings.ToLower(err.Error()), s)
+	}
+}
