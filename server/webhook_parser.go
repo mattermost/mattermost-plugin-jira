@@ -195,16 +195,16 @@ func parseWebhookCreated(jwh *JiraWebhook) Webhook {
 		return wh
 	}
 
-	var fields []*model.SlackAttachmentField
+	var fields []*model.MessageAttachmentField
 	if jwh.Issue.Fields.Assignee != nil {
-		fields = append(fields, &model.SlackAttachmentField{
+		fields = append(fields, &model.MessageAttachmentField{
 			Title: "Assignee",
 			Value: jwh.Issue.Fields.Assignee.DisplayName,
 			Short: true,
 		})
 	}
 	if jwh.Issue.Fields.Priority != nil {
-		fields = append(fields, &model.SlackAttachmentField{
+		fields = append(fields, &model.MessageAttachmentField{
 			Title: "Priority",
 			Value: jwh.Issue.Fields.Priority.Name,
 			Short: true,
@@ -603,7 +603,7 @@ func mergeWebhookEvents(events []*webhook) Webhook {
 		// Use the english language for now. Using the server's local might be better.
 		msg := "**" + cases.Title(language.English, cases.NoLower).String(event.fieldInfo.name) + ":** " + strike +
 			event.fieldInfo.from + strike + " " + event.fieldInfo.to
-		merged.fields = append(merged.fields, &model.SlackAttachmentField{
+		merged.fields = append(merged.fields, &model.MessageAttachmentField{
 			Value: msg,
 			Short: false,
 		})

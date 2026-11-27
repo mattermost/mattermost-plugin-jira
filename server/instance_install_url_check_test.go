@@ -244,6 +244,9 @@ func TestCheckJiraURLBlocksReservedAddressForms(t *testing.T) {
 	for name, rawURL := range map[string]string{ //nolint:gosec // test fixture: fake userinfo checks that credentials in the URL don't bypass the IP filter
 		"IPv6 loopback":           "http://[::1]:8065",
 		"IPv4-mapped IPv6":        "http://[::ffff:127.0.0.1]:8065",
+		"IPv4-mapped IPv6, hex":   "http://[::ffff:7f00:1]:8065",
+		"IPv4-mapped private":     "http://[::ffff:10.0.0.1]:8065",
+		"IPv4-mapped metadata":    "http://[::ffff:169.254.169.254]",
 		"unspecified IPv4":        "http://0.0.0.0:8065",
 		"cloud metadata":          "http://169.254.169.254",
 		"localhost hostname":      "http://localhost:8065",

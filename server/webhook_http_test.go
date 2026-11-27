@@ -68,7 +68,7 @@ func TestWebhookHTTP(t *testing.T) {
 		ExpectedHeadline        string
 		ExpectedSlackAttachment bool
 		ExpectedText            string
-		ExpectedFields          []*model.SlackAttachmentField
+		ExpectedFields          []*model.MessageAttachmentField
 		ExpectedStatus          int
 		ExpectedIgnored         bool // Indicates that no post was made as a result of the webhook request
 		CurrentInstance         bool
@@ -80,7 +80,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "Unit test description, not that long",
-			ExpectedFields: []*model.SlackAttachmentField{
+			ExpectedFields: []*model.MessageAttachmentField{
 				{
 					Title: "Priority",
 					Value: "High",
@@ -95,7 +95,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "Unit test description, not that long",
-			ExpectedFields:          []*model.SlackAttachmentField{},
+			ExpectedFields:          []*model.MessageAttachmentField{},
 			CurrentInstance:         true,
 		},
 		"issue created no description": {
@@ -104,7 +104,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			// ExpectedText:            "Unit test description, not that long",
-			ExpectedFields: []*model.SlackAttachmentField{
+			ExpectedFields: []*model.MessageAttachmentField{
 				{
 					Title: "Priority",
 					Value: "High",
@@ -194,7 +194,7 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-issue-updated-multiple-values.json"),
 			ExpectedHeadline:        `Test User **updated** story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)`,
 			ExpectedSlackAttachment: true,
-			ExpectedFields: []*model.SlackAttachmentField{
+			ExpectedFields: []*model.MessageAttachmentField{
 				{
 					Title: "",
 					Value: "**Fix Version:** ~~v1~~ v2",
@@ -227,7 +227,7 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-issue-updated-reopened.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **updated** story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedFields: []*model.SlackAttachmentField{
+			ExpectedFields: []*model.MessageAttachmentField{
 				{
 					Title: "",
 					Value: "**Reopened:** ~~Done~~ Open",
@@ -245,7 +245,7 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-issue-updated-resolved.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **updated** story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedFields: []*model.SlackAttachmentField{
+			ExpectedFields: []*model.MessageAttachmentField{
 				{
 					Title: "",
 					Value: "**Resolved:** ~~Open~~ Done",
@@ -263,7 +263,7 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-resolved.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **updated** bug [TES-4: Unit test summary 1](http://some-instance-test.centralus.cloudapp.azure.com:8080/browse/TES-4)",
-			ExpectedFields: []*model.SlackAttachmentField{
+			ExpectedFields: []*model.MessageAttachmentField{
 				{
 					Title: "",
 					Value: "**Status:** ~~In Progress~~ Resolved",
@@ -281,7 +281,7 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-server-issue-updated-reopened.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **updated** bug [TES-4: Unit test summary 1](http://some-instance-test.centralus.cloudapp.azure.com:8080/browse/TES-4)",
-			ExpectedFields: []*model.SlackAttachmentField{
+			ExpectedFields: []*model.MessageAttachmentField{
 				{
 					Title: "",
 					Value: "**Reopened:** ~~Done~~ Open",
@@ -414,7 +414,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "Unit test description, not that long",
-			ExpectedFields: []*model.SlackAttachmentField{
+			ExpectedFields: []*model.MessageAttachmentField{
 				{
 					Title: "Priority",
 					Value: "High",
@@ -429,7 +429,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			ExpectedText:            "Unit test description, not that long",
-			ExpectedFields:          []*model.SlackAttachmentField{},
+			ExpectedFields:          []*model.MessageAttachmentField{},
 			CurrentInstance:         false,
 		},
 		"issue created no description - no Instance": {
@@ -438,7 +438,7 @@ func TestWebhookHTTP(t *testing.T) {
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **created** story [TES-41: Unit test summary](https://some-instance-test.atlassian.net/browse/TES-41)",
 			// ExpectedText:            "Unit test description, not that long",
-			ExpectedFields: []*model.SlackAttachmentField{
+			ExpectedFields: []*model.MessageAttachmentField{
 				{
 					Title: "Priority",
 					Value: "High",
@@ -520,7 +520,7 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-issue-updated-reopened.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **updated** story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedFields: []*model.SlackAttachmentField{
+			ExpectedFields: []*model.MessageAttachmentField{
 				{
 					Title: "",
 					Value: "**Reopened:** ~~Done~~ Open",
@@ -538,7 +538,7 @@ func TestWebhookHTTP(t *testing.T) {
 			Request:                 testWebhookRequest("webhook-issue-updated-resolved.json"),
 			ExpectedSlackAttachment: true,
 			ExpectedHeadline:        "Test User **updated** story [TES-41: Unit test summary 1](https://some-instance-test.atlassian.net/browse/TES-41)",
-			ExpectedFields: []*model.SlackAttachmentField{
+			ExpectedFields: []*model.MessageAttachmentField{
 				{
 					Title: "",
 					Value: "**Resolved:** ~~Open~~ Done",
@@ -664,7 +664,7 @@ func TestWebhookHTTP(t *testing.T) {
 
 			rPost := &model.Post{}
 			rPost.Message = tc.ExpectedHeadline
-			rAttachments := []*model.SlackAttachment{
+			rAttachments := []*model.MessageAttachment{
 				{
 					Pretext: tc.ExpectedHeadline,
 					Text:    tc.ExpectedText,
@@ -676,7 +676,7 @@ func TestWebhookHTTP(t *testing.T) {
 				rPost.RootId = tc.RootID
 			}
 
-			model.ParseSlackAttachment(rPost, rAttachments)
+			model.ParseMessageAttachment(rPost, rAttachments)
 			api.On("CreatePost", mock.AnythingOfType("*model.Post")).Return(rPost, nil)
 			api.On("GetUser", mock.AnythingOfType("string")).Return(&model.User{
 				Username: "test-mm-username",
@@ -730,7 +730,7 @@ func TestWebhookHTTP(t *testing.T) {
 
 			require.NotNil(t, post.Props)
 			require.NotNil(t, post.Props["attachments"])
-			attachments := post.Props["attachments"].([]*model.SlackAttachment)
+			attachments := post.Props["attachments"].([]*model.MessageAttachment)
 			require.Equal(t, 1, len(attachments))
 
 			sa := attachments[0]
