@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -20,6 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/enterprise"
+	"github.com/mattermost/mattermost-plugin-jira/server/utils"
 	"github.com/mattermost/mattermost-plugin-jira/server/utils/types"
 )
 
@@ -77,7 +79,6 @@ func setupInstallURLCheckPlugin(t *testing.T, allowedInternal string) (*Plugin, 
 	mmConfig := &model.Config{}
 	mmConfig.SetDefaults()
 	mmConfig.ServiceSettings.AllowedUntrustedInternalConnections = model.NewPointer(allowedInternal)
-	p.updateOutgoingHTTP(mmConfig)
 
 	bundlePath, err := filepath.Abs("..")
 	require.NoError(t, err)
@@ -218,6 +219,46 @@ func TestInstallServerInstanceDoesNotFollowRedirectToInternalAddress(t *testing.
 	instancesStored, listsStored := store.writes()
 	assert.Equal(t, 0, instancesStored)
 	assert.Equal(t, 0, listsStored)
+}
+
+// The cloud-oauth install only accepts *.atlassian.net, so it must not send
+// any request to a URL that can never be accepted.
+func TestInstallCloudOAuthInstanceDoesNotProbeNonCloudURL(t *testing.T) {
+	var hits int32
+	srv := newStatusServer(t, http.StatusOK, `{"state":"RUNNING"}`, &hits)
+	p, store := setupInstallURLCheckPlugin(t, "127.0.0.0/8")
+
+	_, _, err := p.installCloudOAuthInstance(srv.URL)
+
+	require.Error(t, err)
+	assert.Equal(t, int32(0), atomic.LoadInt32(&hits), "no request may be sent to a non-Atlassian host")
+	instancesStored, _ := store.writes()
+	assert.Equal(t, 0, instancesStored)
+}
+
+func TestCheckJiraURLBlocksReservedAddressForms(t *testing.T) {
+	for name, rawURL := range map[string]string{ //nolint:gosec // test fixture: fake userinfo checks that credentials in the URL don't bypass the IP filter
+		"IPv6 loopback":           "http://[::1]:8065",
+		"IPv4-mapped IPv6":        "http://[::ffff:127.0.0.1]:8065",
+		"unspecified IPv4":        "http://0.0.0.0:8065",
+		"cloud metadata":          "http://169.254.169.254",
+		"localhost hostname":      "http://localhost:8065",
+		"userinfo before IP":      "http://user:pass@127.0.0.1:8065",
+		"private network":         "http://10.0.0.1:8065",
+		"no scheme, loopback":     "127.0.0.1/jira",
+		"IPv6 unique local":       "http://[fd00::1]:8065",
+		"trailing dot localhost.": "http://localhost.:8065",
+	} {
+		t.Run(name, func(t *testing.T) {
+			p, _ := setupInstallURLCheckPlugin(t, "")
+
+			_, err := p.checkJiraURL(rawURL)
+
+			var checkErr *utils.JiraURLCheckError
+			require.True(t, errors.As(err, &checkErr), "expected a JiraURLCheckError, got %v", err)
+			assert.Contains(t, checkErr.Cause.Error(), "address forbidden")
+		})
+	}
 }
 
 func TestInstallServerInstanceAllowedInternalJiraURL(t *testing.T) {

@@ -227,7 +227,7 @@ func TestCloudOAuthMigration(t *testing.T) {
 			api.On("GetBundlePath").Return(tempDir, nil)
 			mmConfig := &model.Config{}
 			mmConfig.ServiceSettings.AllowedUntrustedInternalConnections = model.NewPointer("127.0.0.0/8")
-			p.updateOutgoingHTTP(mmConfig)
+			api.On("GetConfig").Return(mmConfig).Maybe()
 			api.On("LogDebug", mock.AnythingOfType("string")).Return()
 			api.On("UnregisterCommand", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil)
 			api.On("RegisterCommand", mock.Anything).Return(nil)

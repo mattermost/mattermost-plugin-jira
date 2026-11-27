@@ -72,7 +72,7 @@ type JiraStatus struct {
 const maxJiraStatusResponseSize = 1 << 20
 
 // JiraURLCheckError reports a failed availability check. Error() is safe to
-// show to the user; the detailed Cause is only meant for server logs.
+// show to the user; Cause is only meant for server logs.
 type JiraURLCheckError struct {
 	Cause error
 }

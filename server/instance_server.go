@@ -4,13 +4,12 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/dghubble/oauth1"
+	"github.com/mattermost/mattermost/server/public/shared/httpservice"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-jira/server/utils"
@@ -28,19 +27,31 @@ type serverInstance struct {
 
 var _ Instance = (*serverInstance)(nil)
 
-const oauth1TokenRequestTimeout = 30 * time.Second
+// checkJiraURL sends the availability check through a client that blocks
+// internal addresses unless they are in AllowedUntrustedInternalConnections.
+func (p *Plugin) checkJiraURL(rawURL string) (string, error) {
+	client := httpservice.MakeHTTPServicePlugin(p.API).MakeClient(false)
+	defer client.CloseIdleConnections()
 
-// errJiraServerRequestFailed is shown to users in place of transport and
-// upstream errors, which are logged instead.
-var errJiraServerRequestFailed = errors.New("we couldn't complete the request to the Jira server. Please try again later or contact your system administrator")
+	jiraURL, err := utils.CheckJiraURL(client, p.GetSiteURL(), rawURL, false)
+	var checkErr *utils.JiraURLCheckError
+	if errors.As(err, &checkErr) {
+		p.client.Log.Warn("Failed to validate the connection to the Jira server", "error", checkErr.Cause.Error())
+	}
+	return jiraURL, err
+}
 
 func (p *Plugin) installServerInstance(rawURL string) (string, *serverInstance, error) {
-	jiraURL, err := p.checkJiraURL(rawURL)
+	jiraURL, err := utils.NormalizeJiraURL(rawURL)
 	if err != nil {
 		return "", nil, err
 	}
 	if utils.IsJiraCloudURL(jiraURL) {
 		return "", nil, errors.Errorf("`%s` is not a Jira server URL, it refers to Jira Cloud", jiraURL)
+	}
+	jiraURL, err = p.checkJiraURL(jiraURL)
+	if err != nil {
+		return "", nil, err
 	}
 
 	instance := &serverInstance{
@@ -93,8 +104,7 @@ func (si *serverInstance) GetUserConnectURL(mattermostUserID string) (returnURL 
 	oauth1Config := si.getOAuth1Config()
 	token, secret, err := oauth1Config.RequestToken()
 	if err != nil {
-		si.Plugin.client.Log.Warn("Failed to obtain an OAuth1 request token from Jira", "instance", redactURLForLog(si.GetURL()), "error", err.Error())
-		return "", nil, errJiraServerRequestFailed
+		return "", nil, err
 	}
 
 	err = si.Plugin.otsStore.StoreOauth1aTemporaryCredentials(mattermostUserID,
@@ -126,8 +136,7 @@ func (si *serverInstance) GetClient(connection *Connection) (client Client, retu
 	token := oauth1.NewToken(connection.Oauth1AccessToken, connection.Oauth1AccessSecret)
 	conf := si.getConfig()
 
-	ctx := context.WithValue(context.Background(), oauth1.HTTPClient, si.Plugin.makeInstanceHTTPClient(si.GetURL(), 0))
-	httpClient := si.getOAuth1Config().Client(ctx, token)
+	httpClient := si.getOAuth1Config().Client(oauth1.NoContext, token)
 	httpClient = utils.WrapHTTPClient(httpClient,
 		utils.WithRequestSizeLimit(conf.maxAttachmentSize),
 		utils.WithResponseSizeLimit(conf.maxAttachmentSize))
@@ -154,6 +163,5 @@ func (si *serverInstance) getOAuth1Config() *oauth1.Config {
 		Signer: &oauth1.RSASigner{
 			PrivateKey: p.getConfig().rsaKey,
 		},
-		HTTPClient: p.makeInstanceHTTPClient(si.GetURL(), oauth1TokenRequestTimeout),
 	}
 }

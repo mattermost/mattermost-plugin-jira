@@ -1604,7 +1604,7 @@ func (p *Plugin) GetIssueByKey(instanceID, mattermostUserID types.ID, issueKey s
 }
 
 func (p *Plugin) GetIssueDataWithAPIToken(issueID string, instance Instance) (*jira.Issue, error) {
-	client := p.makeInstanceHTTPClient(instance.GetJiraBaseURL(), 0)
+	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/2/issue/%s", instance.GetJiraBaseURL(), issueID), nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create http request for fetching issue data. IssueID: %s", issueID)
@@ -1652,7 +1652,7 @@ func (p *Plugin) GetWatchersWithAPIToken(issueKeyOrID string, instance Instance)
 		apiVersion = "3"
 	}
 
-	httpClient := p.makeInstanceHTTPClient(instance.GetJiraBaseURL(), 30*time.Second)
+	httpClient := &http.Client{Timeout: 30 * time.Second}
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/%s/issue/%s/watchers", instance.GetJiraBaseURL(), apiVersion, issueKeyOrID), nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching watchers. Issue: %s", issueKeyOrID)
@@ -1941,7 +1941,7 @@ type ProjectSearchResponse struct {
 
 func (p *Plugin) GetProjectListWithAPIToken(instance Instance) (*jira.ProjectList, error) {
 	instanceID := instance.GetID().String()
-	client := p.makeInstanceHTTPClient(instance.GetJiraBaseURL(), 0)
+	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/rest/api/3/project/search", instance.GetJiraBaseURL()), nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create HTTP request for fetching project list data. InstanceID: %s", instanceID)

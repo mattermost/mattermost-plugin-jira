@@ -11,7 +11,6 @@ import (
 	"fmt"
 	htmlTemplate "html/template"
 	"math"
-	"net/http"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -161,12 +160,6 @@ type Plugin struct {
 	// enterprise features
 	enterpriseChecker enterprise.Checker
 
-	// Only tests set this, to replace the client used to check a Jira URL
-	// before installing an instance.
-	jiraURLCheckClientOverride *http.Client
-
-	outgoingHTTP atomic.Pointer[outgoingHTTP]
-
 	// Telemetry package copied inside repository, should be changed
 	// to pluginapi's one (0.1.3+) when min_server_version is safe to point at 7.x
 
@@ -217,12 +210,9 @@ func (p *Plugin) OnConfigurationChange() error {
 	}
 	p.adminBasicFallbackFailed.Store(false)
 
-	mmConfig := p.API.GetConfig()
-	p.updateOutgoingHTTP(mmConfig)
-
 	ec.MaxAttachmentSize = strings.TrimSpace(ec.MaxAttachmentSize)
 	maxAttachmentSize := defaultMaxAttachmentSize
-	mattermostMaxAttachmentSize := mmConfig.FileSettings.MaxFileSize
+	mattermostMaxAttachmentSize := p.API.GetConfig().FileSettings.MaxFileSize
 	if mattermostMaxAttachmentSize != nil {
 		maxAttachmentSize = types.ByteSize(*mattermostMaxAttachmentSize)
 	}
